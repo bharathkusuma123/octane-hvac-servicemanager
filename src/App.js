@@ -1,24 +1,174 @@
-import logo from './logo.svg';
-import './App.css';
+// App.js
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+  Link,
+} from "react-router-dom";
+import "./App.css";
 
+import ServiceManagerLogin from "./Login/Login";
+import NewCustomer from "./Customer/NewCustomer";
+import PreventiveMaintainanceChart from "./PreventiveMaintainanceChart/PreventiveMaintainanceChart";
+import PreventiveMaintainance from "./PreventiveMaintainanceGroup/PreventiveMaintainance";
+import ServiceItemComponents from "./ServiceItemComponents/ServiceItemComponents";
+import NewServiceItem from "./ServiceItems/NewServiceItem";
+import ServicePool from "./ServicePool/ServicePool";
+
+
+// 🔹 TopNavbar
+const TopNavbar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const userRole = localStorage.getItem("userRole");
+
+  const handleLogout = () => {
+    localStorage.removeItem("userRole");
+    navigate("/");
+  };
+
+  if (userRole !== "service-manager") return null;
+
+  const navItems = [
+          { 
+            label: "Preventive Maintenance",
+            dropdown: [
+                            { path: "/servicemanager/preventive-maintainance-group", label: "P M Group" },
+
+              { path: "/servicemanager/preventive-maintainance-chart", label: "P M Chart" },
+            ]
+     
+          },
+                    { path: "/servicemanager/new-customer", label: "Customer" },
+
+          { path: "/servicemanager/service-pool", label: "Service Pool" },
+          // { path: "/servicemanager/service-assignment", label: "Service Assignment" },
+          { path: "/servicemanager/service-item-components", label: "Service Item Components" },
+          { path: "/servicemanager/new-service-item", label: "Service Item" },
+          
+        ];
+
+  return (
+    <nav className="top-navbar">
+      <div className="nav-container">
+        <div className="nav-brand">Service Manager Panel</div>
+        <div className="nav-links">
+          {navItems.map((item) =>
+            item.dropdown ? (
+              <div key={item.label} className="dropdown">
+                <button className="dropdown-toggle">{item.label}</button>
+                <div className="dropdown-menu">
+                  {item.dropdown.map((subItem) => (
+                    <Link
+                      key={subItem.path}
+                      to={subItem.path}
+                      className={
+                        location.pathname === subItem.path ? "active" : ""
+                      }
+                    >
+                      {subItem.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={location.pathname === item.path ? "active" : ""}
+              >
+                {item.label}
+              </Link>
+            )
+          )}
+        </div>
+        <div className="nav-user">
+          <button onClick={handleLogout} className="logout-btn">
+            Logout
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+// 🔒 Protected Layout
+const PanelLayout = ({ children }) => (
+  <>
+    <TopNavbar />
+    <div className="panel-content">{children}</div>
+  </>
+);
+
+// 🔒 Route Protection
+const ProtectedRoute = ({ children }) => {
+  const userRole = localStorage.getItem("userRole");
+  if (userRole !== "service-manager") {
+    return <Navigate to="/" replace />;
+  }
+  return <PanelLayout>{children}</PanelLayout>;
+};
+
+// 🔁 Main App
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<ServiceManagerLogin />} />
+        <Route
+          path="/servicemanager/new-customer"
+          element={
+            <ProtectedRoute>
+              <NewCustomer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/servicemanager/preventive-maintainance-chart"
+          element={
+            <ProtectedRoute>
+              <PreventiveMaintainanceChart />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/servicemanager/preventive-maintainance-group"
+          element={
+            <ProtectedRoute>
+              <PreventiveMaintainance />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/servicemanager/service-item-components"
+          element={
+            <ProtectedRoute>
+              <ServiceItemComponents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/servicemanager/new-service-item"
+          element={
+            <ProtectedRoute>
+              <NewServiceItem />
+            </ProtectedRoute>
+          }
+        /><Route
+          path="/servicemanager/service-pool"
+          element={
+            <ProtectedRoute>
+              <ServicePool />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </Router>
   );
 }
 

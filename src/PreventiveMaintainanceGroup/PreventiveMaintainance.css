@@ -1,0 +1,78 @@
+.pm-container {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  /* max-width: 900px; */
+  margin: 40px auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.07);
+}
+
+.pm-form .form-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.pm-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  margin-top: 25px;
+  color: #2c3e50;
+  text-align: left;
+}
+
+
+.form-label {
+  font-weight: 500;
+  text-align: left !important;
+  display: block;
+}
+
+
+
+/* Add these to your existing CSS */
+.pm-subtitle {
+  color: #6c757d;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.table-responsive {
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+}
+
+.table {
+  margin-bottom: 0;
+  font-size: 14px;
+}
+
+.table th {
+  background-color: #343a40;
+  color: white;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* Update the existing form styles */
+.pm-form .form-control {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+}
+
+.pm-form .form-control:focus {
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn {
+  padding: 8px 16px;
+  font-weight: 500;
+}
