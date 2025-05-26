@@ -1,6 +1,110 @@
-import React from 'react';
+import React,{useState} from 'react';
+import axios from 'axios';
 
-const CustomerForm = ({ formData, handleChange, handleSubmit, toggleForm }) => {
+const SECURITY_QUESTION_CHOICES = [
+  "What is your mother’s maiden name?",
+  "What was the name of your first pet?",
+  "What was your first car?",
+  "What is the name of the town where you were born?",
+  "What was your childhood nickname?",
+];
+
+const CustomerForm = ({ formData, handleChange, toggleForm }) => {
+  
+const initialForm1Data = {
+  user_id: '',
+  username: '',
+  full_name: '',
+  email: '',
+  mobile_no: '',
+  telephone: '',
+  city: '',
+  country_code: 'KSA',
+  customer_type: 'Individual',
+  status: 'Active',
+  remarks: '',
+  hourly_rate: '',
+  address: '',
+  security_question1: '',
+  answer1: '',
+  security_question2: '',
+  answer2: '',
+};
+const [formData1, setFormData1] = useState(initialForm1Data);
+
+
+  
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  // Validate security questions aren't the same
+  if (formData.security_question1 === formData.security_question2) {
+    alert('Security questions must be different');
+    return;
+  }
+
+  
+
+  const payload = {
+    user_id: formData.user_id,
+    username: formData.username,
+    full_name: formData.full_name,
+    email: formData.email,
+    mobile_no: formData.mobile_no,
+    telephone: formData.telephone || "Not provided",
+    city: formData.city || "Not provided",
+    country_code: formData.country_code || "KSA", // Default to KSA
+    customer_type: formData.customer_type || "Individual",
+    status: formData.status || "Active",
+    remarks: formData.remarks || "No remarks",
+    role: "Customer",
+    hourly_rate: parseFloat(formData.hourly_rate) || 0,
+    address: formData.address || "Not provided",
+    security_question1: formData.security_question1 || 
+      "What is your mother's maiden name?",
+    answer1: formData.answer1 || "Not provided",
+    security_question2: formData.security_question2 || 
+      "What was the name of your first pet?",
+    answer2: formData.answer2 || "Not provided",
+    last_password: "default_password", // Temporary value
+    availability: "Available",
+    rating: "0",
+    created_by: "Service Manager",
+    updated_by: "Service Manager"
+  };
+
+  // Ensure security questions are different
+  if (payload.security_question1 === payload.security_question2) {
+    payload.security_question2 = "What was your first car?";
+  }
+
+  try {
+    const response = await axios.post('http://175.29.21.7:8006/users/', payload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Customer saved:', response.data);
+    alert('Customer saved successfully!');
+    setFormData1(initialForm1Data); 
+    toggleForm();
+  } catch (error) {
+    console.error('Full error details:', {
+      error: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      config: error.config,
+    });
+    
+    // Display specific validation errors if available
+    const errorMsg = error.response?.data?.errors 
+      ? Object.values(error.response.data.errors).flat().join(', ')
+      : error.response?.data?.message || error.message;
+    
+    alert(`Failed to save customer: ${errorMsg}`);
+  }
+};
+
   return (
     <>
       <h2 className="customer-title">New Customer</h2>
@@ -16,8 +120,8 @@ const CustomerForm = ({ formData, handleChange, handleSubmit, toggleForm }) => {
               type="text" 
               className="form-control" 
               placeholder="e.g. C04049" 
-              name="customer_id"
-              value={formData.customer_id}
+              name="user_id"  
+              value={formData.user_id}
               onChange={handleChange}
               required
             />
@@ -82,8 +186,8 @@ const CustomerForm = ({ formData, handleChange, handleSubmit, toggleForm }) => {
               type="text" 
               className="form-control" 
               placeholder="Mobile number" 
-              name="mobile"
-              value={formData.mobile}
+              name="mobile_no"
+              value={formData.mobile_no}
               onChange={handleChange}
               required
             />
@@ -152,9 +256,9 @@ const CustomerForm = ({ formData, handleChange, handleSubmit, toggleForm }) => {
               onChange={handleChange}
             >
               <option value="">Select Type</option>
-              <option value="Regular">Regular</option>
-              <option value="Premium">Premium</option>
-              <option value="VIP">VIP</option>
+              <option value="Individual">Individual</option>
+              <option value="Business">Business</option>
+              <option value="Contractor">Contractor</option>
             </select>
           </div>
           <div className="col-md-6 d-flex align-items-center gap-3">
@@ -196,19 +300,20 @@ const CustomerForm = ({ formData, handleChange, handleSubmit, toggleForm }) => {
         <div className="section-title">Security Information</div>
         <div className="row mb-4">
           <div className="col-md-3">
-            <label className="form-label">Security Question 1</label>
-            <select 
-              className="form-select"
-              name="security_question1"
-              value={formData.security_question1}
-              onChange={handleChange}
-            >
-              <option value="">Select Question 1</option>
-              <option value="What was your first pet's name?">What was your first pet's name?</option>
-              <option value="What city were you born in?">What city were you born in?</option>
-              <option value="What is your mother's maiden name?">What is your mother's maiden name?</option>
-            </select>
-          </div>
+  <label className="form-label">Security Question 1</label>
+  <select 
+    className="form-select"
+    name="security_question1"
+    value={formData.security_question1}
+    onChange={handleChange}
+    required
+  >
+    <option value="">Select Question 1</option>
+    {SECURITY_QUESTION_CHOICES.map((question, index) => (
+      <option key={index} value={question}>{question}</option>
+    ))}
+  </select>
+</div>
           <div className="col-md-3">
             <label className="form-label">Answer 1</label>
             <input 
@@ -221,19 +326,20 @@ const CustomerForm = ({ formData, handleChange, handleSubmit, toggleForm }) => {
             />
           </div>
           <div className="col-md-3">
-            <label className="form-label">Security Question 2</label>
-            <select 
-              className="form-select"
-              name="security_question2"
-              value={formData.security_question2}
-              onChange={handleChange}
-            >
-              <option value="">Select Question 2</option>
-              <option value="What was your first school?">What was your first school?</option>
-              <option value="What is your favorite book?">What is your favorite book?</option>
-              <option value="What was your childhood nickname?">What was your childhood nickname?</option>
-            </select>
-          </div>
+  <label className="form-label">Security Question 2</label>
+  <select 
+    className="form-select"
+    name="security_question2"
+    value={formData.security_question2}
+    onChange={handleChange}
+    required
+  >
+    <option value="">Select Question 2</option>
+    {SECURITY_QUESTION_CHOICES.map((question, index) => (
+      <option key={index} value={question}>{question}</option>
+    ))}
+  </select>
+</div>
           <div className="col-md-3">
             <label className="form-label">Answer 2</label>
             <input 
