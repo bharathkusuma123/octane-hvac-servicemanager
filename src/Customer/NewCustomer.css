@@ -1,4 +1,4 @@
-.customer-form-container {
+/* .customer-form-container {
   background-color: #fff;
   padding: 30px;
   margin: 40px auto;
@@ -34,7 +34,93 @@
   display: block;
 }
 
-/* Add these to your existing CSS */
+.table-responsive {
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  vertical-align: middle;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.badge {
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.btn-outline-secondary {
+  color: #6c757d;
+  border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+  background-color: #6c757d;
+  color: white;
+} */
+
+
+
+
+
+
+
+
+.customer-form-container {
+  background-color: #fff;
+  padding: 30px;
+  margin: 40px auto;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.customer-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.customer-subtitle {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 25px 0 15px;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 5px;
+  text-align: left;
+}
+
+.form-label {
+  font-weight: 500;
+  text-align: left !important;
+  display: block;
+}
+
 .table-responsive {
   margin-top: 20px;
   border-radius: 8px;
