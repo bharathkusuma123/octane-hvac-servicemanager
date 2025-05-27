@@ -149,6 +149,9 @@
 
 import React, { useState } from "react";
 import "./PreventiveMaintainanceChart.css";
+import { FaEdit, FaTrash } from "react-icons/fa"; // Add this at top if not already
+
+
 
 const PreventiveMaintainanceChart = () => {
   const [showForm, setShowForm] = useState(false);
@@ -275,14 +278,21 @@ const PreventiveMaintainanceChart = () => {
                         {chart.responsible}
                       </span>
                     </td>
-                    <td>
-                      <button className="btn btn-sm btn-outline-primary me-2">
-                        Edit
-                      </button>
-                      <button className="btn btn-sm btn-outline-danger">
-                        Delete
-                      </button>
-                    </td>
+   <td>
+  <FaEdit
+    className="action-icon text-primary me-2"
+    title="Edit"
+ 
+    role="button"
+  />
+  <FaTrash
+    className="action-icon text-danger"
+    title="Delete"
+
+    role="button"
+  />
+</td>
+
                   </tr>
                 ))}
               </tbody>

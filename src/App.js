@@ -19,6 +19,8 @@ import ServiceItemComponents from "./ServiceItemComponents/ServiceItemComponents
 import NewServiceItem from "./ServiceItems/NewServiceItem";
 import ServicePool from "./ServicePool/ServicePool";
 
+// Placeholder for ServiceOrders component (create this if not available yet)
+const ServiceOrders = () => <div>Service Orders Page</div>;
 
 // 🔹 TopNavbar
 const TopNavbar = () => {
@@ -34,23 +36,38 @@ const TopNavbar = () => {
   if (userRole !== "service-manager") return null;
 
   const navItems = [
-          { 
-            label: "Preventive Maintenance",
-            dropdown: [
-                            { path: "/servicemanager/preventive-maintainance-group", label: "P M Group" },
+    {
+      label: "Preventive Maintenance",
+      dropdown: [
+        {
+          path: "/servicemanager/preventive-maintainance-group",
+          label: "P M Group",
+        },
+        {
+          path: "/servicemanager/preventive-maintainance-chart",
+          label: "P M Chart",
+        },
+      ],
+    },
+    {
+      label: "Services",
+      dropdown: [
+        { path: "/servicemanager/service-pool", label: "Service Pool" },
+        { path: "/servicemanager/service-orders", label: "Service Orders" },
+      ],
+    },
+    { path: "/servicemanager/new-customer", label: "Customer" },
+    {
+    label: "Service Items",
+    dropdown: [
+      { path: "/servicemanager/new-service-item", label: "Items" },
+      { path: "/servicemanager/service-item-components", label: "Components" },
+    ],
+  },
+    // { path: "/servicemanager/service-item-components", label: "Service Item Components" },
 
-              { path: "/servicemanager/preventive-maintainance-chart", label: "P M Chart" },
-            ]
-     
-          },
-                    { path: "/servicemanager/new-customer", label: "Customer" },
-
-          { path: "/servicemanager/service-pool", label: "Service Pool" },
-          // { path: "/servicemanager/service-assignment", label: "Service Assignment" },
-          { path: "/servicemanager/service-item-components", label: "Service Item Components" },
-          { path: "/servicemanager/new-service-item", label: "Service Item" },
-          
-        ];
+    // { path: "/servicemanager/new-service-item", label: "Service Item" },
+  ];
 
   return (
     <nav className="top-navbar">
@@ -66,9 +83,7 @@ const TopNavbar = () => {
                     <Link
                       key={subItem.path}
                       to={subItem.path}
-                      className={
-                        location.pathname === subItem.path ? "active" : ""
-                      }
+                      className={location.pathname === subItem.path ? "active" : ""}
                     >
                       {subItem.label}
                     </Link>
@@ -158,11 +173,20 @@ function App() {
               <NewServiceItem />
             </ProtectedRoute>
           }
-        /><Route
+        />
+        <Route
           path="/servicemanager/service-pool"
           element={
             <ProtectedRoute>
               <ServicePool />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/servicemanager/service-orders"
+          element={
+            <ProtectedRoute>
+              <ServiceOrders />
             </ProtectedRoute>
           }
         />
