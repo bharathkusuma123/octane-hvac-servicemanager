@@ -527,66 +527,18 @@
 
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ServiceItemTable from './ServiceItemTable';
 import ServiceItemForm from './ServiceItemForm';
 import './NewServiceItem.css';
 
 const ServiceItem = () => {
   const [showForm, setShowForm] = useState(false);
-  const [serviceItems, setServiceItems] = useState([
-    {
-      service_item_id: 1,
-      serial_number: "SN123456",
-      product_id: 101,
-      user_id: 501,
-      location: "123 Main St, New York",
-      location_latitude: 40.7128,
-      location_longitude: -74.0060,
-      installation_date: "2022-01-15",
-      warranty_start_date: "2022-01-15",
-      warranty_end_date: "2025-01-15",
-      contract_end_date: "2024-12-31",
-      status: "Active",
-      last_checked: "2023-05-10 14:30:00",
-      iot_status: "Online",
-      product_description: "HVAC Unit Model X2000",
-      last_service: "2023-04-20 10:00:00",
-      pm_group_id: "PMG001",
-      created_at: "2022-01-15 09:00:00",
-      updated_at: "2023-05-10 14:30:00",
-      created_by: "admin",
-      updated_by: "tech1"
-    },
-    {
-      service_item_id: 2,
-      serial_number: "SN789012",
-      product_id: 102,
-      user_id: 502,
-      location: "456 Oak Ave, Boston",
-      location_latitude: 42.3601,
-      location_longitude: -71.0589,
-      installation_date: "2021-11-20",
-      warranty_start_date: "2021-11-20",
-      warranty_end_date: "2024-11-20",
-      contract_end_date: null,
-      status: "Service Due",
-      last_checked: "2023-05-08 11:15:00",
-      iot_status: "Offline",
-      product_description: "HVAC Unit Model Y3000",
-      last_service: "2023-03-15 09:30:00",
-      pm_group_id: "PMG002",
-      created_at: "2021-11-20 10:30:00",
-      updated_at: "2023-05-08 11:15:00",
-      created_by: "admin",
-      updated_by: "tech2"
-    }
-  ]);
-
+  const [serviceItems, setServiceItems] = useState([]);
   const [formData, setFormData] = useState({
     serial_number: "",
-    product_id: "",
-    user_id: "",
+    product: "",
+    user: "",
     location: "",
     location_latitude: "",
     location_longitude: "",
@@ -597,52 +549,94 @@ const ServiceItem = () => {
     status: "",
     iot_status: "",
     product_description: "",
-    pm_group_id: ""
+    pm_group: ""
   });
 
+  // ✅ Fetch service items on load
+  useEffect(() => {
+    const fetchServiceItems = async () => {
+      try {
+        const response = await fetch("http://175.29.21.7:8006/service-items/");
+        const result = await response.json();
+        if (result.status === "success") {
+          setServiceItems(result.data);
+        } else {
+          console.error("Failed to fetch service items.");
+        }
+      } catch (error) {
+        console.error("API Error:", error);
+      }
+    };
+    fetchServiceItems();
+  }, []);
+
+  // ✅ Input handler
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newServiceItem = {
-      ...formData,
-      service_item_id: serviceItems.length + 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: "admin",
-      updated_by: "admin",
-      last_checked: "",
-      last_service: ""
-    };
-    setServiceItems([...serviceItems, newServiceItem]);
-    setShowForm(false);
-    setFormData({
-      serial_number: "",
-      product_id: "",
-      user_id: "",
-      location: "",
-      location_latitude: "",
-      location_longitude: "",
-      installation_date: "",
-      warranty_start_date: "",
-      warranty_end_date: "",
-      contract_end_date: "",
-      status: "",
-      iot_status: "",
-      product_description: "",
-      pm_group_id: ""
-    });
-  };
+  // ✅ Submit handler
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   const newServiceItem = {
+  //     ...formData,
+  //     service_item_id: `TEMP${Date.now()}`, // Temporary ID, backend should handle real one
+  //     created_at: new Date().toISOString(),
+  //     updated_at: new Date().toISOString(),
+  //     created_by: "admin",
+  //     updated_by: "admin",
+  //     last_checked: "",
+  //     last_service: ""
+  //   };
+  //   setServiceItems([...serviceItems, newServiceItem]);
+  //   setShowForm(false);
+  //   setFormData({
+  //     serial_number: "",
+  //     product: "",
+  //     user: "",
+  //     location: "",
+  //     location_latitude: "",
+  //     location_longitude: "",
+  //     installation_date: "",
+  //     warranty_start_date: "",
+  //     warranty_end_date: "",
+  //     contract_end_date: "",
+  //     status: "",
+  //     iot_status: "",
+  //     product_description: "",
+  //     // pm_group: ""
+  //   });
+  // };
 
-  const toggleForm = () => {
-    setShowForm((prev) => !prev);
-  };
+  // ✅ Accepts serviceItem, not event
+const handleSubmit = (serviceItem) => {
+  setServiceItems([...serviceItems, serviceItem]);
+  setShowForm(false);
+
+  setFormData({
+    serial_number: "",
+    product: "",
+    user: "",
+    location: "",
+    location_latitude: "",
+    location_longitude: "",
+    installation_date: "",
+    warranty_start_date: "",
+    warranty_end_date: "",
+    contract_end_date: "",
+    status: "",
+    iot_status: "",
+    product_description: "",
+    pm_group: ""
+  });
+};
+
+
+  const toggleForm = () => setShowForm((prev) => !prev);
 
   return (
-    <div >
+    <div>
       {!showForm ? (
         <ServiceItemTable 
           serviceItems={serviceItems} 

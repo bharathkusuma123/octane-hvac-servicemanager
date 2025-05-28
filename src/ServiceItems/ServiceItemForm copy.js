@@ -294,45 +294,58 @@ useEffect(() => {
 }, []);
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-      const newServiceItem = {
-    ...formData,
-    created_by: "admin",
-    updated_by: "admin",
-    service_item_id: `TEMP${Date.now()}`, // Temporary ID, backend should handle real one
-  };
-    console.log('Submitting form data:', newServiceItem); // Add this line
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setError(null);
 
-    try {
-      const response = await fetch('http://175.29.21.7:8006/service-items/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newServiceItem),
-        
-      
-      });
+  try {
+    // Prepare the payload according to the expected structure
+    const payload = {
+      serial_number: formData.serial_number,
+      location: formData.location,
+      location_latitude: formData.location_latitude ? parseFloat(formData.location_latitude) : null,
+      location_longitude: formData.location_longitude ? parseFloat(formData.location_longitude) : null,
+      installation_date: formData.installation_date,
+      warranty_start_date: formData.warranty_start_date,
+      warranty_end_date: formData.warranty_end_date,
+      contract_end_date: formData.contract_end_date || null,
+      status: formData.status,
+      iot_status: formData.iot_status,
+      product_description: formData.product_description || '',
+      last_service: formData.last_service || null,
+      product: formData.product_id,  // Make sure this matches the product_id from the products list
+      user: formData.user_id ,
+      created_by: "Sharvani",
+      updated_by: "Mani",
+      service_item_id: "03",       // Make sure this matches the user_id from the customers list
+    };
 
-      if (!response.ok) {
-         const errorData = await response.json();
-        console.error('Server error details:', errorData);
-        throw new Error('Failed to submit form');
-      }
+    console.log("Final payload:", payload); // Debugging log
 
-      const data = await response.json();
-      // ✅ Call parent's handler with new item (not event!)
-    onSubmit(data.data); // pass actual new item (adjust based on API shape)
-    } catch (err) {
-      console.error('Error submitting form:', err);
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
+    const response = await fetch('http://175.29.21.7:8006/service-items/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("API Error Response:", errorData); // Log detailed error
+      throw new Error(errorData.message || 'Service Item creation failed');
     }
-  };
+
+    const data = await response.json();
+    onSubmit(data);
+  } catch (err) {
+    console.error('Error submitting form:', err);
+    setError(err.message || 'Failed to create service item. Please check all fields and try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="service-item-container">
@@ -364,8 +377,8 @@ useEffect(() => {
               <label className="service-item-label">Product</label>
             <select
   className="service-item-input"
-  name="product"
-  value={formData.product || ''}
+  name="product_id"
+  value={formData.product_id || ''}
   onChange={onChange}
   required
 >
@@ -413,8 +426,8 @@ useEffect(() => {
               <label className="service-item-label">Customer</label>
               <select
                 className="service-item-input"
-                name="user"
-                value={formData.user || ''}
+                name="user_id"
+                value={formData.user_id || ''}
                 onChange={onChange}
                 required
               >
