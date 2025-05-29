@@ -4,6 +4,7 @@ import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 
 const ServicePoolTable = () => {
+  const userId = localStorage.getItem('userId'); 
   const [showAssignmentScreen, setShowAssignmentScreen] = useState(false);
   const [currentRequest, setCurrentRequest] = useState(null);
   const [formData, setFormData] = useState({
@@ -81,6 +82,7 @@ const handleSubmit = async (e) => {
   };
 
   try {
+    // First update the service pool record
     await axios.put(
       `http://175.29.21.7:8006/service-pools/${currentRequest.request_id}/`,
       payload,
@@ -90,12 +92,37 @@ const handleSubmit = async (e) => {
         },
       }
     );
-    alert("Engineer assigned successfully!");
-    
 
-      // ✅ Step 3: Refresh data after assignment
-      await fetchData();
-    // Refresh data or close modal
+    // Then create the assignment history record
+    const assignmentPayload = {
+      assignment_id: Math.floor(Math.random() * 1000000),
+      request: currentRequest.request_id,
+      assigned_engineer: formData.engineerId,
+      assigned_by: userId,
+      assigned_at: new Date().toISOString(),
+      assignment_type: "Assign",
+      status: "Pending",
+      comments: ''
+      // decline_reason and comments can be omitted or set to empty string
+    };
+    console.log("assignmentpayload",assignmentPayload);
+
+    await axios.post(
+      "http://175.29.21.7:8006/assignment-history/",
+      assignmentPayload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    alert("Engineer assigned successfully and history recorded!");
+    
+    // Refresh data after assignment
+    await fetchData();
+    
+    // Close modal and reset form
     setShowAssignmentScreen(false);
     setFormData({
       engineerId: "",
@@ -105,10 +132,23 @@ const handleSubmit = async (e) => {
       endDateTime: "",
     });
 
-  } catch (err) {
-    console.error("Failed to assign engineer:", err);
-    alert("Failed to assign engineer. Please try again.");
+ } catch (err) {
+  console.error("Failed to assign engineer:", err);
+
+  // More detailed error logging
+  if (err.response) {
+    console.error("Response data:", err.response.data);
+    console.error("Status code:", err.response.status);
+    console.error("Headers:", err.response.headers);
+  } else if (err.request) {
+    console.error("Request was made but no response received:", err.request);
+  } else {
+    console.error("Something went wrong in setting up the request:", err.message);
   }
+
+  alert("Failed to assign engineer. Please check the console for more details.");
+}
+
 };
 
 
@@ -184,8 +224,9 @@ const handleSubmit = async (e) => {
                     </td>
                     <td>
                       <button
-                        className="assign-btn"
+                        className={`assign-btn ${d.status === "Accepted" ? "disabled" : ""}`}
                         onClick={() => handleAssignClick(d)}
+                        disabled={d.status == "Accepted"} 
                       >
                         Assign
                       </button>

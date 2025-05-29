@@ -293,6 +293,12 @@ h2 {
   background-color: #45a049;
 }
 
+.assign-btn.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+
 /* Table footer */
 .table-footer {
   display: flex;
