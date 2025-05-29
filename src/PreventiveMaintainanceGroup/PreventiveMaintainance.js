@@ -46,14 +46,12 @@
 
 
 
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PreventiveMaintainance.css';
 
 const PreventiveMaintenance = () => {
   const [showForm, setShowForm] = useState(false);
   const [pmGroups, setPmGroups] = useState([
-    // Sample data - replace with your actual data
     {
       pm_group_id: 'PM001',
       pm_group_name: 'CRS Series Maintenance Plan',
@@ -80,6 +78,24 @@ const PreventiveMaintenance = () => {
     series: ''
   });
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [entriesPerPage, setEntriesPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredGroups, setFilteredGroups] = useState(pmGroups);
+
+  useEffect(() => {
+    const filtered = pmGroups.filter(group =>
+      Object.values(group).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredGroups(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, pmGroups]);
+
+  const indexOfLastEntry = currentPage * entriesPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+  const currentItems = filteredGroups.slice(indexOfFirstEntry, indexOfLastEntry);
+  const totalPages = Math.ceil(filteredGroups.length / entriesPerPage);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -87,54 +103,79 @@ const PreventiveMaintenance = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Here you would typically make an API call to save the data
-    console.log('Form submitted:', formData);
-    
-    // For demo purposes, add to local state
     const newGroup = {
       ...formData,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      created_by: 'current_user', // Replace with actual user
-      updated_by: 'current_user'  // Replace with actual user
+      created_by: 'current_user',
+      updated_by: 'current_user'
     };
-    
-    setPmGroups([...pmGroups, newGroup]);
-    setShowForm(false);
+    const updatedGroups = [...pmGroups, newGroup];
+    setPmGroups(updatedGroups);
     setFormData({ pm_group_id: '', pm_group_name: '', series: '' });
+    setShowForm(false);
   };
 
   const toggleForm = () => {
     setShowForm(!showForm);
     if (showForm) {
-      // Reset form when hiding it
       setFormData({ pm_group_id: '', pm_group_name: '', series: '' });
     }
   };
 
   return (
     <div className="pm-container">
-      <h2 className="pm-title">Preventive Maintenance Group</h2>
-      <p className="pm-subtitle">
-        {showForm ? 'Enter details for new preventive maintenance group' : 'Manage preventive maintenance groups'}
-      </p>
-      <hr />
+      {/* Header and Button Row */}
+      {!showForm && (
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+          <div>
+            <h2 className="pm-title">Preventive Maintenance Group</h2>
+            <p className="pm-subtitle">Manage preventive maintenance groups</p>
+          </div>
+          <button onClick={toggleForm} className="btn btn-primary">
+            Add New PM Group
+          </button>
+        </div>
+      )}
 
+      {showForm && (
+        <>
+          <h2 className="pm-title">Preventive Maintenance Group</h2>
+          <p className="pm-subtitle">Enter details for new preventive maintenance group</p>
+        </>
+      )}
       {!showForm ? (
         <>
-          <div className="d-flex justify-content-end mb-3">
-            <button 
-              onClick={toggleForm}
-              className="btn btn-primary"
-            >
-              Add New PM Group
-            </button>
+          {/* Search and Entries Per Page */}
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <div className="d-flex align-items-center gap-2">
+              Show
+              <select
+                value={entriesPerPage}
+                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                className="form-select form-select-sm w-auto"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+              </select>
+              entries
+            </div>
+            <input
+              type="text"
+              className="form-control w-auto"
+              placeholder="Search PM groups..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
 
+          {/* Table */}
           <div className="table-responsive">
             <table className="table table-striped table-hover">
               <thead className="table-dark">
                 <tr>
+                  <th>S.No</th>
                   <th>PM Group ID</th>
                   <th>PM Group Name</th>
                   <th>Series</th>
@@ -145,20 +186,50 @@ const PreventiveMaintenance = () => {
                 </tr>
               </thead>
               <tbody>
-                {pmGroups.map((group, index) => (
-                  <tr key={index}>
-                    <td>{group.pm_group_id}</td>
-                    <td>{group.pm_group_name}</td>
-                    <td>{group.series}</td>
-                    <td>{group.created_at}</td>
-                    <td>{group.updated_at}</td>
-                    <td>{group.created_by}</td>
-                    <td>{group.updated_by}</td>
+                {currentItems.length > 0 ? (
+                  currentItems.map((group, index) => (
+                    <tr key={index}>
+                      <td>{indexOfFirstEntry + index + 1}</td>
+                      <td>{group.pm_group_id}</td>
+                      <td>{group.pm_group_name}</td>
+                      <td>{group.series}</td>
+                      <td>{group.created_at}</td>
+                      <td>{group.updated_at}</td>
+                      <td>{group.created_by}</td>
+                      <td>{group.updated_by}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="text-center">No PM groups found.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {filteredGroups.length > 0 && (
+            <div className="pagination-controls d-flex justify-content-center mt-3">
+              <button
+                className="btn btn-outline-primary me-2"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Previous
+              </button>
+              <span className="align-self-center mx-2">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                className="btn btn-outline-primary ms-2"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <form onSubmit={handleSubmit} className="pm-form">
@@ -171,7 +242,6 @@ const PreventiveMaintenance = () => {
                 name="pm_group_id"
                 value={formData.pm_group_id}
                 onChange={handleChange}
-                placeholder="e.g. PM001" 
                 required
               />
             </div>
@@ -183,7 +253,6 @@ const PreventiveMaintenance = () => {
                 name="pm_group_name"
                 value={formData.pm_group_name}
                 onChange={handleChange}
-                placeholder="e.g. CRS Series Maintenance Plan" 
                 required
               />
             </div>
@@ -195,12 +264,10 @@ const PreventiveMaintenance = () => {
                 name="series"
                 value={formData.series}
                 onChange={handleChange}
-                placeholder="e.g. CRS Series" 
                 required
               />
             </div>
           </div>
-
           <div className="d-flex justify-content-end gap-2">
             <button 
               type="button" 
@@ -210,7 +277,7 @@ const PreventiveMaintenance = () => {
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">
-              Save Maintenance
+              Save Chart
             </button>
           </div>
         </form>
@@ -220,3 +287,4 @@ const PreventiveMaintenance = () => {
 };
 
 export default PreventiveMaintenance;
+
