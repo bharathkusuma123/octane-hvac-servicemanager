@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
+import axios from "axios";
 
 const ServicePoolTable = () => {
   const [showAssignmentScreen, setShowAssignmentScreen] = useState(false);
@@ -16,27 +17,44 @@ const ServicePoolTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("http://175.29.21.7:8006/service-pools/");
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        const result = await response.json();
-        
-        // Handle both array and object responses
-        const responseData = result.data || result;
-        const dataArray = Array.isArray(responseData) ? responseData : [responseData];
-        setData(dataArray);
-      } catch (err) {
-        setError(err.message);
-        setData([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [engineers, setEngineers] = useState([]);
 
+
+  useEffect(() => {
+    axios.get("http://175.29.21.7:8006/users/")
+      .then(response => {
+        const serviceEngineers = response.data.filter(
+          user => user.role === "Service Engineer"
+        );
+        setEngineers(serviceEngineers);
+      })
+      .catch(error => {
+        console.error("Error fetching users:", error);
+      });
+  }, []);
+
+  // ✅ Step 1: Create reusable fetch function
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://175.29.21.7:8006/service-pools/");
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+      const result = await response.json();
+      const responseData = result.data || result;
+      const dataArray = Array.isArray(responseData) ? responseData : [responseData];
+      setData(dataArray);
+    } catch (err) {
+      setError(err.message);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Step 2: Call fetch on mount
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -50,9 +68,34 @@ const ServicePoolTable = () => {
     setShowAssignmentScreen(true);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Submitted for request:", currentRequest?.request_id, formData);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    assigned_engineer: formData.engineerId,
+    estimated_completion_time: formData.completionTime,
+    estimated_price: formData.estimatedPrice,
+    est_start_datetime: formData.startDateTime,
+    est_end_datetime: formData.endDateTime,
+    status: "Assigned"
+  };
+
+  try {
+    await axios.put(
+      `http://175.29.21.7:8006/service-pools/${currentRequest.request_id}/`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    alert("Engineer assigned successfully!");
+    
+
+      // ✅ Step 3: Refresh data after assignment
+      await fetchData();
+    // Refresh data or close modal
     setShowAssignmentScreen(false);
     setFormData({
       engineerId: "",
@@ -61,7 +104,13 @@ const ServicePoolTable = () => {
       startDateTime: "",
       endDateTime: "",
     });
-  };
+
+  } catch (err) {
+    console.error("Failed to assign engineer:", err);
+    alert("Failed to assign engineer. Please try again.");
+  }
+};
+
 
   if (loading) {
     return <div className="service-container">Loading...</div>;
@@ -108,6 +157,8 @@ const ServicePoolTable = () => {
                   <th>SOURCE TYPE</th>
                   <th>SERVICE ITEM ID</th>
                   <th>PREFERRED DATE || TIME</th>
+                  <th>STATUS</th>
+                  <th>ENGINEER</th>
                   <th>ACTIONS</th>
                   <th>ASSIGN</th>
                 </tr>
@@ -124,6 +175,8 @@ const ServicePoolTable = () => {
                       {d.preferred_date ? d.preferred_date.split('T')[0] : "N/A"} || 
                       {d.preferred_time ? d.preferred_time.substring(0, 5) : "N/A"}
                     </td>
+                    <td>{d.status}</td>
+                    <td>{d.assigned_engineer}</td>
                     <td className="action-icons">
                       <FaEye className="icon view" />
                       <FaEdit className="icon edit" />
@@ -166,15 +219,22 @@ const ServicePoolTable = () => {
           <form onSubmit={handleSubmit} className="assignment-form">
             <div className="form-grid">
               <div className="form-group">
-                <label>Assigned Engineer ID</label>
-                <input
-                  type="text"
-                  name="engineerId"
-                  value={formData.engineerId}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
+      <label>Assigned Engineer</label>
+      <select
+        name="engineerId"
+        value={formData.engineerId}
+        onChange={handleChange}
+        required
+        className="form-control"
+      >
+        <option value="">-- Select Engineer --</option>
+        {engineers.map(engineer => (
+          <option key={engineer.user_id} value={engineer.user_id}>
+            {engineer.full_name} ({engineer.user_id})
+          </option>
+        ))}
+      </select>
+    </div>
 
               <div className="form-group">
                 <label>Estimated Completion Time</label>
