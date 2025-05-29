@@ -1,107 +1,6 @@
-// import React from "react";
-// import "./ServiceItemComponents.css";
-
-// const ServiceItemComponents = () => {
-//   return (
-//     <div className="svc-form-wrapper container shadow-sm">
-//       <div className="svc-header mb-4">
-//         <h2 className="svc-title">Service Item Components</h2>
-//         <p className="svc-subtitle">Fill in the service item details below</p>
-//       </div>
-
-//       <form className="svc-form">
-//         <div className="row mb-3">
-//           <div className="col-md-6">
-//             <label className="svc-label" htmlFor="serviceItem">
-//               Service Item
-//             </label>
-//             <select id="serviceItem" className="form-select svc-input">
-//               <option>Select Service Item</option>
-//             </select>
-//           </div>
-//           <div className="col-md-6">
-//             <label className="svc-label" htmlFor="component">
-//               Component
-//             </label>
-//             <select id="component" className="form-select svc-input">
-//               <option>Select Component</option>
-//             </select>
-//           </div>
-//         </div>
-
-//         <div className="row mb-3">
-//           <div className="col-md-6">
-//             <label className="svc-label" htmlFor="serialNumber">
-//               Component Serial Number
-//             </label>
-//             <input
-//               type="text"
-//               id="serialNumber"
-//               className="form-control svc-input"
-//               placeholder="Enter serial number"
-//             />
-//           </div>
-//           <div className="col-md-6">
-//             <label className="svc-label" htmlFor="vendor">
-//               Vendor (optional)
-//             </label>
-//             <select id="vendor" className="form-select svc-input">
-//               <option>Select Vendor</option>
-//             </select>
-//           </div>
-//         </div>
-
-//         <div className="row mb-4">
-//           <div className="col-md-6">
-//             <label className="svc-label" htmlFor="warrantyStart">
-//               Warranty Start Date
-//             </label>
-//             <input
-//               type="date"
-//               id="warrantyStart"
-//               className="form-control svc-input"
-//             />
-//           </div>
-//           <div className="col-md-6">
-//             <label className="svc-label" htmlFor="warrantyEnd">
-//               Warranty End Date
-//             </label>
-//             <input
-//               type="date"
-//               id="warrantyEnd"
-//               className="form-control svc-input"
-//             />
-//           </div>
-//         </div>
-
-//         <div className="d-flex justify-content-end gap-2 svc-button-group">
-//           <button type="button" className="btn btn-outline-secondary svc-btn-cancel">
-//             Cancel
-//           </button>
-//           <button type="submit" className="btn btn-primary svc-btn-save">
-//             Save Item Component
-//           </button>
-//         </div>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default ServiceItemComponents;
 
 
-
-
-
-
-
-
-
-
-
-
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ServiceItemComponents.css";
 
 const ServiceItemComponents = () => {
@@ -144,6 +43,24 @@ const ServiceItemComponents = () => {
     warranty_end_date: "",
     vendor_id: ""
   });
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredComponents, setFilteredComponents] = useState([]);
+  const [entriesPerPage, setEntriesPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setFilteredComponents(components);
+  }, [components]);
+
+  useEffect(() => {
+    const filtered = components.filter(comp =>
+      Object.values(comp).join(" ").toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredComponents(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, components]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -195,8 +112,14 @@ const ServiceItemComponents = () => {
     }
   };
 
+  
+  const indexOfLastEntry = currentPage * entriesPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+  const currentComponents = filteredComponents.slice(indexOfFirstEntry, indexOfLastEntry);
+  const totalPages = Math.ceil(filteredComponents.length / entriesPerPage);
+
   return (
-    <div className="svc-form-wrapper container shadow-sm">
+   <div className="svc-form-wrapper container shadow-sm">
       <div className="svc-header mb-4">
         <h2 className="svc-title">Service Item Components</h2>
         <p className="svc-subtitle">
@@ -206,19 +129,43 @@ const ServiceItemComponents = () => {
 
       {!showForm ? (
         <>
-          <div className="d-flex justify-content-end mb-3">
-            <button 
-              onClick={toggleForm}
-              className="btn btn-primary svc-btn-save"
-            >
-              Add Component
-            </button>
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <div className="d-flex align-items-center gap-2">
+              Show
+              <select
+                value={entriesPerPage}
+                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                className="form-select form-select-sm w-auto"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+              </select>
+              entries
+            </div>
+
+            <div className="d-flex gap-2">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search components..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <button
+                onClick={toggleForm}
+                className="btn btn-primary svc-btn-save"
+              >
+                Add Component
+              </button>
+            </div>
           </div>
 
           <div className="table-responsive">
             <table className="table table-striped table-hover">
               <thead className="table-dark">
                 <tr>
+                  <th>S.No</th>
                   <th>Entry ID</th>
                   <th>Service Item</th>
                   <th>Component ID</th>
@@ -230,20 +177,49 @@ const ServiceItemComponents = () => {
                 </tr>
               </thead>
               <tbody>
-                {components.map((component) => (
-                  <tr key={component.component_entry_id}>
-                    <td>{component.component_entry_id}</td>
-                    <td>{component.service_item_id}</td>
-                    <td>{component.component_id}</td>
-                    <td>{component.component_serial_number}</td>
-                    <td>{component.warranty_start_date}</td>
-                    <td>{component.warranty_end_date}</td>
-                    <td>{component.vendor_id || '-'}</td>
-                    <td>{component.created_by}</td>
+                {currentComponents.length > 0 ? (
+                  currentComponents.map((component, index) => (
+                    <tr key={component.component_entry_id}>
+                      <td>{indexOfFirstEntry + index + 1}</td>
+                      <td>{component.component_entry_id}</td>
+                      <td>{component.service_item_id}</td>
+                      <td>{component.component_id}</td>
+                      <td>{component.component_serial_number}</td>
+                      <td>{component.warranty_start_date}</td>
+                      <td>{component.warranty_end_date}</td>
+                      <td>{component.vendor_id || "-"}</td>
+                      <td>{component.created_by}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="text-center">
+                      No components found.
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
+          </div>
+
+          <div className="pagination-controls d-flex justify-content-center mt-3">
+            <button
+              className="btn btn-outline-primary me-2"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((prev) => prev - 1)}
+            >
+              Previous
+            </button>
+            <span className="align-self-center mx-2">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              className="btn btn-outline-primary ms-2"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((prev) => prev + 1)}
+            >
+              Next
+            </button>
           </div>
         </>
       ) : (

@@ -349,14 +349,14 @@ useEffect(() => {
 
           <div className="service-item-row">
             <div className="service-item-group">
-              <label className="service-item-label">Serial Number</label>
+              <label className="service-item-label">Service S.No.</label>
               <input 
                 type="text" 
                 className="service-item-input" 
                 name="serial_number"
                 value={formData.serial_number || ''}
                 onChange={onChange}
-                placeholder="Enter serial number" 
+                placeholder="Enter Service S.No." 
                 required
               />
             </div>
