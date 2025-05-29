@@ -1,45 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
-
-const data = [
-  {
-    id: 1,
-    requestId: "Request_001",
-    requestBy: "Request_by sa12sa",
-    sourceType: "PM Schedule",
-    serviceItemId: "Service Id_001",
-    preferredDate: "12-12-2024",
-    preferredTime: "12:20 PM"
-  },
-  {
-    id: 2,
-    requestId: "Request_002",
-    requestBy: "Request_by sa12sa",
-    sourceType: "PM Schedule",
-    serviceItemId: "Service Id_002",
-    preferredDate: "12-12-2024",
-    preferredTime: "12:20 PM"
-  },
-  {
-    id: 3,
-    requestId: "Request_003",
-    requestBy: "Request_by sa12sa",
-    sourceType: "PM Schedule",
-    serviceItemId: "Service Id_003",
-    preferredDate: "12-12-2024",
-    preferredTime: "12:20 PM"
-  },
-  {
-    id: 4,
-    requestId: "Request_004",
-    requestBy: "Request_by sa12sa",
-    sourceType: "PM Schedule",
-    serviceItemId: "Service Id_004",
-    preferredDate: "12-12-2024",
-    preferredTime: "12:20 PM"
-  }
-];
 
 const ServicePoolTable = () => {
   const [showAssignmentScreen, setShowAssignmentScreen] = useState(false);
@@ -51,6 +12,33 @@ const ServicePoolTable = () => {
     startDateTime: "",
     endDateTime: "",
   });
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("http://175.29.21.7:8006/service-pools/");
+        if (!response.ok) {
+          throw new Error("Failed to fetch data");
+        }
+        const result = await response.json();
+        
+        // Handle both array and object responses
+        const responseData = result.data || result;
+        const dataArray = Array.isArray(responseData) ? responseData : [responseData];
+        setData(dataArray);
+      } catch (err) {
+        setError(err.message);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,7 +52,7 @@ const ServicePoolTable = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitted for request:", currentRequest?.requestId, formData);
+    console.log("Submitted for request:", currentRequest?.request_id, formData);
     setShowAssignmentScreen(false);
     setFormData({
       engineerId: "",
@@ -75,29 +63,38 @@ const ServicePoolTable = () => {
     });
   };
 
+  if (loading) {
+    return <div className="service-container">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="service-container">Error: {error}</div>;
+  }
+
   return (
     <div className="service-container">
       <h2>Service Pool Details</h2>
 
       {/* Search & Filter Controls */}
-   {!showAssignmentScreen && (
-  <div className="table-controls">
-    <div className="entries-selector">
-      Show{" "}
-      <select>
-        <option>10</option>
-        <option>25</option>
-        <option>50</option>
-      </select>{" "}
-      entries
-      <input
-        type="text"
-        placeholder="Search services..."
-        className="search-input"
-      />
-    </div>
-  </div>
-)}
+      {!showAssignmentScreen && (
+        <div className="table-controls">
+          <div className="entries-selector">
+            Show{" "}
+            <select>
+              <option>10</option>
+              <option>25</option>
+              <option>50</option>
+            </select>{" "}
+            entries
+            <input
+              type="text"
+              placeholder="Search services..."
+              className="search-input"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       {!showAssignmentScreen && (
         <>
@@ -117,20 +114,26 @@ const ServicePoolTable = () => {
               </thead>
               <tbody>
                 {data.map((d, index) => (
-                  <tr key={d.id}>
+                  <tr key={d.request_id || index}>
                     <td>{String(index + 1).padStart(2, "0")}</td>
-                    <td>{d.requestId}</td>
-                    <td>{d.requestBy}</td>
-                    <td>{d.sourceType}</td>
-                    <td>{d.serviceItemId}</td>
-                    <td>{d.preferredDate} || {d.preferredTime}</td>
+                    <td>{d.request_id}</td>
+                    <td>{d.requested_by || "N/A"}</td>
+                    <td>{d.source_type}</td>
+                    <td>{d.service_item}</td>
+                    <td>
+                      {d.preferred_date ? d.preferred_date.split('T')[0] : "N/A"} || 
+                      {d.preferred_time ? d.preferred_time.substring(0, 5) : "N/A"}
+                    </td>
                     <td className="action-icons">
                       <FaEye className="icon view" />
                       <FaEdit className="icon edit" />
                       <FaTrash className="icon delete" />
                     </td>
                     <td>
-                      <button className="assign-btn" onClick={() => handleAssignClick(d)}>
+                      <button
+                        className="assign-btn"
+                        onClick={() => handleAssignClick(d)}
+                      >
                         Assign
                       </button>
                     </td>
@@ -142,7 +145,9 @@ const ServicePoolTable = () => {
 
           {/* Footer */}
           <div className="table-footer">
-            <span>Showing 1 to 4 of 4 items</span>
+            <span>
+              Showing 1 to {data.length} of {data.length} items
+            </span>
             <div className="pagination">
               <button disabled>«</button>
               <button className="active">1</button>
@@ -155,7 +160,7 @@ const ServicePoolTable = () => {
       {/* Full-Screen Assignment Form */}
       {showAssignmentScreen && (
         <div className="assignment-screen">
-          <h3>Service Assignment for {currentRequest?.requestId}</h3>
+          <h3>Service Assignment for {currentRequest?.request_id}</h3>
           <p>Fill in the service assignment details below</p>
 
           <form onSubmit={handleSubmit} className="assignment-form">
@@ -217,7 +222,11 @@ const ServicePoolTable = () => {
             </div>
 
             <div className="form-actions">
-              <button type="button" className="cancel-btn" onClick={() => setShowAssignmentScreen(false)}>
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={() => setShowAssignmentScreen(false)}
+              >
                 Cancel
               </button>
               <button type="submit" className="submit-btn">
