@@ -45,6 +45,7 @@ const ServiceItemTable = ({ onAddNew }) => {
               <tr>
                 <th>ID</th>
                 <th>Serial Number</th>
+                <th>Customer</th>
                 <th>Product</th>
                 <th>Location</th>
                 <th>Latitude</th>
@@ -63,6 +64,7 @@ const ServiceItemTable = ({ onAddNew }) => {
                 <tr key={item.service_item_id}>
                   <td>{item.service_item_id}</td>
                   <td>{item.serial_number}</td>
+                   <td>{item.user}</td>
                   <td>{item.product}</td>
                   <td>{item.location}</td>
                   <td>{item.location_latitude}</td>
