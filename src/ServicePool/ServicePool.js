@@ -17,9 +17,13 @@ const ServicePoolTable = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [engineers, setEngineers] = useState([]);
 
+  // Search and pagination states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [entriesPerPage, setEntriesPerPage] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredData, setFilteredData] = useState([]);
 
   useEffect(() => {
     axios.get("http://175.29.21.7:8006/users/")
@@ -34,7 +38,7 @@ const ServicePoolTable = () => {
       });
   }, []);
 
-  // ✅ Step 1: Create reusable fetch function
+  // Fetch data function
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -46,18 +50,32 @@ const ServicePoolTable = () => {
       const responseData = result.data || result;
       const dataArray = Array.isArray(responseData) ? responseData : [responseData];
       setData(dataArray);
+      setFilteredData(dataArray); // Initialize filtered data
     } catch (err) {
       setError(err.message);
       setData([]);
+      setFilteredData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Step 2: Call fetch on mount
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Apply search filter whenever searchTerm or data changes
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredData(data);
+    } else {
+      const filtered = data.filter(item =>
+        Object.values(item).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredData(filtered);
+    }
+    setCurrentPage(1); // Reset to first page when search changes
+  }, [searchTerm, data]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -69,88 +87,87 @@ const ServicePoolTable = () => {
     setShowAssignmentScreen(true);
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const payload = {
-    assigned_engineer: formData.engineerId,
-    estimated_completion_time: formData.completionTime,
-    estimated_price: formData.estimatedPrice,
-    est_start_datetime: formData.startDateTime,
-    est_end_datetime: formData.endDateTime,
-    status: "Assigned"
+    const payload = {
+      assigned_engineer: formData.engineerId,
+      estimated_completion_time: formData.completionTime,
+      estimated_price: formData.estimatedPrice,
+      est_start_datetime: formData.startDateTime,
+      est_end_datetime: formData.endDateTime,
+      status: "Assigned"
+    };
+
+    try {
+      // First update the service pool record
+      await axios.put(
+        `http://175.29.21.7:8006/service-pools/${currentRequest.request_id}/`,
+        payload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Then create the assignment history record
+      const assignmentPayload = {
+        assignment_id: Math.floor(Math.random() * 1000000),
+        request: currentRequest.request_id,
+        assigned_engineer: formData.engineerId,
+        assigned_by: userId,
+        assigned_at: new Date().toISOString(),
+        assignment_type: "Assign",
+        status: "Pending",
+        comments: ''
+      };
+
+      await axios.post(
+        "http://175.29.21.7:8006/assignment-history/",
+        assignmentPayload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      alert("Engineer assigned successfully and history recorded!");
+      
+      // Refresh data after assignment
+      await fetchData();
+      
+      // Close modal and reset form
+      setShowAssignmentScreen(false);
+      setFormData({
+        engineerId: "",
+        completionTime: "",
+        estimatedPrice: "",
+        startDateTime: "",
+        endDateTime: "",
+      });
+
+    } catch (err) {
+      console.error("Failed to assign engineer:", err);
+      if (err.response) {
+        console.error("Response data:", err.response.data);
+        console.error("Status code:", err.response.status);
+        console.error("Headers:", err.response.headers);
+      } else if (err.request) {
+        console.error("Request was made but no response received:", err.request);
+      } else {
+        console.error("Something went wrong in setting up the request:", err.message);
+      }
+      alert("Failed to assign engineer. Please check the console for more details.");
+    }
   };
 
-  try {
-    // First update the service pool record
-    await axios.put(
-      `http://175.29.21.7:8006/service-pools/${currentRequest.request_id}/`,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    // Then create the assignment history record
-    const assignmentPayload = {
-      assignment_id: Math.floor(Math.random() * 1000000),
-      request: currentRequest.request_id,
-      assigned_engineer: formData.engineerId,
-      assigned_by: userId,
-      assigned_at: new Date().toISOString(),
-      assignment_type: "Assign",
-      status: "Pending",
-      comments: ''
-      // decline_reason and comments can be omitted or set to empty string
-    };
-    console.log("assignmentpayload",assignmentPayload);
-
-    await axios.post(
-      "http://175.29.21.7:8006/assignment-history/",
-      assignmentPayload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    alert("Engineer assigned successfully and history recorded!");
-    
-    // Refresh data after assignment
-    await fetchData();
-    
-    // Close modal and reset form
-    setShowAssignmentScreen(false);
-    setFormData({
-      engineerId: "",
-      completionTime: "",
-      estimatedPrice: "",
-      startDateTime: "",
-      endDateTime: "",
-    });
-
- } catch (err) {
-  console.error("Failed to assign engineer:", err);
-
-  // More detailed error logging
-  if (err.response) {
-    console.error("Response data:", err.response.data);
-    console.error("Status code:", err.response.status);
-    console.error("Headers:", err.response.headers);
-  } else if (err.request) {
-    console.error("Request was made but no response received:", err.request);
-  } else {
-    console.error("Something went wrong in setting up the request:", err.message);
-  }
-
-  alert("Failed to assign engineer. Please check the console for more details.");
-}
-
-};
-
+  // Pagination calculations
+  const indexOfLastEntry = currentPage * entriesPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+  const currentItems = filteredData.slice(indexOfFirstEntry, indexOfLastEntry);
+  const totalPages = Math.ceil(filteredData.length / entriesPerPage);
 
   if (loading) {
     return <div className="service-container">Loading...</div>;
@@ -161,93 +178,132 @@ const handleSubmit = async (e) => {
   }
 
   return (
-    <div className="service-container">
-      <h2>Service Pool Details</h2>
+    <div className="service-container pm-container">
+      {/* Header */}
+     {!showAssignmentScreen && (
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <div>
+          <h2 className="pm-title">Service Pool Details</h2>
+          <p className="pm-subtitle">Manage service requests and assignments</p>
+        </div>
+      </div>
+    )}
 
-      {/* Search & Filter Controls */}
       {!showAssignmentScreen && (
-        <div className="table-controls">
-          <div className="entries-selector">
-            Show{" "}
-            <select>
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
-            </select>{" "}
-            entries
+        
+        <>
+          {/* Search and Entries Per Page */}
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <div className="d-flex align-items-center gap-2">
+              Show
+              <select
+                value={entriesPerPage}
+                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                className="form-select form-select-sm w-auto"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+              entries
+            </div>
             <input
               type="text"
+              className="form-control w-auto"
               placeholder="Search services..."
-              className="search-input"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-      )}
 
-      {/* Table */}
-      {!showAssignmentScreen && (
-        <>
-          <div className="table-wrapper">
-            <table className="service-table">
-              <thead>
+          {/* Table */}
+          <div className="table-responsive">
+            <table className="table table-striped table-hover">
+              <thead className="table-dark">
                 <tr>
-                  <th>SL. NO</th>
-                  <th>REQUEST ID</th>
-                  <th>REQUEST BY</th>
-                  <th>SOURCE TYPE</th>
-                  <th>SERVICE ITEM ID</th>
-                  <th>PREFERRED DATE || TIME</th>
-                  <th>STATUS</th>
-                  <th>ENGINEER</th>
-                  <th>ACTIONS</th>
-                  <th>ASSIGN</th>
+                  <th>S.No</th>
+                  <th>Request ID</th>
+                  <th>Request By</th>
+                  <th>Source Type</th>
+                  <th>Service Item</th>
+                  <th>Preferred Date/Time</th>
+                  <th>Status</th>
+                  <th>Engineer</th>
+                  <th>Actions</th>
+                  <th>Assign</th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((d, index) => (
-                  <tr key={d.request_id || index}>
-                    <td>{String(index + 1).padStart(2, "0")}</td>
-                    <td>{d.request_id}</td>
-                    <td>{d.requested_by || "N/A"}</td>
-                    <td>{d.source_type}</td>
-                    <td>{d.service_item}</td>
-                    <td>
-                      {d.preferred_date ? d.preferred_date.split('T')[0] : "N/A"} || 
-                      {d.preferred_time ? d.preferred_time.substring(0, 5) : "N/A"}
-                    </td>
-                    <td>{d.status}</td>
-                    <td>{d.assigned_engineer}</td>
-                    <td className="action-icons">
-                      <FaEye className="icon view" />
-                      <FaEdit className="icon edit" />
-                      <FaTrash className="icon delete" />
-                    </td>
-                    <td>
-                      <button
-                        className={`assign-btn ${d.status === "Accepted" ? "disabled" : ""}`}
-                        onClick={() => handleAssignClick(d)}
-                        disabled={d.status == "Accepted"} 
-                      >
-                        Assign
-                      </button>
-                    </td>
+                {currentItems.length > 0 ? (
+                  currentItems.map((item, index) => (
+                    <tr key={item.request_id || index}>
+                      <td>{indexOfFirstEntry + index + 1}</td>
+                      <td>{item.request_id}</td>
+                      <td>{item.requested_by || "N/A"}</td>
+                      <td>{item.source_type}</td>
+                      <td>{item.service_item}</td>
+                      <td>
+                        {item.preferred_date ? item.preferred_date.split('T')[0] : "N/A"} / 
+                        {item.preferred_time ? item.preferred_time.substring(0, 5) : "N/A"}
+                      </td>
+                      <td>{item.status}</td>
+                      <td>{item.assigned_engineer || "N/A"}</td>
+                      <td>
+                        <div className="d-flex gap-2">
+                          <button className="btn btn-sm btn-outline-primary">
+                            <FaEye />
+                          </button>
+                          <button className="btn btn-sm btn-outline-secondary">
+                            <FaEdit />
+                          </button>
+                          <button className="btn btn-sm btn-outline-danger">
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <button
+                          className={`btn btn-sm ${item.status === "Accepted" ? "btn-secondary disabled" : "btn-primary"}`}
+                          onClick={() => handleAssignClick(item)}
+                          disabled={item.status === "Accepted"}
+                        >
+                          Assign
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="10" className="text-center">No service requests found.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Footer */}
-          <div className="table-footer">
-            <span>
-              Showing 1 to {data.length} of {data.length} items
-            </span>
-            <div className="pagination">
-              <button disabled>«</button>
-              <button className="active">1</button>
-              <button disabled>»</button>
+          {/* Pagination */}
+          {filteredData.length > 0 && (
+            <div className="pagination-controls d-flex justify-content-center mt-3">
+              <button
+                className="btn btn-outline-primary me-2"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => prev - 1)}
+              >
+                Previous
+              </button>
+              <span className="align-self-center mx-2">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                className="btn btn-outline-primary ms-2"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => prev + 1)}
+              >
+                Next
+              </button>
             </div>
-          </div>
+          )}
         </>
       )}
 
@@ -260,22 +316,22 @@ const handleSubmit = async (e) => {
           <form onSubmit={handleSubmit} className="assignment-form">
             <div className="form-grid">
               <div className="form-group">
-      <label>Assigned Engineer</label>
-      <select
-        name="engineerId"
-        value={formData.engineerId}
-        onChange={handleChange}
-        required
-        className="form-control"
-      >
-        <option value="">-- Select Engineer --</option>
-        {engineers.map(engineer => (
-          <option key={engineer.user_id} value={engineer.user_id}>
-            {engineer.full_name} ({engineer.user_id})
-          </option>
-        ))}
-      </select>
-    </div>
+                <label>Assigned Engineer</label>
+                <select
+                  name="engineerId"
+                  value={formData.engineerId}
+                  onChange={handleChange}
+                  required
+                  className="form-control"
+                >
+                  <option value="">-- Select Engineer --</option>
+                  {engineers.map(engineer => (
+                    <option key={engineer.user_id} value={engineer.user_id}>
+                      {engineer.full_name} ({engineer.user_id})
+                    </option>
+                  ))}
+                </select>
+              </div>
 
               <div className="form-group">
                 <label>Estimated Completion Time</label>
@@ -285,6 +341,7 @@ const handleSubmit = async (e) => {
                   value={formData.completionTime}
                   onChange={handleChange}
                   required
+                  className="form-control"
                 />
               </div>
 
@@ -296,6 +353,7 @@ const handleSubmit = async (e) => {
                   value={formData.estimatedPrice}
                   onChange={handleChange}
                   required
+                  className="form-control"
                 />
               </div>
 
@@ -307,6 +365,7 @@ const handleSubmit = async (e) => {
                   value={formData.startDateTime}
                   onChange={handleChange}
                   required
+                  className="form-control"
                 />
               </div>
 
@@ -318,19 +377,20 @@ const handleSubmit = async (e) => {
                   value={formData.endDateTime}
                   onChange={handleChange}
                   required
+                  className="form-control"
                 />
               </div>
             </div>
 
-            <div className="form-actions">
+            <div className="form-actions d-flex justify-content-end gap-2">
               <button
                 type="button"
-                className="cancel-btn"
+                className="btn btn-outline-secondary"
                 onClick={() => setShowAssignmentScreen(false)}
               >
                 Cancel
               </button>
-              <button type="submit" className="submit-btn">
+              <button type="submit" className="btn btn-primary">
                 Save Assignment
               </button>
             </div>
