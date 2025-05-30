@@ -153,8 +153,9 @@ const ServiceItemComponents = () => {
 
         const newComponent = {
           component_entry_id: components.length + 1,
-          service_item_id: formData.service_item_id,
-          component_id: formData.component_id,
+          service_component_id: payload.service_component_id, // Add this
+          service_item: formData.service_item_id,             // Instead of service_item_id
+          component: formData.component_id,                   // Instead of component_id
           component_serial_number: formData.component_serial_number,
           warranty_start_date: formData.warranty_start_date,
           warranty_end_date: formData.warranty_end_date,
@@ -164,6 +165,7 @@ const ServiceItemComponents = () => {
           created_by: "service manager",
           updated_by: "service manager",
         };
+
 
         setComponents([...components, newComponent]);
         setShowForm(false);
@@ -255,7 +257,7 @@ const ServiceItemComponents = () => {
               <thead className="table-dark">
                 <tr>
                   <th>S.No</th>
-                  <th>Entry ID</th>
+                  <th>Service Component ID</th>
                   <th>Service Item</th>
                   <th>Component ID</th>
                   <th>Serial Number</th>
