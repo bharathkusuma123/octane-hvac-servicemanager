@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import "./ServiceItemComponents.css";
 
@@ -18,7 +16,7 @@ const ServiceItemComponents = () => {
       created_at: "2023-01-15 10:00:00",
       updated_at: "2023-01-15 10:00:00",
       created_by: "admin",
-      updated_by: "admin"
+      updated_by: "admin",
     },
     {
       component_entry_id: 2,
@@ -31,9 +29,13 @@ const ServiceItemComponents = () => {
       created_at: "2023-02-15 11:30:00",
       updated_at: "2023-02-15 11:30:00",
       created_by: "admin",
-      updated_by: "admin"
-    }
+      updated_by: "admin",
+    },
   ]);
+
+  // New state for dropdown options
+  const [serviceItemsOptions, setServiceItemsOptions] = useState([]);
+  const [componentOptions, setComponentOptions] = useState([]);
 
   const [formData, setFormData] = useState({
     service_item_id: "",
@@ -41,7 +43,7 @@ const ServiceItemComponents = () => {
     component_serial_number: "",
     warranty_start_date: "",
     warranty_end_date: "",
-    vendor_id: ""
+    vendor_id: "",
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,48 +55,131 @@ const ServiceItemComponents = () => {
     setFilteredComponents(components);
   }, [components]);
 
+  // Fetch stored Service Item Components
   useEffect(() => {
-    const filtered = components.filter(comp =>
-      Object.values(comp).join(" ").toLowerCase().includes(searchTerm.toLowerCase())
+    fetch("http://175.29.21.7:8006/service-item-components/")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.data) {
+          // Optional: transform the data if needed to match table fields
+          setComponents(data.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching service item components:", err);
+      });
+  }, []);
+
+  useEffect(() => {
+    const filtered = components.filter((comp) =>
+      Object.values(comp)
+        .join(" ")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
     setFilteredComponents(filtered);
     setCurrentPage(1);
   }, [searchTerm, components]);
 
+  // Fetch Service Items for dropdown
+  useEffect(() => {
+    fetch("http://175.29.21.7:8006/service-items/")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.data) {
+          setServiceItemsOptions(data.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching service items:", err);
+      });
+  }, []);
+
+  // Fetch Components for dropdown
+  useEffect(() => {
+    fetch("http://175.29.21.7:8006/components/")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.data) {
+          setComponentOptions(data.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Error fetching components:", err);
+      });
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitted:", formData);
-    // Here you would typically call an API to save the data
-    // For now, we'll just add it to our local state
-    const newComponent = {
-      component_entry_id: components.length + 1,
-      service_item_id: formData.service_item_id,
-      component_id: formData.component_id,
+
+    const now = new Date().toISOString();
+
+    const payload = {
+      service_component_id: `SC-${Date.now()}`, // unique ID for the service_component
       component_serial_number: formData.component_serial_number,
       warranty_start_date: formData.warranty_start_date,
       warranty_end_date: formData.warranty_end_date,
-      vendor_id: formData.vendor_id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: "current_user", // Replace with actual user
-      updated_by: "current_user" // Replace with actual user
+      vendor_id: formData.vendor_id || "N/A", // assuming 'N/A' is okay for missing vendors
+      created_at: now,
+      updated_at: now,
+      created_by: "service manager",
+      updated_by: "service manager",
+      service_item: formData.service_item_id,
+      component: formData.component_id,
     };
-    setComponents([...components, newComponent]);
-    setShowForm(false);
-    setFormData({
-      service_item_id: "",
-      component_id: "",
-      component_serial_number: "",
-      warranty_start_date: "",
-      warranty_end_date: "",
-      vendor_id: ""
-    });
+
+    fetch("http://175.29.21.7:8006/service-item-components/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then((data) => {
+            throw new Error(JSON.stringify(data));
+          });
+        }
+        return response.json();
+      })
+      .then((data) => {
+        alert("✅ Service Item Component added successfully!");
+
+        const newComponent = {
+          component_entry_id: components.length + 1,
+          service_item_id: formData.service_item_id,
+          component_id: formData.component_id,
+          component_serial_number: formData.component_serial_number,
+          warranty_start_date: formData.warranty_start_date,
+          warranty_end_date: formData.warranty_end_date,
+          vendor_id: formData.vendor_id,
+          created_at: now,
+          updated_at: now,
+          created_by: "service manager",
+          updated_by: "service manager",
+        };
+
+        setComponents([...components, newComponent]);
+        setShowForm(false);
+        setFormData({
+          service_item_id: "",
+          component_id: "",
+          component_serial_number: "",
+          warranty_start_date: "",
+          warranty_end_date: "",
+          vendor_id: "",
+        });
+      })
+      .catch((error) => {
+        console.error("❌ Error posting component:", error);
+        alert(`Error: ${error.message}`);
+      });
   };
 
   const toggleForm = () => {
@@ -107,23 +192,27 @@ const ServiceItemComponents = () => {
         component_serial_number: "",
         warranty_start_date: "",
         warranty_end_date: "",
-        vendor_id: ""
+        vendor_id: "",
       });
     }
   };
 
-  
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentComponents = filteredComponents.slice(indexOfFirstEntry, indexOfLastEntry);
+  const currentComponents = filteredComponents.slice(
+    indexOfFirstEntry,
+    indexOfLastEntry
+  );
   const totalPages = Math.ceil(filteredComponents.length / entriesPerPage);
 
   return (
-   <div className="svc-form-wrapper container shadow-sm">
+    <div className="svc-form-wrapper container shadow-sm">
       <div className="svc-header mb-4">
         <h2 className="svc-title">Service Item Components</h2>
         <p className="svc-subtitle">
-          {showForm ? "Fill in the service item details below" : "Manage service item components"}
+          {showForm
+            ? "Fill in the service item details below"
+            : "Manage service item components"}
         </p>
       </div>
 
@@ -181,9 +270,9 @@ const ServiceItemComponents = () => {
                   currentComponents.map((component, index) => (
                     <tr key={component.component_entry_id}>
                       <td>{indexOfFirstEntry + index + 1}</td>
-                      <td>{component.component_entry_id}</td>
-                      <td>{component.service_item_id}</td>
-                      <td>{component.component_id}</td>
+                      <td>{component.service_component_id}</td>
+                      <td>{component.service_item}</td>
+                      <td>{component.component}</td>
                       <td>{component.component_serial_number}</td>
                       <td>{component.warranty_start_date}</td>
                       <td>{component.warranty_end_date}</td>
@@ -201,124 +290,116 @@ const ServiceItemComponents = () => {
               </tbody>
             </table>
           </div>
-
-          <div className="pagination-controls d-flex justify-content-center mt-3">
-            <button
-              className="btn btn-outline-primary me-2"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
-            >
-              Previous
-            </button>
-            <span className="align-self-center mx-2">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              className="btn btn-outline-primary ms-2"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-            >
-              Next
-            </button>
-          </div>
         </>
       ) : (
         <form onSubmit={handleSubmit} className="svc-form">
           <div className="row mb-3">
             <div className="col-md-6">
-              <label className="svc-label" htmlFor="serviceItem">
+              <label htmlFor="service_item_id" className="form-label">
                 Service Item
               </label>
-              <select 
-                id="serviceItem" 
-                className="form-select svc-input"
+              <select
+                id="service_item_id"
                 name="service_item_id"
+                className="form-select"
                 value={formData.service_item_id}
                 onChange={handleChange}
                 required
               >
                 <option value="">Select Service Item</option>
-                <option value="101">Service Item 101</option>
-                <option value="102">Service Item 102</option>
+                {serviceItemsOptions.map((item) => (
+                  <option
+                    key={item.service_item_id}
+                    value={item.service_item_id}
+                  >
+                    {item.service_item_id}
+                  </option>
+                ))}
               </select>
             </div>
+
             <div className="col-md-6">
-              <label className="svc-label" htmlFor="component">
+              <label htmlFor="component_id" className="form-label">
                 Component
               </label>
-              <select 
-                id="component" 
-                className="form-select svc-input"
+              <select
+                id="component_id"
                 name="component_id"
+                className="form-select"
                 value={formData.component_id}
                 onChange={handleChange}
                 required
               >
                 <option value="">Select Component</option>
-                <option value="COMP-001">Component 001</option>
-                <option value="COMP-002">Component 002</option>
+                {componentOptions.map((comp) => (
+                  <option key={comp.component_id} value={comp.component_id}>
+                    {comp.component_id}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="row mb-3">
             <div className="col-md-6">
-              <label className="svc-label" htmlFor="serialNumber">
+              <label htmlFor="component_serial_number" className="form-label">
                 Component Serial Number
               </label>
               <input
                 type="text"
-                id="serialNumber"
-                className="form-control svc-input"
+                id="component_serial_number"
                 name="component_serial_number"
+                className="form-control"
                 value={formData.component_serial_number}
                 onChange={handleChange}
                 placeholder="Enter serial number"
                 required
               />
             </div>
+
             <div className="col-md-6">
-              <label className="svc-label" htmlFor="vendor">
+              <label htmlFor="vendor_id" className="form-label">
                 Vendor (optional)
               </label>
-              <select 
-                id="vendor" 
-                className="form-select svc-input"
+              <select
+                id="vendor_id"
                 name="vendor_id"
+                className="form-select"
                 value={formData.vendor_id}
                 onChange={handleChange}
               >
                 <option value="">Select Vendor</option>
-                <option value="VEND-001">Vendor 001</option>
-                <option value="VEND-002">Vendor 002</option>
+                <option value="vendor1">Vendor 1</option>
+                <option value="vendor2">Vendor 2</option>
               </select>
             </div>
           </div>
 
-          <div className="row mb-4">
+          <div className="row mb-3">
             <div className="col-md-6">
-              <label className="svc-label" htmlFor="warrantyStart">
+              <label htmlFor="warranty_start_date" className="form-label">
                 Warranty Start Date
               </label>
               <input
                 type="date"
-                id="warrantyStart"
-                className="form-control svc-input"
+                id="warranty_start_date"
                 name="warranty_start_date"
+                className="form-control"
                 value={formData.warranty_start_date}
                 onChange={handleChange}
                 required
               />
             </div>
+
             <div className="col-md-6">
-              <label className="svc-label" htmlFor="warrantyEnd">
+              <label htmlFor="warranty_end_date" className="form-label">
                 Warranty End Date
               </label>
               <input
                 type="date"
-                id="warrantyEnd"
-                className="form-control svc-input"
+                id="warranty_end_date"
                 name="warranty_end_date"
+                className="form-control"
                 value={formData.warranty_end_date}
                 onChange={handleChange}
                 required
@@ -326,15 +407,15 @@ const ServiceItemComponents = () => {
             </div>
           </div>
 
-          <div className="d-flex justify-content-end gap-2 svc-button-group">
-            <button 
-              type="button" 
+          <div className="d-flex justify-content-end">
+            <button
+              type="button"
               onClick={toggleForm}
-              className="btn btn-outline-secondary svc-btn-cancel"
+              className="btn btn-outline-secondary me-2"
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary svc-btn-save">
+            <button type="submit" className="btn btn-primary">
               Save Item Component
             </button>
           </div>
