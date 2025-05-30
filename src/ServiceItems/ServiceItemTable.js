@@ -201,7 +201,7 @@ const ServiceItemTable = ({ onAddNew }) => {
             <thead className="table-dark">
               <tr>
                 <th>S.No</th>
-                <th>Service S.No.</th>
+                <th>Service Item ID</th>
                 <th>Customer</th>
                 <th>Product</th>
                 <th>Location</th>
@@ -221,7 +221,7 @@ const ServiceItemTable = ({ onAddNew }) => {
                 currentItems.map((item, index) => (
                   <tr key={item.service_item_id}>
                     <td>{indexOfFirstEntry + index + 1}</td>
-                    <td>{item.serial_number}</td>
+                    <td>{item.service_item_id}</td>
                     <td>{item.user}</td>
                     <td>{item.product}</td>
                     <td>{item.location}</td>
