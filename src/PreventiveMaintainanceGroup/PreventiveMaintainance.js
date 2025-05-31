@@ -19,6 +19,9 @@ const PreventiveMaintenance = () => {
   try {
     const response = await fetch('http://175.29.21.7:8006/pm-groups/');
     const result = await response.json();
+    // Sort by created_at in descending order (most recent first)
+    const sortedData = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
     setPmGroups(result.data); // ✅ set only the array of PM groups
   } catch (error) {
     console.error('Error fetching PM groups:', error);
