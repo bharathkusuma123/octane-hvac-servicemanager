@@ -1,87 +1,34 @@
-// import React from 'react';
-// import './PreventiveMaintainance.css';
-
-// const PreventiveMaintenance = () => {
-//   return (
-//     <div className="pm-container">
-
-//         <h2 className="delegate-title">Preventive Maintainance Group </h2>
-//       <p className="delegate-subtitle">Enter details for preventive maintenance</p>
-//             <hr />
-
-//       <form className="pm-form">
-//         <div className="row mb-3">
-//           <div className="col-md-4">
-//             <label className="form-label">PM Group ID</label>
-//             <input type="text" className="form-control" placeholder="e.g. 101 or MCH-001" />
-//           </div>
-//            <div className="col-md-4">
-//             <label className="form-label">PM Group Name</label>
-//             <input type="text" className="form-control" placeholder="e.g. 101 or MCH-001" />
-//           </div>
-//            <div className="col-md-4">
-//             <label className="form-label">Series</label>
-//             <input type="text" className="form-control" placeholder="e.g. 101 or MCH-001" />
-//           </div>
-        
-//         </div>
-
-       
-//         <div className="d-flex justify-content-end gap-2">
-//           <button type="button" className="btn btn-outline-secondary">Cancel</button>
-//           <button type="submit" className="btn btn-primary">Save Maintenance</button>
-//         </div>
-//       </form>
-//     </div>
-//   );
-// };
-
-// export default PreventiveMaintenance;
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import './PreventiveMaintainance.css';
 
 const PreventiveMaintenance = () => {
   const [showForm, setShowForm] = useState(false);
-  const [pmGroups, setPmGroups] = useState([
-    {
-      pm_group_id: 'PM001',
-      pm_group_name: 'CRS Series Maintenance Plan',
-      series: 'CRS Series',
-      created_at: '2023-05-01 10:00:00',
-      updated_at: '2023-05-10 15:30:00',
-      created_by: 'admin',
-      updated_by: 'admin'
-    },
-    {
-      pm_group_id: 'PM002',
-      pm_group_name: 'MCH Series Maintenance Plan',
-      series: 'MCH Series',
-      created_at: '2023-05-05 09:15:00',
-      updated_at: '2023-05-12 11:20:00',
-      created_by: 'manager',
-      updated_by: 'admin'
-    }
-  ]);
-
+  const [pmGroups, setPmGroups] = useState([]);
   const [formData, setFormData] = useState({
     pm_group_id: '',
     pm_group_name: '',
     series: ''
   });
-
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredGroups, setFilteredGroups] = useState(pmGroups);
+  const [filteredGroups, setFilteredGroups] = useState([]);
+
+  // ✅ GET operation to fetch PM Groups
+  const fetchPmGroups = async () => {
+  try {
+    const response = await fetch('http://175.29.21.7:8006/pm-groups/');
+    const result = await response.json();
+    setPmGroups(result.data); // ✅ set only the array of PM groups
+  } catch (error) {
+    console.error('Error fetching PM groups:', error);
+  }
+};
+
+
+  useEffect(() => {
+    fetchPmGroups(); // On load
+  }, []);
 
   useEffect(() => {
     const filtered = pmGroups.filter(group =>
@@ -101,19 +48,40 @@ const PreventiveMaintenance = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // ✅ POST operation with alert + GET refresh
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     const newGroup = {
       ...formData,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      created_by: 'current_user',
-      updated_by: 'current_user'
+      created_by: 'Service Manager',
+      updated_by: 'Service Manager'
     };
-    const updatedGroups = [...pmGroups, newGroup];
-    setPmGroups(updatedGroups);
-    setFormData({ pm_group_id: '', pm_group_name: '', series: '' });
-    setShowForm(false);
+
+    try {
+      const response = await fetch('http://175.29.21.7:8006/pm-groups/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newGroup)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit PM group');
+      }
+
+      await response.json();
+      alert('PM Group added successfully!');
+      fetchPmGroups(); // ✅ Refresh list
+      setFormData({ pm_group_id: '', pm_group_name: '', series: '' });
+      setShowForm(false);
+    } catch (error) {
+      console.error('POST error:', error);
+      alert('Failed to add PM group. Please try again.');
+    }
   };
 
   const toggleForm = () => {
@@ -125,16 +93,13 @@ const PreventiveMaintenance = () => {
 
   return (
     <div className="pm-container">
-      {/* Header and Button Row */}
       {!showForm && (
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
           <div>
             <h2 className="pm-title">Preventive Maintenance Group</h2>
             <p className="pm-subtitle">Manage preventive maintenance groups</p>
           </div>
-          <button onClick={toggleForm} className="btn btn-primary">
-            Add New PM Group
-          </button>
+          <button onClick={toggleForm} className="btn btn-primary">Add New PM Group</button>
         </div>
       )}
 
@@ -144,9 +109,9 @@ const PreventiveMaintenance = () => {
           <p className="pm-subtitle">Enter details for new preventive maintenance group</p>
         </>
       )}
+
       {!showForm ? (
         <>
-          {/* Search and Entries Per Page */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
             <div className="d-flex align-items-center gap-2">
               Show
@@ -170,7 +135,6 @@ const PreventiveMaintenance = () => {
             />
           </div>
 
-          {/* Table */}
           <div className="table-responsive">
             <table className="table table-striped table-hover">
               <thead className="table-dark">
@@ -208,7 +172,6 @@ const PreventiveMaintenance = () => {
             </table>
           </div>
 
-          {/* Pagination */}
           {filteredGroups.length > 0 && (
             <div className="pagination-controls d-flex justify-content-center mt-3">
               <button
@@ -236,9 +199,9 @@ const PreventiveMaintenance = () => {
           <div className="row mb-3">
             <div className="col-md-4">
               <label className="form-label">PM Group ID</label>
-              <input 
-                type="text" 
-                className="form-control" 
+              <input
+                type="text"
+                className="form-control"
                 name="pm_group_id"
                 value={formData.pm_group_id}
                 onChange={handleChange}
@@ -247,9 +210,9 @@ const PreventiveMaintenance = () => {
             </div>
             <div className="col-md-4">
               <label className="form-label">PM Group Name</label>
-              <input 
-                type="text" 
-                className="form-control" 
+              <input
+                type="text"
+                className="form-control"
                 name="pm_group_name"
                 value={formData.pm_group_name}
                 onChange={handleChange}
@@ -258,9 +221,9 @@ const PreventiveMaintenance = () => {
             </div>
             <div className="col-md-4">
               <label className="form-label">Series</label>
-              <input 
-                type="text" 
-                className="form-control" 
+              <input
+                type="text"
+                className="form-control"
                 name="series"
                 value={formData.series}
                 onChange={handleChange}
@@ -269,16 +232,10 @@ const PreventiveMaintenance = () => {
             </div>
           </div>
           <div className="d-flex justify-content-end gap-2">
-            <button 
-              type="button" 
-              className="btn btn-outline-secondary"
-              onClick={toggleForm}
-            >
+            <button type="button" className="btn btn-outline-secondary" onClick={toggleForm}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              Save Chart
-            </button>
+            <button type="submit" className="btn btn-primary">Save Maintenance</button>
           </div>
         </form>
       )}
@@ -287,4 +244,3 @@ const PreventiveMaintenance = () => {
 };
 
 export default PreventiveMaintenance;
-
