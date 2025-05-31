@@ -7,6 +7,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [products, setProducts] = useState([]);
+  const [pmGroups, setPmGroups] = useState([]);
 
   useEffect(() => {
   const fetchCustomers = async () => {
@@ -42,6 +43,25 @@ useEffect(() => {
 
   fetchProducts();
 }, []);
+
+
+ useEffect(() => {
+    const fetchPmGroups = async () => {
+      try {
+        const response = await fetch('http://175.29.21.7:8006/pm-groups/');
+        const result = await response.json();
+        if (result.status === 'success' && Array.isArray(result.data)) {
+          setPmGroups(result.data);
+        } else {
+          console.error('Unexpected API response format for PM groups:', result);
+        }
+      } catch (error) {
+        console.error('Error fetching PM groups:', error);
+      }
+    };
+
+    fetchPmGroups();
+  }, []);
 
 
   const handleSubmit = async (e) => {
@@ -129,17 +149,22 @@ const token = localStorage.getItem('authToken');
 </select>
 
             </div>
-            {/* <div className="service-item-group">
-              <label className="service-item-label">PM Group ID</label>
-              <input 
-                type="text" 
-                className="service-item-input" 
-                name="pm_group_id"
-                value={formData.pm_group_id || ''}
-                onChange={onChange}
-                placeholder="Enter PM Group ID" 
-              />
-            </div> */}
+            <div className="service-item-group">
+          <label className="service-item-label">PM Group ID</label>
+          <select
+            className="service-item-input"
+            name="pm_group"
+            value={formData.pm_group || ''}
+            onChange={onChange}
+          >
+            <option value="">Select PM Group</option>
+            {pmGroups.map((group) => (
+              <option key={group.pm_group_id} value={group.pm_group_id}>
+                {group.pm_group_id}
+              </option>
+            ))}
+          </select>
+        </div>
           </div>
 
           <div className="service-item-row">
@@ -164,8 +189,8 @@ const token = localStorage.getItem('authToken');
               <label className="service-item-label">Customer</label>
               <select
                 className="service-item-input"
-                name="user"
-                value={formData.user || ''}
+                name="customer"
+                value={formData.customer || ''}
                 onChange={onChange}
                 required
               >

@@ -203,6 +203,7 @@ const ServiceItemTable = ({ onAddNew }) => {
                 <th>S.No</th>
                 <th>Service Item ID</th>
                 <th>Customer</th>
+                  <th>Pm Group</th>
                 <th>Product</th>
                 <th>Location</th>
                 <th>Latitude</th>
@@ -222,7 +223,8 @@ const ServiceItemTable = ({ onAddNew }) => {
                   <tr key={item.service_item_id}>
                     <td>{indexOfFirstEntry + index + 1}</td>
                     <td>{item.service_item_id}</td>
-                    <td>{item.user}</td>
+                    <td>{item.customer}</td>
+                    <td>{item.pm_group}</td>
                     <td>{item.product}</td>
                     <td>{item.location}</td>
                     <td>{item.location_latitude}</td>
