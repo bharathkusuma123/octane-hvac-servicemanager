@@ -4,6 +4,18 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
   <form onSubmit={handleSubmit} className="pm-form">
     <div className="row mb-3">
       <div className="col-md-4">
+        <label className="form-label">Chart ID</label>
+        <input
+          type="text"
+          className="form-control"
+          name="chart_id"
+          value={formData.chart_id || ""}
+          onChange={handleChange}
+          placeholder="Enter Chart ID"
+          required
+        />
+      </div>
+      <div className="col-md-4">
         <label className="form-label">PM Group</label>
         <select
           className="form-control"

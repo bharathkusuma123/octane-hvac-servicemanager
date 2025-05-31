@@ -6,6 +6,7 @@ import "./PreventiveMaintainanceChart.css";
 const PreventiveMaintainanceChart = () => {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
+    chart_id: "",
     pm_group: "",
     pm_id: "",
     description: "",
@@ -22,13 +23,32 @@ const PreventiveMaintainanceChart = () => {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
 
- useEffect(() => {
+  useEffect(() => {
+    const fetchPmGroups = async () => {
+      try {
+        const response = await fetch("http://175.29.21.7:8006/pm-groups/");
+        const data = await response.json();
+        if (data.status === "success") {
+          setPmGroups(data.data);
+        } else {
+          console.error("Failed to fetch PM Groups");
+        }
+      } catch (error) {
+        console.error("Error fetching PM Groups:", error);
+      }
+    };
+
+    fetchPmGroups();
+    setCharts([]);
+  }, []);
+
+  useEffect(() => {
   const fetchPmGroups = async () => {
     try {
       const response = await fetch("http://175.29.21.7:8006/pm-groups/");
       const data = await response.json();
       if (data.status === "success") {
-        setPmGroups(data.data); // data.data contains the array of pm groups
+        setPmGroups(data.data);
       } else {
         console.error("Failed to fetch PM Groups");
       }
@@ -37,8 +57,22 @@ const PreventiveMaintainanceChart = () => {
     }
   };
 
+  const fetchCharts = async () => {
+    try {
+      const response = await fetch("http://175.29.21.7:8006/pm-charts/");
+      const data = await response.json();
+      if (data.status === "success") {
+        setCharts(data.data);
+      } else {
+        console.error("Failed to fetch charts");
+      }
+    } catch (error) {
+      console.error("Error fetching charts:", error);
+    }
+  };
+
   fetchPmGroups();
-  setCharts([]);
+  fetchCharts();
 }, []);
 
 
@@ -49,60 +83,60 @@ const PreventiveMaintainanceChart = () => {
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const newChart = {
-    pm_id: formData.pm_id,
-    description: formData.description,
-    task_type: formData.task_type,
-    frequency_days: parseInt(formData.frequency_days),
-    alert_days: parseInt(formData.alert_days),
-    responsible: formData.responsible,
-    remarks: formData.remarks,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    created_by: "Service Manager", // Modify as per your actual user
-    updated_by: "Service Manager",
-    pm_group: formData.pm_group
-  };
+    const newChart = {
+      chart_id: formData.chart_id, // use manual chart_id from form input as string
+      pm_id: formData.pm_id,
+      description: formData.description,
+      task_type: formData.task_type,
+      frequency_days: parseInt(formData.frequency_days),
+      alert_days: parseInt(formData.alert_days),
+      responsible: formData.responsible,
+      remarks: formData.remarks,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: "Service Manager",
+      updated_by: "Service Manager",
+      pm_group: formData.pm_group
+    };
 
-  try {
-    const response = await fetch("http://175.29.21.7:8006/pm-charts/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(newChart)
-    });
-
-    const result = await response.json();
-
-    if (response.ok && result.status === "success") {
-      setCharts((prev) => [...prev, newChart]);
-      alert("Chart saved successfully!");
-      // Reset form
-      setFormData({
-        pm_group: "",
-        pm_id: "",
-        description: "",
-        task_type: "",
-        frequency_days: "",
-        alert_days: "",
-        responsible: "",
-        remarks: ""
+    try {
+      const response = await fetch("http://175.29.21.7:8006/pm-charts/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newChart)
       });
-      toggleForm();
-    } else {
-      console.error("Failed to save chart:", result.message || result);
-      alert("Failed to save chart.");
-    }
-  } catch (error) {
-    console.error("Error during POST request:", error);
-    alert("An error occurred while saving the chart.");
-  }
-};
 
+      const result = await response.json();
+
+      if (response.ok && result.status === "success") {
+        setCharts((prev) => [...prev, newChart]);
+        alert("Chart saved successfully!");
+        setFormData({
+          chart_id: "",
+          pm_group: "",
+          pm_id: "",
+          description: "",
+          task_type: "",
+          frequency_days: "",
+          alert_days: "",
+          responsible: "",
+          remarks: ""
+        });
+        toggleForm();
+      } else {
+        console.error("Failed to save chart:", result.message || result);
+        alert("Failed to save chart.");
+      }
+    } catch (error) {
+      console.error("Error during POST request:", error);
+      alert("An error occurred while saving the chart.");
+    }
+  };
 
   const filteredCharts = charts.filter((chart) =>
     Object.values(chart).some((val) =>
