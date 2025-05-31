@@ -136,22 +136,9 @@
 
 // export default PreventiveMaintainanceChart;
 
-
-
-
-
-
-
-
-
-
-
-
 // import React, { useState } from "react";
 // import "./PreventiveMaintainanceChart.css";
 // import { FaEdit, FaTrash } from "react-icons/fa"; // Add this at top if not already
-
-
 
 // const PreventiveMaintainanceChart = () => {
 //   const [showForm, setShowForm] = useState(false);
@@ -238,7 +225,7 @@
 //       {!showForm ? (
 //         <>
 //           <div className="d-flex justify-content-end mb-3">
-//             <button 
+//             <button
 //               onClick={toggleForm}
 //               className="btn btn-primary"
 //             >
@@ -282,7 +269,7 @@
 //   <FaEdit
 //     className="action-icon text-primary me-2"
 //     title="Edit"
- 
+
 //     role="button"
 //   />
 //   <FaTrash
@@ -315,7 +302,7 @@
 //             </div>
 //             <div className="col-md-6">
 //               <label className="form-label">PM Group ID</label>
-//               <select 
+//               <select
 //                 className="form-select"
 //                 name="pm_group_id"
 //                 value={formData.pm_group_id}
@@ -345,7 +332,7 @@
 //             </div>
 //             <div className="col-md-6">
 //               <label className="form-label">Task Type</label>
-//               <select 
+//               <select
 //                 className="form-select"
 //                 name="task_type"
 //                 value={formData.task_type}
@@ -445,8 +432,8 @@
 
 //           {/* Buttons */}
 //           <div className="d-flex justify-content-end gap-2">
-//             <button 
-//               type="button" 
+//             <button
+//               type="button"
 //               className="btn btn-outline-secondary"
 //               onClick={toggleForm}
 //             >
@@ -463,8 +450,6 @@
 // };
 
 // export default PreventiveMaintainanceChart;
-
-
 
 import React, { useState, useEffect } from "react";
 import "./PreventiveMaintainanceChart.css";
@@ -486,7 +471,7 @@ const PreventiveMaintainanceChart = () => {
       created_at: "2023-01-15 09:30:00",
       updated_at: "2023-01-15 09:30:00",
       created_by: "admin",
-      updated_by: "admin"
+      updated_by: "admin",
     },
     {
       chart_id: 2,
@@ -501,8 +486,8 @@ const PreventiveMaintainanceChart = () => {
       created_at: "2023-02-20 11:15:00",
       updated_at: "2023-02-20 11:15:00",
       created_by: "manager",
-      updated_by: "manager"
-    }
+      updated_by: "manager",
+    },
   ]);
 
   const [formData, setFormData] = useState({
@@ -513,17 +498,33 @@ const PreventiveMaintainanceChart = () => {
     frequency_days: "",
     alert_days: "",
     responsible: "Factory",
-    remarks: ""
+    remarks: "",
   });
 
+  const [pmGroups, setPmGroups] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredCharts, setFilteredCharts] = useState(pmCharts);
 
+  // Fetch PM Groups from API
+  useEffect(() => {
+    fetch("http://175.29.21.7:8006/pm-groups/")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.status === "success") {
+          setPmGroups(data.data);
+        }
+      })
+      .catch((err) => console.error("Failed to fetch PM Groups:", err));
+  }, []);
+
   useEffect(() => {
     const filtered = pmCharts.filter((chart) =>
-      Object.values(chart).join(" ").toLowerCase().includes(searchTerm.toLowerCase())
+      Object.values(chart)
+        .join(" ")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
     setFilteredCharts(filtered);
     setCurrentPage(1);
@@ -531,37 +532,80 @@ const PreventiveMaintainanceChart = () => {
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentItems = filteredCharts.slice(indexOfFirstEntry, indexOfLastEntry);
+  const currentItems = filteredCharts.slice(
+    indexOfFirstEntry,
+    indexOfLastEntry
+  );
   const totalPages = Math.ceil(filteredCharts.length / entriesPerPage);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newChart = {
-      ...formData,
-      chart_id: pmCharts.length + 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: "current_user",
-      updated_by: "current_user"
-    };
-    setPmCharts(prev => [...prev, newChart]);
-    setFormData({
-      pm_group_id: "",
-      pm_id: "",
-      description: "",
-      task_type: "",
-      frequency_days: "",
-      alert_days: "",
-      responsible: "Factory",
-      remarks: ""
-    });
-    setShowForm(false);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const payload = {
+    pm_group: formData.pm_group_id, // ✅ Use correct field
+    pm_id: formData.pm_id,
+    description: formData.description,
+    task_type: formData.task_type,
+    frequency_days: Number(formData.frequency_days),
+    alert_days: Number(formData.alert_days),
+    responsible: formData.responsible,
+    remarks: formData.remarks,
+    created_by: "Service Manager",
+    updated_by: "Service Manager"
   };
+
+  try {
+    const response = await fetch("http://175.29.21.7:8006/pm-charts/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.status === "success") {
+      alert("Chart added successfully!");
+
+      const newChart = {
+        chart_id: result.data?.chart_id || `CHART-${Date.now()}`, // fallback if not returned
+        ...payload,
+        pm_group_id: payload.pm_group, // add for UI display
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      setPmCharts((prev) => [newChart, ...prev]);
+
+      setFormData({
+        pm_group_id: "",
+        pm_id: "",
+        description: "",
+        task_type: "",
+        frequency_days: "",
+        alert_days: "",
+        responsible: "Factory",
+        remarks: ""
+      });
+
+      setShowForm(false);
+    } else {
+      console.error("API Error:", result);
+      alert(result?.message || "Failed to add chart. Please try again.");
+    }
+  } catch (error) {
+    console.error("Network error:", error);
+    alert("Network error occurred. Please try again.");
+  }
+};
+
+
 
   const toggleForm = () => {
     setShowForm(!showForm);
@@ -574,7 +618,7 @@ const PreventiveMaintainanceChart = () => {
         frequency_days: "",
         alert_days: "",
         responsible: "Factory",
-        remarks: ""
+        remarks: "",
       });
     }
   };
@@ -585,7 +629,9 @@ const PreventiveMaintainanceChart = () => {
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
           <div>
             <h2 className="pm-title">Preventive Maintenance Chart</h2>
-            <p className="pm-subtitle">Create and manage maintenance tasks and schedules</p>
+            <p className="pm-subtitle">
+              Create and manage maintenance tasks and schedules
+            </p>
           </div>
           <button onClick={toggleForm} className="btn btn-primary">
             Add New Chart
@@ -599,9 +645,10 @@ const PreventiveMaintainanceChart = () => {
           <p className="pm-subtitle">Enter details for new maintenance task</p>
         </>
       )}
+
       {!showForm ? (
         <>
-          {/* Search and Entries Filter */}
+          {/* Search and Pagination Controls */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
             <div className="d-flex align-items-center gap-2">
               Show
@@ -625,7 +672,7 @@ const PreventiveMaintainanceChart = () => {
             />
           </div>
 
-          {/* Table */}
+          {/* Chart Table */}
           <div className="table-responsive">
             <table className="table table-striped table-hover">
               <thead className="table-dark">
@@ -671,7 +718,9 @@ const PreventiveMaintainanceChart = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="14" className="text-center">No charts found.</td>
+                    <td colSpan="14" className="text-center">
+                      No charts found.
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -684,7 +733,7 @@ const PreventiveMaintainanceChart = () => {
               <button
                 className="btn btn-outline-primary me-2"
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
               >
                 Previous
               </button>
@@ -694,7 +743,7 @@ const PreventiveMaintainanceChart = () => {
               <button
                 className="btn btn-outline-primary ms-2"
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
               >
                 Next
               </button>
@@ -706,14 +755,20 @@ const PreventiveMaintainanceChart = () => {
           <div className="row mb-3">
             <div className="col-md-4">
               <label className="form-label">PM Group ID</label>
-              <input
-                type="text"
+              <select
                 className="form-control"
                 name="pm_group_id"
                 value={formData.pm_group_id}
                 onChange={handleChange}
                 required
-              />
+              >
+                <option value="">Select PM Group</option>
+                {pmGroups.map((group) => (
+                  <option key={group.pm_group_id} value={group.pm_group_id}>
+                    {group.pm_group_id}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="col-md-4">
               <label className="form-label">PM ID</label>
@@ -798,7 +853,11 @@ const PreventiveMaintainanceChart = () => {
           </div>
 
           <div className="d-flex justify-content-end gap-2">
-            <button type="button" className="btn btn-outline-secondary" onClick={toggleForm}>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={toggleForm}
+            >
               Cancel
             </button>
             <button type="submit" className="btn btn-primary">
