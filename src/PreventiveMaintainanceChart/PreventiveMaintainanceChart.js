@@ -53,7 +53,6 @@ const handleSubmit = async (e) => {
   e.preventDefault();
 
   const newChart = {
-    chart_id: "", // Assuming backend auto-generates this
     pm_id: formData.pm_id,
     description: formData.description,
     task_type: formData.task_type,
@@ -81,7 +80,7 @@ const handleSubmit = async (e) => {
 
     if (response.ok && result.status === "success") {
       setCharts((prev) => [...prev, newChart]);
-
+      alert("Chart saved successfully!");
       // Reset form
       setFormData({
         pm_group: "",
