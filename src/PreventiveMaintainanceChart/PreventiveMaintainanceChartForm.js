@@ -43,6 +43,11 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
           required
         />
       </div>
+      
+    </div>
+
+    <div className="row mb-3">
+
       <div className="col-md-4">
         <label className="form-label">Description</label>
         <input
@@ -54,9 +59,6 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
           required
         />
       </div>
-    </div>
-
-    <div className="row mb-3">
       <div className="col-md-4">
         <label className="form-label">Task Type</label>
         <input
@@ -79,6 +81,10 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
           required
         />
       </div>
+      
+    </div>
+
+    <div className="row mb-3">
       <div className="col-md-4">
         <label className="form-label">Alert Days</label>
         <input
@@ -90,9 +96,6 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
           required
         />
       </div>
-    </div>
-
-    <div className="row mb-3">
       <div className="col-md-4">
         <label className="form-label">Responsible</label>
         <select
@@ -107,7 +110,7 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
           <option value="Customer">Customer</option>
         </select>
       </div>
-      <div className="col-md-8">
+      <div className="col-md-4">
         <label className="form-label">Remarks</label>
         <input
           type="text"
