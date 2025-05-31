@@ -16,7 +16,7 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
                 username: '',
                 full_name: '',
                 email: '',
-                mobile_no: '',
+                mobile: '',
                 telephone: '',
                 city: '',
                 country_code: 'KSA',
@@ -38,11 +38,11 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
         e.preventDefault();
 
         const payload = {
-            user_id: formData.user_id,
+             customer_id: formData.customer_id,
             username: formData.username,
             full_name: formData.full_name,
             email: formData.email,
-            mobile_no: formData.mobile_no,
+            mobile: formData.mobile,
             telephone: formData.telephone || "Not provided",
             city: formData.city || "Not provided",
             country_code: formData.country_code || "KSA",
@@ -59,7 +59,7 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
         };
 
         try {
-            const response = await axios.post('http://175.29.21.7:8006/users/', payload, {
+            const response = await axios.post('http://175.29.21.7:8006/customers/', payload, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -99,7 +99,7 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
                                                         type="text"
                                                         className="form-control"
                                                         placeholder="e.g. C04049"
-                                                        name="user_id"
+                                                        name="customer_id" 
                                                         value={formData.user_id}
                                                         onChange={handleChange}
                                                         required
@@ -165,8 +165,8 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
                                                         type="text"
                                                         className="form-control"
                                                         placeholder="Mobile number"
-                                                        name="mobile_no"
-                                                        value={formData.mobile_no}
+                                                        name="mobile"
+                                                        value={formData.mobile}
                                                         onChange={handleChange}
                                                         required
                                                 />

@@ -89,22 +89,22 @@ const CustomerTable = ({ toggleForm }) => {
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const response = await axios.get('http://175.29.21.7:8006/users/');
-        const filteredAndSorted = response.data
-          .filter(user => user.role === 'Customer')
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        setCustomers(filteredAndSorted);
-        setFilteredCustomers(filteredAndSorted);
-      } catch (error) {
-        console.error('Error fetching customer data:', error);
-      }
-    };
+useEffect(() => {
+  const fetchCustomers = async () => {
+    try {
+      const response = await axios.get('http://175.29.21.7:8006/customers/');
+      const filteredAndSorted = response.data.data
+        .filter(user => user.status === 'Active') 
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setCustomers(filteredAndSorted);
+      setFilteredCustomers(filteredAndSorted);
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+    }
+  };
 
-    fetchCustomers();
-  }, []);
+  fetchCustomers();
+}, []);
 
   useEffect(() => {
     const results = customers.filter(customer =>
@@ -180,11 +180,11 @@ const CustomerTable = ({ toggleForm }) => {
               currentEntries.map((customer, index) => (
                 <tr key={index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
-                  <td>{customer.user_id}</td>
+                  <td>{customer.customer_id}</td>
                   <td>{customer.full_name}</td>
                   <td>{customer.username}</td>
                   <td>{customer.email}</td>
-                  <td>{customer.mobile_no}</td>
+                  <td>{customer.mobile}</td>
                   <td>{customer.city}</td>
                   <td>{customer.customer_type}</td>
                   <td>

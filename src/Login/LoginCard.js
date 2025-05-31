@@ -116,10 +116,10 @@ import logo from "../Logos/hvac-logo-new.jpg";
 
 const LoginCard = ({
   title,
-  mobile_no,
+   username, 
   password,
   showPassword,
-  setMobileNo,
+  setUsername, 
   setPassword,
   setShowPassword,
   handleSubmit,
@@ -144,12 +144,12 @@ const LoginCard = ({
               
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Mobile No</Form.Label>
+                  <Form.Label>Username</Form.Label>
                   <Form.Control
-                    type="mobile_no"
-                    placeholder="Enter Mobile Number"
-                    value={mobile_no}
-                    onChange={(e) => setMobileNo(e.target.value)}
+                    type="text"
+                    placeholder="Enter username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
                   />
                 </Form.Group>

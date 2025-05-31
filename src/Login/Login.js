@@ -4,7 +4,7 @@ import axios from "axios";
 import LoginCard from "./LoginCard";
 
 const AdminLogin = () => {
-  const [mobile_no, setMobileNo] = useState("");
+   const [username, setUsername] = useState(""); 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -15,8 +15,8 @@ const handleSubmit = async (e) => {
   e.preventDefault();
 
   try {
-    const response = await axios.post("http://175.29.21.7:8006/login/", {
-      mobile_no: mobile_no,
+    const response = await axios.post("http://175.29.21.7:8006/user-login/", {
+       username,
       password,
     });
 
@@ -31,7 +31,7 @@ const handleSubmit = async (e) => {
     }
   } catch (err) {
     console.error("Login error:", err);
-    setError("Invalid mobile number or password");
+    setError("Invalid username or password");
   }
 };
 
@@ -39,10 +39,10 @@ const handleSubmit = async (e) => {
   return (
     <LoginCard
       title="Service Manager Login"
-      mobile_no={mobile_no}
+       username={username}
       password={password}
       showPassword={showPassword}
-      setMobileNo={setMobileNo}
+      setUsername={setUsername}
       setPassword={setPassword}
       setShowPassword={setShowPassword}
       handleSubmit={handleSubmit}
