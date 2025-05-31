@@ -63,8 +63,8 @@ const handleSubmit = async (e) => {
     remarks: formData.remarks,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    created_by: "Admin", // Modify as per your actual user
-    updated_by: "Admin",
+    created_by: "Service Manager", // Modify as per your actual user
+    updated_by: "Service Manager",
     pm_group: formData.pm_group
   };
 
