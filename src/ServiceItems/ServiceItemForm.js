@@ -123,7 +123,7 @@ const token = localStorage.getItem('authToken');
   <option value="">Select Product</option>
   {products.map((product) => (
     <option key={product.product_id} value={product.product_id}>
-      {product.product_name}
+      {product.product_id}
     </option>
   ))}
 </select>
