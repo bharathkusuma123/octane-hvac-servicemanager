@@ -20,10 +20,12 @@ import NewServiceItem from "./ServiceItems/NewServiceItem";
 import ServicePool from "./ServicePool/ServicePool";
 import AuthProvider from "./AuthContext/AuthContext";
 import CustomerComplaints from "./CustomerComplaints/Complaints";
+import ServiceOrders from "./ServiceOrders/ServiceOrders";
+
 import ServiceRequestDetail from './ServicePool/ServiceRequestDetail';
 
 // Placeholder for ServiceOrders component (create this if not available yet)
-const ServiceOrders = () => <div>Service Orders Page</div>;
+// const ServiceOrders = () => <div>Service Orders Page</div>;
 
 // 🔹 TopNavbar
 const TopNavbar = () => {
