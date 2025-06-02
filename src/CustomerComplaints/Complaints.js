@@ -80,9 +80,9 @@ const CustomerComplaints = () => {
       ) : (
         <>
           <div className="d-flex justify-content-end mb-3">
-            <button className="btn btn-primary" onClick={toggleForm}>
+            {/* <button className="btn btn-primary" onClick={toggleForm}>
               Add New Complaint
-            </button>
+            </button> */}
           </div>
           <CustomerComplaintsTable
             currentItems={currentItems}
