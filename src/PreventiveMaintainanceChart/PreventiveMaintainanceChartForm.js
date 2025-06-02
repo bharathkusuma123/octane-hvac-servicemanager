@@ -11,7 +11,7 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
           name="chart_id"
           value={formData.chart_id || ""}
           onChange={handleChange}
-          placeholder="Enter Chart ID"
+        //   placeholder="Enter Chart ID"
           required
         />
       </div>
