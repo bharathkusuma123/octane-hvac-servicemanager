@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 
 const ServicePoolTable = () => {
   const userId = localStorage.getItem('userId'); 
@@ -18,6 +19,7 @@ const ServicePoolTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [engineers, setEngineers] = useState([]);
+const navigate = useNavigate();
 
   // Search and pagination states
   const [searchTerm, setSearchTerm] = useState('');
@@ -247,8 +249,14 @@ updated_by: "Service Manager"
                   currentItems.map((item, index) => (
                     <tr key={item.request_id || index}>
                       <td>{indexOfFirstEntry + index + 1}</td>
-                      <td>{item.request_id}</td>
-                      <td>{item.requested_by || "N/A"}</td>
+<td>
+  <button 
+    className="btn btn-link p-0 " 
+    onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
+  >
+    {item.request_id}
+  </button>
+</td>                      <td>{item.requested_by || "N/A"}</td>
                       <td>{item.source_type}</td>
                       <td>{item.service_item}</td>
                       <td>
