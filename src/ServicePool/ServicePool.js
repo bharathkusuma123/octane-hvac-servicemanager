@@ -39,26 +39,32 @@ const ServicePoolTable = () => {
   }, []);
 
   // Fetch data function
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("http://175.29.21.7:8006/service-pools/");
-      if (!response.ok) {
-        throw new Error("Failed to fetch data");
-      }
-      const result = await response.json();
-      const responseData = result.data || result;
-      const dataArray = Array.isArray(responseData) ? responseData : [responseData];
-      setData(dataArray);
-      setFilteredData(dataArray); // Initialize filtered data
-    } catch (err) {
-      setError(err.message);
-      setData([]);
-      setFilteredData([]);
-    } finally {
-      setLoading(false);
+const fetchData = async () => {
+  setLoading(true);
+  try {
+    const response = await fetch("http://175.29.21.7:8006/service-pools/");
+    if (!response.ok) {
+      throw new Error("Failed to fetch data");
     }
-  };
+    const result = await response.json();
+    const responseData = result.data || result;
+    let dataArray = Array.isArray(responseData) ? responseData : [responseData];
+
+    // Sort by created_at descending (most recent first)
+    dataArray.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    setData(dataArray);
+    setFilteredData(dataArray); // Initialize filtered data
+  } catch (err) {
+    setError(err.message);
+    setData([]);
+    setFilteredData([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   useEffect(() => {
     fetchData();
