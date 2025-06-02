@@ -62,7 +62,10 @@ const PreventiveMaintainanceChart = () => {
       const response = await fetch("http://175.29.21.7:8006/pm-charts/");
       const data = await response.json();
       if (data.status === "success") {
-        setCharts(data.data);
+         const sortedCharts = data.data.sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+       setCharts(sortedCharts);
       } else {
         console.error("Failed to fetch charts");
       }
