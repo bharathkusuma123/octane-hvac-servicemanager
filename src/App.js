@@ -19,6 +19,7 @@ import ServiceItemComponents from "./ServiceItemComponents/ServiceItemComponents
 import NewServiceItem from "./ServiceItems/NewServiceItem";
 import ServicePool from "./ServicePool/ServicePool";
 import AuthProvider from "./AuthContext/AuthContext";
+import CustomerComplaints from "./CustomerComplaints/Complaints";
 
 // Placeholder for ServiceOrders component (create this if not available yet)
 const ServiceOrders = () => <div>Service Orders Page</div>;
@@ -67,7 +68,7 @@ const TopNavbar = () => {
   },
     // { path: "/servicemanager/service-item-components", label: "Service Item Components" },
 
-    // { path: "/servicemanager/new-service-item", label: "Service Item" },
+    { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
   ];
 
   return (
@@ -173,6 +174,14 @@ function App() {
           element={
             <ProtectedRoute>
               <NewServiceItem />
+            </ProtectedRoute>
+          }
+        />
+          <Route
+          path="/servicemanager/customer-complaints"
+          element={
+            <ProtectedRoute>
+              <CustomerComplaints />
             </ProtectedRoute>
           }
         />
