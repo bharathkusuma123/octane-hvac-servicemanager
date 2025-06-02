@@ -18,6 +18,7 @@ import PreventiveMaintainance from "./PreventiveMaintainanceGroup/PreventiveMain
 import ServiceItemComponents from "./ServiceItemComponents/ServiceItemComponents";
 import NewServiceItem from "./ServiceItems/NewServiceItem";
 import ServicePool from "./ServicePool/ServicePool";
+import AuthProvider from "./AuthContext/AuthContext";
 
 // Placeholder for ServiceOrders component (create this if not available yet)
 const ServiceOrders = () => <div>Service Orders Page</div>;
@@ -131,6 +132,7 @@ const ProtectedRoute = ({ children }) => {
 // 🔁 Main App
 function App() {
   return (
+     <AuthProvider>
     <Router>
       <Routes>
         <Route path="/" element={<ServiceManagerLogin />} />
@@ -193,6 +195,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
+    </AuthProvider>
   );
 }
 

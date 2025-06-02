@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import './PreventiveMaintainance.css';
 import PMGroupForm from './PreventiveMaintainanceGroupForm';
 import PMGroupTable from './PreventiveMaintainanceGroupTable';
+import { AuthContext } from "../AuthContext/AuthContext";
 
-const PreventiveMaintenance = () => {
+const PreventiveMaintenance = () => { 
   const [showForm, setShowForm] = useState(false);
   const [pmGroups, setPmGroups] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredGroups, setFilteredGroups] = useState([]);
+
+  const { userRole, userId, logout } = useContext(AuthContext);
+
+
 
   const fetchPmGroups = async () => {
     try {
@@ -39,6 +44,12 @@ const PreventiveMaintenance = () => {
   };
 
   return (
+    <>
+     <div>
+      <p>User Role: {userRole}</p>
+      <p>User ID: {userId}</p>
+      <button onClick={logout}>Logout</button>
+    </div>
     <div className="pm-container">
       {!showForm ? (
         <>
@@ -70,6 +81,7 @@ const PreventiveMaintenance = () => {
         </>
       )}
     </div>
+    </>
   );
 };
 
