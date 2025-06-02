@@ -64,46 +64,75 @@ useEffect(() => {
   }, []);
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
-      const newServiceItem = {
-    ...formData,
-    created_by: "admin",
-    updated_by: "admin",
-    service_item_id: `TEMP${Date.now()}`, // Temporary ID, backend should handle real one
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setError(null);
+
+  const nowISOString = new Date().toISOString();
+
+  const newServiceItem = {
+    service_item_id: `TEMP${Date.now()}`,
+    serial_number: formData.serial_number || `TEMP${Date.now()}`,
+    location: formData.location,
+    location_latitude: parseFloat(formData.location_latitude).toFixed(6),
+    location_longitude: parseFloat(formData.location_longitude).toFixed(6),
+    installation_date: formData.installation_date,
+    warranty_start_date: formData.warranty_start_date,
+    warranty_end_date: formData.warranty_end_date,
+    contract_end_date: formData.contract_end_date,
+    status: formData.status,
+    iot_status: formData.iot_status,
+    last_checked: nowISOString, // ✅ Set current time
+    last_service: formData.last_service
+      ? new Date(formData.last_service).toISOString()
+      : null,
+    product_description: formData.product_description || "",
+    bc_number: formData.bc_number || "",
+    ship_to_code: formData.ship_to_code || "",
+    created_at: nowISOString,
+    updated_at: nowISOString,
+    created_by: "Service Manager",
+    updated_by: "Service Manager",
+    company: null,
+    product: formData.product,
+    customer: formData.customer,
+    pm_group: formData.pm_group,
   };
-    console.log('Submitting form data:', newServiceItem); // Add this line
-const token = localStorage.getItem('authToken');
-    try {
-      const response = await fetch('http://175.29.21.7:8006/service-items/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-            ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
-        body: JSON.stringify(newServiceItem),
-        
-      
-      });
 
-      if (!response.ok) {
-         const errorData = await response.json();
-        console.error('Server error details:', errorData);
-        throw new Error('Failed to submit form');
-      }
+  console.log('Submitting:', newServiceItem);
 
-      const data = await response.json();
-      // ✅ Call parent's handler with new item (not event!)
-    onSubmit(data.data); // pass actual new item (adjust based on API shape)
-    } catch (err) {
-      console.error('Error submitting form:', err);
-      setError(err.message);
-    } finally {
-      setIsSubmitting(false);
+  const token = localStorage.getItem("authToken");
+
+  try {
+    const response = await fetch("http://175.29.21.7:8006/service-items/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(newServiceItem),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Server error:", errorData);
+      throw new Error("Failed to submit service item");
     }
-  };
+
+    const result = await response.json();
+    onSubmit(result.data); // pass data back to parent
+
+    // ✅ Show success alert
+    window.alert("Service Item added successfully!");
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
 
   return (
     <div className="service-item-container">
@@ -328,6 +357,36 @@ const token = localStorage.getItem('authToken');
               </select>
             </div>
           </div>
+
+          {/* Additional Fields */}
+          <div className="service-item-section">
+            <h3 className="service-item-section-title">Additional Info</h3>
+            <div className="service-item-row">
+              <div className="service-item-group">
+                <label className="service-item-label">BC Number</label>
+                <input 
+                  type="text" 
+                  className="service-item-input" 
+                  name="bc_number"
+                  value={formData.bc_number || ''}
+                  onChange={onChange}
+                  placeholder="Enter BC Number" 
+                />
+              </div>
+              <div className="service-item-group">
+                <label className="service-item-label">Ship To Code</label>
+                <input 
+                  type="text" 
+                  className="service-item-input" 
+                  name="ship_to_code"
+                  value={formData.ship_to_code || ''}
+                  onChange={onChange}
+                  placeholder="Enter Ship To Code" 
+                />
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* Action Buttons */}
