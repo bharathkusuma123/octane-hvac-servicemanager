@@ -22,6 +22,7 @@ import AuthProvider from "./AuthContext/AuthContext";
 import CustomerComplaints from "./CustomerComplaints/Complaints";
 import ServiceOrders from "./ServiceOrders/ServiceOrders";
 
+import ServiceRequestDetail from './ServicePool/ServiceRequestDetail';
 
 // Placeholder for ServiceOrders component (create this if not available yet)
 // const ServiceOrders = () => <div>Service Orders Page</div>;
@@ -200,6 +201,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ServiceOrders />
+            </ProtectedRoute>
+          }
+        />
+          <Route
+          path="/servicemanager/service-requests/:requestId"
+          element={
+            <ProtectedRoute>
+              <ServiceRequestDetail  />
             </ProtectedRoute>
           }
         />
