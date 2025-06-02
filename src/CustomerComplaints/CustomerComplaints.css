@@ -1,0 +1,23 @@
+
+/* Add these to your existing CSS */
+.table-responsive {
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  vertical-align: middle;
+}
+
+.table td {
+  vertical-align: middle;
+}
