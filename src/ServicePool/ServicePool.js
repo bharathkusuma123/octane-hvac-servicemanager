@@ -114,13 +114,15 @@ const ServicePoolTable = () => {
       // Then create the assignment history record
       const assignmentPayload = {
         assignment_id: Math.floor(Math.random() * 1000000),
-        request: currentRequest.request_id,
-        assigned_engineer: formData.engineerId,
-        assigned_by: userId,
-        assigned_at: new Date().toISOString(),
-        assignment_type: "Assign",
-        status: "Pending",
-        comments: ''
+  request: currentRequest.request_id,
+  assigned_engineer: formData.engineerId,
+  assigned_by: userId,
+  assigned_at: new Date().toISOString(),
+  assignment_type: "Assign",
+  status: "Pending",
+  comments: '',
+  created_by:"Service Manager",
+updated_by: "Service Manager"
       };
 
       await axios.post(

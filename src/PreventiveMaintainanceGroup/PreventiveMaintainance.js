@@ -45,11 +45,7 @@ const PreventiveMaintenance = () => {
 
   return (
     <>
-     <div>
-      <p>User Role: {userRole}</p>
-      <p>User ID: {userId}</p>
-      <button onClick={logout}>Logout</button>
-    </div>
+    
     <div className="pm-container">
       {!showForm ? (
         <>
