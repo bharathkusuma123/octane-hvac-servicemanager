@@ -166,8 +166,8 @@ const PreventiveMaintainanceChart = () => {
 
       {showForm ? (
         <>
-          <h2 className="pm-title">Preventive Maintenance Chart</h2>
-          <p className="pm-subtitle">Enter details for new maintenance task</p>
+          {/* <h2 className="pm-title">Preventive Maintenance Chart</h2>
+          <p className="pm-subtitle">Enter details for new maintenance task</p> */}
           <ChartForm
             formData={formData}
             handleChange={handleChange}

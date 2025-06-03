@@ -68,8 +68,8 @@ const PreventiveMaintenance = () => {
         </>
       ) : (
         <>
-          <h2 className="pm-title">Preventive Maintenance Group</h2>
-          <p className="pm-subtitle">Enter details for new preventive maintenance group</p>
+          {/* <h2 className="pm-title">Preventive Maintenance Group</h2>
+          <p className="pm-subtitle">Enter details for new preventive maintenance group</p> */}
           <PMGroupForm
             fetchPmGroups={fetchPmGroups}
             toggleForm={toggleForm}
