@@ -135,280 +135,525 @@ useEffect(() => {
 
 
   return (
-    <div className="service-item-container">
-      <h2 className="service-item-title">New Service Item Card</h2>
-      <p className="service-item-subtitle">Fill in the service item details below</p>
-      <hr/>
+//     <div className="service-item-container">
+//       <h2 className="service-item-title">New Service Item Card</h2>
+//       <p className="service-item-subtitle">Fill in the service item details below</p>
+//       <hr/>
 
+//       {error && <div className="alert alert-danger">{error}</div>}
+
+//       <form onSubmit={handleSubmit}>
+//         {/* Basic Information */}
+//         <div className="service-item-section">
+//           <h3 className="service-item-section-title">Basic Information</h3>
+
+//           <div className="service-item-row">
+//             <div className="service-item-group">
+//               <label className="service-item-label">Service S.No.</label>
+//               <input 
+//                 type="text" 
+//                 className="service-item-input" 
+//                 name="serial_number"
+//                 value={formData.serial_number || ''}
+//                 onChange={onChange}
+//                 placeholder="Enter Service S.No." 
+//                 required
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Product</label>
+//             <select
+//   className="service-item-input"
+//   name="product"
+//   value={formData.product || ''}
+//   onChange={onChange}
+//   required
+// >
+//   <option value="">Select Product</option>
+//   {products.map((product) => (
+//     <option key={product.product_id} value={product.product_id}>
+//       {product.product_id}
+//     </option>
+//   ))}
+// </select>
+
+//             </div>
+//             <div className="service-item-group">
+//           <label className="service-item-label">PM Group ID</label>
+//           <select
+//             className="service-item-input"
+//             name="pm_group"
+//             value={formData.pm_group || ''}
+//             onChange={onChange}
+//           >
+//             <option value="">Select PM Group</option>
+//             {pmGroups.map((group) => (
+//               <option key={group.pm_group_id} value={group.pm_group_id}>
+//                 {group.pm_group_id}
+//               </option>
+//             ))}
+//           </select>
+//         </div>
+//           </div>
+
+//           <div className="service-item-row">
+//             <div className="service-item-group service-item-full">
+//               <label className="service-item-label">Product Description</label>
+//               <textarea 
+//                 className="service-item-textarea" 
+//                 name="product_description"
+//                 value={formData.product_description || ''}
+//                 onChange={onChange}
+//                 placeholder="Add any notes or description..."
+//               ></textarea>
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Customer & Location */}
+//         <div className="service-item-section">
+//           <h3 className="service-item-section-title">Customer & Location</h3>
+//           <div className="service-item-row">
+//               <div className="service-item-group">
+//               <label className="service-item-label">Customer</label>
+//               <select
+//                 className="service-item-input"
+//                 name="customer"
+//                 value={formData.customer || ''}
+//                 onChange={onChange}
+//                 required
+//               >
+//                 <option value="">Select Customer</option>
+//                 {customers.map(customer => (
+//                   <option key={customer.customer_id} value={customer.customer_id}>
+//                     {customer.full_name} ({customer.customer_id})
+//                   </option>
+//                 ))}
+//               </select>
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Installation Location</label>
+//               <input 
+//                 type="text" 
+//                 className="service-item-input" 
+//                 name="location"
+//                 value={formData.location || ''}
+//                 onChange={onChange}
+//                 placeholder="Address" 
+//                 required
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Latitude</label>
+//               <input 
+//                 type="number" 
+//                 step="0.000001"
+//                 className="service-item-input" 
+//                 name="location_latitude"
+//                 value={formData.location_latitude || ''}
+//                 onChange={onChange}
+//                 placeholder="e.g. 12.971599" 
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Longitude</label>
+//               <input 
+//                 type="number" 
+//                 step="0.000001"
+//                 className="service-item-input" 
+//                 name="location_longitude"
+//                 value={formData.location_longitude || ''}
+//                 onChange={onChange}
+//                 placeholder="e.g. 77.594566" 
+//               />
+//             </div>
+//           </div>
+//         </div>
+
+//         {/* Dates & Status */}
+//         <div className="service-item-section">
+//           <h3 className="service-item-section-title">Important Dates & Status</h3>
+//           <div className="service-item-row">
+//             <div className="service-item-group">
+//               <label className="service-item-label">Installation Date</label>
+//               <input 
+//                 type="date" 
+//                 className="service-item-input" 
+//                 name="installation_date"
+//                 value={formData.installation_date || ''}
+//                 onChange={onChange}
+//                 required
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Warranty Start Date</label>
+//               <input 
+//                 type="date" 
+//                 className="service-item-input" 
+//                 name="warranty_start_date"
+//                 value={formData.warranty_start_date || ''}
+//                 onChange={onChange}
+//                 required
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Warranty End Date</label>
+//               <input 
+//                 type="date" 
+//                 className="service-item-input" 
+//                 name="warranty_end_date"
+//                 value={formData.warranty_end_date || ''}
+//                 onChange={onChange}
+//                 required
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Contract End Date</label>
+//               <input 
+//                 type="date" 
+//                 className="service-item-input" 
+//                 name="contract_end_date"
+//                 value={formData.contract_end_date || ''}
+//                 onChange={onChange}
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Last Service</label>
+//               <input 
+//                 type="date" 
+//                 className="service-item-input" 
+//                 name="last_service"
+//                 value={formData.last_service || ''}
+//                 onChange={onChange}
+//               />
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">Operational Status</label>
+//               <select 
+//                 className="service-item-input"
+//                 name="status"
+//                 value={formData.status || ''}
+//                 onChange={onChange}
+//                 required
+//               >
+//                 <option value="">Select Status</option>
+//                 <option value="Active">Active</option>
+//                 <option value="Inactive">Inactive</option>
+//                 <option value="Service Due">Service Due</option>
+//               </select>
+//             </div>
+//             <div className="service-item-group">
+//               <label className="service-item-label">IoT Status</label>
+//               <select 
+//                 className="service-item-input"
+//                 name="iot_status"
+//                 value={formData.iot_status || ''}
+//                 onChange={onChange}
+//                 required
+//               >
+//                 <option value="">Select Status</option>
+//                 <option value="Online">Online</option>
+//                 <option value="Offline">Offline</option>
+//               </select>
+//             </div>
+//           </div>
+
+//           {/* Additional Fields */}
+//           <div className="service-item-section">
+//             <h3 className="service-item-section-title">Additional Info</h3>
+//             <div className="service-item-row">
+//               <div className="service-item-group">
+//                 <label className="service-item-label">BC Number</label>
+//                 <input 
+//                   type="text" 
+//                   className="service-item-input" 
+//                   name="bc_number"
+//                   value={formData.bc_number || ''}
+//                   onChange={onChange}
+//                   placeholder="Enter BC Number" 
+//                 />
+//               </div>
+//               <div className="service-item-group">
+//                 <label className="service-item-label">Ship To Code</label>
+//                 <input 
+//                   type="text" 
+//                   className="service-item-input" 
+//                   name="ship_to_code"
+//                   value={formData.ship_to_code || ''}
+//                   onChange={onChange}
+//                   placeholder="Enter Ship To Code" 
+//                 />
+//               </div>
+//             </div>
+//           </div>
+
+//         </div>
+
+//         {/* Action Buttons */}
+//         <div className="service-item-buttons">
+//           <button 
+//             type="button"
+//             onClick={onCancel}
+//             className="btn btn-outline-secondary service-item-btn service-item-cancel"
+//             disabled={isSubmitting}
+//           >
+//             Cancel
+//           </button>
+//           <button 
+//             type="submit" 
+//             className="btn btn-primary service-item-btn service-item-save"
+//             disabled={isSubmitting}
+//           >
+//             {isSubmitting ? 'Saving...' : 'Save Item'}
+//           </button>
+//         </div>
+//       </form>
+//     </div>
+
+<div className="container mt-4 service-request-form">
+  <div className="card">
+    <div className="card-header">
+      <h5 className="mb-1">New Service Item Card</h5>
+      <h6 className="text" style={{ color: '#acaeb0' }}>Fill in the service item details below</h6>
+    </div>
+    <div className="card-body">
       {error && <div className="alert alert-danger">{error}</div>}
 
       <form onSubmit={handleSubmit}>
-        {/* Basic Information */}
-        <div className="service-item-section">
-          <h3 className="service-item-section-title">Basic Information</h3>
+        <div className="row g-3">
 
-          <div className="service-item-row">
-            <div className="service-item-group">
-              <label className="service-item-label">Service S.No.</label>
-              <input 
-                type="text" 
-                className="service-item-input" 
-                name="serial_number"
-                value={formData.serial_number || ''}
-                onChange={onChange}
-                placeholder="Enter Service S.No." 
-                required
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Product</label>
+          {/* Service S.No. */}
+          <div className="col-md-4">
+            <label className="form-label">Service S.No.</label>
+            <input 
+              type="text" 
+              className="form-control" 
+              name="serial_number"
+              value={formData.serial_number || ''}
+              onChange={onChange}
+              placeholder="Enter Service S.No." 
+              required
+            />
+          </div>
+
+          {/* Product */}
+          <div className="col-md-4">
+            <label className="form-label">Product</label>
             <select
-  className="service-item-input"
-  name="product"
-  value={formData.product || ''}
-  onChange={onChange}
-  required
->
-  <option value="">Select Product</option>
-  {products.map((product) => (
-    <option key={product.product_id} value={product.product_id}>
-      {product.product_id}
-    </option>
-  ))}
-</select>
-
-            </div>
-            <div className="service-item-group">
-          <label className="service-item-label">PM Group ID</label>
-          <select
-            className="service-item-input"
-            name="pm_group"
-            value={formData.pm_group || ''}
-            onChange={onChange}
-          >
-            <option value="">Select PM Group</option>
-            {pmGroups.map((group) => (
-              <option key={group.pm_group_id} value={group.pm_group_id}>
-                {group.pm_group_id}
-              </option>
-            ))}
-          </select>
-        </div>
+              className="form-control"
+              name="product"
+              value={formData.product || ''}
+              onChange={onChange}
+              required
+            >
+              <option value="">Select Product</option>
+              {products.map((product) => (
+                <option key={product.product_id} value={product.product_id}>
+                  {product.product_id}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="service-item-row">
-            <div className="service-item-group service-item-full">
-              <label className="service-item-label">Product Description</label>
-              <textarea 
-                className="service-item-textarea" 
-                name="product_description"
-                value={formData.product_description || ''}
-                onChange={onChange}
-                placeholder="Add any notes or description..."
-              ></textarea>
-            </div>
-          </div>
-        </div>
-
-        {/* Customer & Location */}
-        <div className="service-item-section">
-          <h3 className="service-item-section-title">Customer & Location</h3>
-          <div className="service-item-row">
-              <div className="service-item-group">
-              <label className="service-item-label">Customer</label>
-              <select
-                className="service-item-input"
-                name="customer"
-                value={formData.customer || ''}
-                onChange={onChange}
-                required
-              >
-                <option value="">Select Customer</option>
-                {customers.map(customer => (
-                  <option key={customer.customer_id} value={customer.customer_id}>
-                    {customer.full_name} ({customer.customer_id})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Installation Location</label>
-              <input 
-                type="text" 
-                className="service-item-input" 
-                name="location"
-                value={formData.location || ''}
-                onChange={onChange}
-                placeholder="Address" 
-                required
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Latitude</label>
-              <input 
-                type="number" 
-                step="0.000001"
-                className="service-item-input" 
-                name="location_latitude"
-                value={formData.location_latitude || ''}
-                onChange={onChange}
-                placeholder="e.g. 12.971599" 
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Longitude</label>
-              <input 
-                type="number" 
-                step="0.000001"
-                className="service-item-input" 
-                name="location_longitude"
-                value={formData.location_longitude || ''}
-                onChange={onChange}
-                placeholder="e.g. 77.594566" 
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Dates & Status */}
-        <div className="service-item-section">
-          <h3 className="service-item-section-title">Important Dates & Status</h3>
-          <div className="service-item-row">
-            <div className="service-item-group">
-              <label className="service-item-label">Installation Date</label>
-              <input 
-                type="date" 
-                className="service-item-input" 
-                name="installation_date"
-                value={formData.installation_date || ''}
-                onChange={onChange}
-                required
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Warranty Start Date</label>
-              <input 
-                type="date" 
-                className="service-item-input" 
-                name="warranty_start_date"
-                value={formData.warranty_start_date || ''}
-                onChange={onChange}
-                required
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Warranty End Date</label>
-              <input 
-                type="date" 
-                className="service-item-input" 
-                name="warranty_end_date"
-                value={formData.warranty_end_date || ''}
-                onChange={onChange}
-                required
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Contract End Date</label>
-              <input 
-                type="date" 
-                className="service-item-input" 
-                name="contract_end_date"
-                value={formData.contract_end_date || ''}
-                onChange={onChange}
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Last Service</label>
-              <input 
-                type="date" 
-                className="service-item-input" 
-                name="last_service"
-                value={formData.last_service || ''}
-                onChange={onChange}
-              />
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">Operational Status</label>
-              <select 
-                className="service-item-input"
-                name="status"
-                value={formData.status || ''}
-                onChange={onChange}
-                required
-              >
-                <option value="">Select Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Service Due">Service Due</option>
-              </select>
-            </div>
-            <div className="service-item-group">
-              <label className="service-item-label">IoT Status</label>
-              <select 
-                className="service-item-input"
-                name="iot_status"
-                value={formData.iot_status || ''}
-                onChange={onChange}
-                required
-              >
-                <option value="">Select Status</option>
-                <option value="Online">Online</option>
-                <option value="Offline">Offline</option>
-              </select>
-            </div>
+          {/* PM Group */}
+          <div className="col-md-4">
+            <label className="form-label">PM Group ID</label>
+            <select
+              className="form-control"
+              name="pm_group"
+              value={formData.pm_group || ''}
+              onChange={onChange}
+            >
+              <option value="">Select PM Group</option>
+              {pmGroups.map((group) => (
+                <option key={group.pm_group_id} value={group.pm_group_id}>
+                  {group.pm_group_id}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Additional Fields */}
-          <div className="service-item-section">
-            <h3 className="service-item-section-title">Additional Info</h3>
-            <div className="service-item-row">
-              <div className="service-item-group">
-                <label className="service-item-label">BC Number</label>
-                <input 
-                  type="text" 
-                  className="service-item-input" 
-                  name="bc_number"
-                  value={formData.bc_number || ''}
-                  onChange={onChange}
-                  placeholder="Enter BC Number" 
-                />
-              </div>
-              <div className="service-item-group">
-                <label className="service-item-label">Ship To Code</label>
-                <input 
-                  type="text" 
-                  className="service-item-input" 
-                  name="ship_to_code"
-                  value={formData.ship_to_code || ''}
-                  onChange={onChange}
-                  placeholder="Enter Ship To Code" 
-                />
-              </div>
-            </div>
+          {/* Product Description */}
+          <div className="col-12">
+            <label className="form-label">Product Description</label>
+            <textarea 
+              className="form-control" 
+              name="product_description"
+              value={formData.product_description || ''}
+              onChange={onChange}
+              placeholder="Add any notes or description..."
+              rows={3}
+            ></textarea>
           </div>
 
-        </div>
+          {/* Customer */}
+          <div className="col-md-4">
+            <label className="form-label">Customer</label>
+            <select
+              className="form-control"
+              name="customer"
+              value={formData.customer || ''}
+              onChange={onChange}
+              required
+            >
+              <option value="">Select Customer</option>
+              {customers.map(customer => (
+                <option key={customer.customer_id} value={customer.customer_id}>
+                  {customer.full_name} ({customer.customer_id})
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {/* Action Buttons */}
-        <div className="service-item-buttons">
-          <button 
-            type="button"
-            onClick={onCancel}
-            className="btn btn-outline-secondary service-item-btn service-item-cancel"
-            disabled={isSubmitting}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            className="btn btn-primary service-item-btn service-item-save"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : 'Save Item'}
-          </button>
+          {/* Location */}
+          <div className="col-md-4">
+            <label className="form-label">Installation Location</label>
+            <input 
+              type="text" 
+              className="form-control" 
+              name="location"
+              value={formData.location || ''}
+              onChange={onChange}
+              placeholder="Address" 
+              required
+            />
+          </div>
+
+          {/* Latitude */}
+          <div className="col-md-2">
+            <label className="form-label">Latitude</label>
+            <input 
+              type="number" 
+              step="0.000001"
+              className="form-control" 
+              name="location_latitude"
+              value={formData.location_latitude || ''}
+              onChange={onChange}
+              placeholder="e.g. 12.971599" 
+            />
+          </div>
+
+          {/* Longitude */}
+          <div className="col-md-2">
+            <label className="form-label">Longitude</label>
+            <input 
+              type="number" 
+              step="0.000001"
+              className="form-control" 
+              name="location_longitude"
+              value={formData.location_longitude || ''}
+              onChange={onChange}
+              placeholder="e.g. 77.594566" 
+            />
+          </div>
+
+          {/* Dates */}
+          <div className="col-md-4">
+            <label className="form-label">Installation Date</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              name="installation_date"
+              value={formData.installation_date || ''}
+              onChange={onChange}
+              required
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label">Warranty Start Date</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              name="warranty_start_date"
+              value={formData.warranty_start_date || ''}
+              onChange={onChange}
+              required
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label">Warranty End Date</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              name="warranty_end_date"
+              value={formData.warranty_end_date || ''}
+              onChange={onChange}
+              required
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label">Contract End Date</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              name="contract_end_date"
+              value={formData.contract_end_date || ''}
+              onChange={onChange}
+            />
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label">Last Service</label>
+            <input 
+              type="date" 
+              className="form-control" 
+              name="last_service"
+              value={formData.last_service || ''}
+              onChange={onChange}
+            />
+          </div>
+
+          {/* Status */}
+          <div className="col-md-4">
+            <label className="form-label">Operational Status</label>
+            <select 
+              className="form-control"
+              name="status"
+              value={formData.status || ''}
+              onChange={onChange}
+              required
+            >
+              <option value="">Select Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Service Due">Service Due</option>
+            </select>
+          </div>
+
+          <div className="col-md-4">
+            <label className="form-label">IoT Status</label>
+            <select 
+              className="form-control"
+              name="iot_status"
+              value={formData.iot_status || ''}
+              onChange={onChange}
+              required
+            >
+              <option value="">Select Status</option>
+              <option value="Online">Online</option>
+              <option value="Offline">Offline</option>
+            </select>
+          </div>
+
+          {/* Submit and Cancel Buttons */}
+          <div className="d-flex justify-content-center mt-3 gap-3">
+            <button type="submit" className="submit-btn" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
+
         </div>
       </form>
     </div>
+  </div>
+</div>
+
   );
 };
 

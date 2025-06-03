@@ -208,23 +208,21 @@ const ServiceItemComponents = () => {
   const totalPages = Math.ceil(filteredComponents.length / entriesPerPage);
 
   return (
-    <div className="svc-form-wrapper container shadow-sm">
-      <div className="svc-header mb-4 d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <div>
+  <div className="svc-form-wrapper container shadow-sm">
+  {!showForm && (
+    <div className="svc-header mb-4 d-flex justify-content-between align-items-center mb-3 flex-wrap">
+      <div>
         <h2 className="svc-title">Service Item Components</h2>
-        <p className="svc-subtitle">
-          {showForm
-            ? "Fill in the service item details below"
-            : "Manage service item components"}
-        </p>
-        </div>
-        <button
-                onClick={toggleForm}
-                className="btn btn-primary svc-btn-save"
-              >
-                Add Component
-              </button>
+        <p className="svc-subtitle">Manage service item components</p>
       </div>
+      <button
+        onClick={toggleForm}
+        className="btn btn-primary svc-btn-save"
+      >
+        Add Component
+      </button>
+    </div>
+  )}
         
 
       {!showForm ? (
@@ -335,134 +333,277 @@ const ServiceItemComponents = () => {
         )}
         </>
       ) : (
-        <form onSubmit={handleSubmit} className="svc-form">
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label htmlFor="service_item_id" className="form-label">
-                Service Item
-              </label>
-              <select
-                id="service_item_id"
-                name="service_item_id"
-                className="form-select"
-                value={formData.service_item_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Service Item</option>
-                {serviceItemsOptions.map((item) => (
-                  <option
-                    key={item.service_item_id}
-                    value={item.service_item_id}
-                  >
-                    {item.service_item_id}
-                  </option>
-                ))}
-              </select>
-            </div>
+        // <form onSubmit={handleSubmit} className="svc-form">
+        //   <div className="row mb-3">
+        //     <div className="col-md-6">
+        //       <label htmlFor="service_item_id" className="form-label">
+        //         Service Item
+        //       </label>
+        //       <select
+        //         id="service_item_id"
+        //         name="service_item_id"
+        //         className="form-select"
+        //         value={formData.service_item_id}
+        //         onChange={handleChange}
+        //         required
+        //       >
+        //         <option value="">Select Service Item</option>
+        //         {serviceItemsOptions.map((item) => (
+        //           <option
+        //             key={item.service_item_id}
+        //             value={item.service_item_id}
+        //           >
+        //             {item.service_item_id}
+        //           </option>
+        //         ))}
+        //       </select>
+        //     </div>
 
-            <div className="col-md-6">
-              <label htmlFor="component_id" className="form-label">
-                Component
-              </label>
-              <select
-                id="component_id"
-                name="component_id"
-                className="form-select"
-                value={formData.component_id}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select Component</option>
-                {componentOptions.map((comp) => (
-                  <option key={comp.component_id} value={comp.component_id}>
-                    {comp.component_id}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        //     <div className="col-md-6">
+        //       <label htmlFor="component_id" className="form-label">
+        //         Component
+        //       </label>
+        //       <select
+        //         id="component_id"
+        //         name="component_id"
+        //         className="form-select"
+        //         value={formData.component_id}
+        //         onChange={handleChange}
+        //         required
+        //       >
+        //         <option value="">Select Component</option>
+        //         {componentOptions.map((comp) => (
+        //           <option key={comp.component_id} value={comp.component_id}>
+        //             {comp.component_id}
+        //           </option>
+        //         ))}
+        //       </select>
+        //     </div>
+        //   </div>
 
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label htmlFor="component_serial_number" className="form-label">
-                Component Serial Number
-              </label>
-              <input
-                type="text"
-                id="component_serial_number"
-                name="component_serial_number"
-                className="form-control"
-                value={formData.component_serial_number}
-                onChange={handleChange}
-                placeholder="Enter serial number"
-                required
-              />
-            </div>
+        //   <div className="row mb-3">
+        //     <div className="col-md-6">
+        //       <label htmlFor="component_serial_number" className="form-label">
+        //         Component Serial Number
+        //       </label>
+        //       <input
+        //         type="text"
+        //         id="component_serial_number"
+        //         name="component_serial_number"
+        //         className="form-control"
+        //         value={formData.component_serial_number}
+        //         onChange={handleChange}
+        //         placeholder="Enter serial number"
+        //         required
+        //       />
+        //     </div>
 
-            <div className="col-md-6">
-              <label htmlFor="vendor_id" className="form-label">
-                Vendor (optional)
-              </label>
-              <select
-                id="vendor_id"
-                name="vendor_id"
-                className="form-select"
-                value={formData.vendor_id}
-                onChange={handleChange}
-              >
-                <option value="">Select Vendor</option>
-                <option value="vendor1">Vendor 1</option>
-                <option value="vendor2">Vendor 2</option>
-              </select>
-            </div>
-          </div>
+        //     <div className="col-md-6">
+        //       <label htmlFor="vendor_id" className="form-label">
+        //         Vendor (optional)
+        //       </label>
+        //       <select
+        //         id="vendor_id"
+        //         name="vendor_id"
+        //         className="form-select"
+        //         value={formData.vendor_id}
+        //         onChange={handleChange}
+        //       >
+        //         <option value="">Select Vendor</option>
+        //         <option value="vendor1">Vendor 1</option>
+        //         <option value="vendor2">Vendor 2</option>
+        //       </select>
+        //     </div>
+        //   </div>
 
-          <div className="row mb-3">
-            <div className="col-md-6">
-              <label htmlFor="warranty_start_date" className="form-label">
-                Warranty Start Date
-              </label>
-              <input
-                type="date"
-                id="warranty_start_date"
-                name="warranty_start_date"
-                className="form-control"
-                value={formData.warranty_start_date}
-                onChange={handleChange}
-                required
-              />
-            </div>
+        //   <div className="row mb-3">
+        //     <div className="col-md-6">
+        //       <label htmlFor="warranty_start_date" className="form-label">
+        //         Warranty Start Date
+        //       </label>
+        //       <input
+        //         type="date"
+        //         id="warranty_start_date"
+        //         name="warranty_start_date"
+        //         className="form-control"
+        //         value={formData.warranty_start_date}
+        //         onChange={handleChange}
+        //         required
+        //       />
+        //     </div>
 
-            <div className="col-md-6">
-              <label htmlFor="warranty_end_date" className="form-label">
-                Warranty End Date
-              </label>
-              <input
-                type="date"
-                id="warranty_end_date"
-                name="warranty_end_date"
-                className="form-control"
-                value={formData.warranty_end_date}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
+        //     <div className="col-md-6">
+        //       <label htmlFor="warranty_end_date" className="form-label">
+        //         Warranty End Date
+        //       </label>
+        //       <input
+        //         type="date"
+        //         id="warranty_end_date"
+        //         name="warranty_end_date"
+        //         className="form-control"
+        //         value={formData.warranty_end_date}
+        //         onChange={handleChange}
+        //         required
+        //       />
+        //     </div>
+        //   </div>
 
-          <div className="d-flex justify-content-end">
-            <button
-              type="button"
-              onClick={toggleForm}
-              className="btn btn-outline-secondary me-2"
-            >
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary">
-              Save Item Component
-            </button>
-          </div>
-        </form>
+        //   <div className="d-flex justify-content-end">
+        //     <button
+        //       type="button"
+        //       onClick={toggleForm}
+        //       className="btn btn-outline-secondary me-2"
+        //     >
+        //       Cancel
+        //     </button>
+        //     <button type="submit" className="btn btn-primary">
+        //       Save Item Component
+        //     </button>
+        //   </div>
+        // </form>
+           <div className="container mt-4 service-request-form">
+      <div className="card">
+        <div className="card-header">
+          <h5 className="mb-1">Add Item Component</h5>
+          <h6 className="text" style={{ color: '#acaeb0' }}>
+            Fill in component details below
+          </h6>
+        </div>
+        <div className="card-body">
+          {/* {error && <div className="alert alert-danger">{error}</div>} */}
+          <form onSubmit={handleSubmit}>
+            <div className="row g-3">
+              <div className="col-md-4">
+                <label htmlFor="service_item_id" className="form-label">
+                  Service Item
+                </label>
+                <select
+                  id="service_item_id"
+                  name="service_item_id"
+                  className="form-select"
+                  value={formData.service_item_id}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Service Item</option>
+                  {serviceItemsOptions.map((item) => (
+                    <option
+                      key={item.service_item_id}
+                      value={item.service_item_id}
+                    >
+                      {item.service_item_id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label htmlFor="component_id" className="form-label">
+                  Component
+                </label>
+                <select
+                  id="component_id"
+                  name="component_id"
+                  className="form-select"
+                  value={formData.component_id}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Component</option>
+                  {componentOptions.map((comp) => (
+                    <option
+                      key={comp.component_id}
+                      value={comp.component_id}
+                    >
+                      {comp.component_id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label htmlFor="component_serial_number" className="form-label">
+                  Component Serial Number
+                </label>
+                <input
+                  type="text"
+                  id="component_serial_number"
+                  name="component_serial_number"
+                  className="form-control"
+                  value={formData.component_serial_number}
+                  onChange={handleChange}
+                  placeholder="Enter serial number"
+                  required
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label htmlFor="vendor_id" className="form-label">
+                  Vendor (optional)
+                </label>
+                <select
+                  id="vendor_id"
+                  name="vendor_id"
+                  className="form-select"
+                  value={formData.vendor_id}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Vendor</option>
+                  <option value="vendor1">Vendor 1</option>
+                  <option value="vendor2">Vendor 2</option>
+                </select>
+              </div>
+
+              <div className="col-md-4">
+                <label htmlFor="warranty_start_date" className="form-label">
+                  Warranty Start Date
+                </label>
+                <input
+                  type="date"
+                  id="warranty_start_date"
+                  name="warranty_start_date"
+                  className="form-control"
+                  value={formData.warranty_start_date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="col-md-4">
+                <label htmlFor="warranty_end_date" className="form-label">
+                  Warranty End Date
+                </label>
+                <input
+                  type="date"
+                  id="warranty_end_date"
+                  name="warranty_end_date"
+                  className="form-control"
+                  value={formData.warranty_end_date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="d-flex justify-content-center mt-3 gap-3">
+                <button
+                  type="submit"
+                  className="submit-btn"
+                >
+                   Save Item Component
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={toggleForm}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
       )}
     </div>
   );
