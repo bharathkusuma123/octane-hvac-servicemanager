@@ -37,9 +37,9 @@ const ChartTable = ({
       />
     </div>
 
-    <div className="table-responsive">
-      <table className="table table-striped table-hover">
-        <thead className="table-dark">
+    <div className="table-responsive mb-4">
+      <table className="table ">
+        <thead className="pm-chart-table-header">
           <tr>
             <th>S.No</th>
             <th>PM Group</th>
@@ -89,7 +89,7 @@ const ChartTable = ({
       </table>
     </div>
 
-    {filteredCharts.length > 0 && (
+    {/* {filteredCharts.length > 0 && (
       <div className="pagination-controls d-flex justify-content-center mt-3">
         <button
           className="btn btn-outline-primary me-2"
@@ -109,7 +109,41 @@ const ChartTable = ({
           Next
         </button>
       </div>
-    )}
+    )} */}
+    {totalPages > 1 && (
+          <nav aria-label="Page navigation">
+            <ul className="pagination justify-content-center">
+              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </button>
+              </li>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <li
+                  key={page}
+                  className={`page-item ${currentPage === page ? "active" : ""}`}
+                >
+                  <button className="page-link" onClick={() => setCurrentPage(page)}>
+                    {page}
+                  </button>
+                </li>
+              ))}
+
+              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        )}
   </>
 );
 

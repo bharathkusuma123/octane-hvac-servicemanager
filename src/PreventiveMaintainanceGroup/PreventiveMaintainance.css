@@ -76,3 +76,11 @@
   padding: 8px 16px;
   font-weight: 500;
 }
+
+.table
+.pm-table-header th {
+  color: #20555c;
+  background-color: #C9FDF2;
+  font-weight: bold;
+  text-align: left;
+}

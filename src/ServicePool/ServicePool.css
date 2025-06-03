@@ -619,3 +619,11 @@ h2 {
 .error {
   color: #d32f2f;
 }
+
+.table
+.service-pool-table-header th {
+  color: #20555c;
+  background-color: #C9FDF2;
+  font-weight: bold;
+  text-align: center;
+}

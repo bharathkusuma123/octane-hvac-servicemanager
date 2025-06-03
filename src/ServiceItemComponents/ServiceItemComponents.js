@@ -209,14 +209,23 @@ const ServiceItemComponents = () => {
 
   return (
     <div className="svc-form-wrapper container shadow-sm">
-      <div className="svc-header mb-4">
+      <div className="svc-header mb-4 d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <div>
         <h2 className="svc-title">Service Item Components</h2>
         <p className="svc-subtitle">
           {showForm
             ? "Fill in the service item details below"
             : "Manage service item components"}
         </p>
+        </div>
+        <button
+                onClick={toggleForm}
+                className="btn btn-primary svc-btn-save"
+              >
+                Add Component
+              </button>
       </div>
+        
 
       {!showForm ? (
         <>
@@ -243,18 +252,13 @@ const ServiceItemComponents = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <button
-                onClick={toggleForm}
-                className="btn btn-primary svc-btn-save"
-              >
-                Add Component
-              </button>
+            
             </div>
           </div>
 
-          <div className="table-responsive">
-            <table className="table table-striped table-hover">
-              <thead className="table-dark">
+          <div className="table-responsive mb-4">
+            <table className="table ">
+              <thead className="service-component-table-header">
                 <tr>
                   <th>S.No</th>
                   <th>Service Component ID</th>
@@ -291,7 +295,44 @@ const ServiceItemComponents = () => {
                 )}
               </tbody>
             </table>
+
+
           </div>
+
+           {totalPages > 1 && (
+          <nav aria-label="Page navigation">
+            <ul className="pagination justify-content-center">
+              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  Previous
+                </button>
+              </li>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <li
+                  key={page}
+                  className={`page-item ${currentPage === page ? "active" : ""}`}
+                >
+                  <button className="page-link" onClick={() => setCurrentPage(page)}>
+                    {page}
+                  </button>
+                </li>
+              ))}
+
+              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                <button
+                  className="page-link"
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next
+                </button>
+              </li>
+            </ul>
+          </nav>
+        )}
         </>
       ) : (
         <form onSubmit={handleSubmit} className="svc-form">
