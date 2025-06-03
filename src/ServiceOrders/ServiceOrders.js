@@ -116,7 +116,7 @@ const ServiceOrders = () => {
                   <td>
                     <span className={`badge ${
                       order.status === 'Assigned' ? 'bg-primary' :
-                      order.status === 'Completed' ? 'bg-success' :
+                      order.status === 'Service Completed' ? 'bg-success' :
                       order.status === 'Declined' ? 'bg-danger' :
                       'bg-secondary'
                     }`}>
