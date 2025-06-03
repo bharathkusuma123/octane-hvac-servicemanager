@@ -90,3 +90,11 @@ textarea.form-control {
 .action-icon:hover {
   transform: scale(1.2);
 }
+
+.table
+.pm-chart-table-header th {
+  color: #20555c;
+  background-color: #C9FDF2;
+  font-weight: bold;
+  text-align: left;
+}

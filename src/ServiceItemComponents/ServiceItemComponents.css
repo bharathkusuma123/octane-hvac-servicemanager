@@ -106,3 +106,12 @@
 .table-hover tbody tr:hover {
   background-color: rgba(0, 0, 0, 0.075);
 }
+
+
+.table
+.service-component-table-header th {
+  color: #20555c;
+  background-color: #C9FDF2;
+  font-weight: bold;
+  text-align: center;
+}
