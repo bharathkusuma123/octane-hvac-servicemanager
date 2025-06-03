@@ -121,7 +121,7 @@ const ServiceItemTable = ({ onAddNew }) => {
       try {
         const response = await axios.get('http://175.29.21.7:8006/service-items/');
         const sortedData = response.data.data.sort(
-          (a, b) => new Date(b.installation_date) - new Date(a.installation_date)
+          (a, b) => new Date(b.created_at) - new Date(a.created_at)
         );
         setServiceItems(sortedData);
         setFilteredItems(sortedData);
