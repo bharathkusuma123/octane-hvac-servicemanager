@@ -240,7 +240,7 @@ updated_by: "Service Manager"
                   <th>Preferred Date/Time</th>
                   <th>Status</th>
                   <th>Engineer</th>
-                  <th>Actions</th>
+                  {/* <th>Actions</th> */}
                   <th>Assign</th>
                 </tr>
               </thead>
@@ -265,7 +265,7 @@ updated_by: "Service Manager"
                       </td>
                       <td>{item.status}</td>
                       <td>{item.assigned_engineer || "N/A"}</td>
-                      <td>
+                      {/* <td>
                         <div className="d-flex gap-2">
                           <button className="btn btn-sm btn-outline-primary">
                             <FaEye />
@@ -277,7 +277,7 @@ updated_by: "Service Manager"
                             <FaTrash />
                           </button>
                         </div>
-                      </td>
+                      </td> */}
                       <td>
                         <button
                           className={`btn btn-sm ${item.status === "Accepted" ? "btn-secondary disabled" : "btn-primary"}`}
