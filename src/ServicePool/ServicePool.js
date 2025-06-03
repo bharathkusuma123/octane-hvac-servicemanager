@@ -228,14 +228,14 @@ updated_by: "Service Manager"
           </div>
 
           {/* Table */}
-          <div className="table-responsive mb-4">
-            <table className="table">
-              <thead className="service-pool-table-header">
+          <div className="table-responsive">
+            <table className="table table-striped table-hover">
+              <thead className="table-dark">
                 <tr>
                   <th>S.No</th>
                   <th>Request ID</th>
                   <th>Request By</th>
-                  <th>Source Type</th>
+                  {/* <th>Source Type</th> */}
                   <th>Service Item</th>
                   <th>Preferred Date/Time</th>
                   <th>Status</th>
@@ -257,7 +257,7 @@ updated_by: "Service Manager"
     {item.request_id}
   </button>
 </td>                      <td>{item.requested_by || "N/A"}</td>
-                      <td>{item.source_type}</td>
+                      {/* <td>{item.source_type}</td> */}
                       <td>{item.service_item}</td>
                       <td>
                         {item.preferred_date ? item.preferred_date.split('T')[0] : "N/A"} / 
@@ -265,7 +265,7 @@ updated_by: "Service Manager"
                       </td>
                       <td>{item.status}</td>
                       <td>{item.assigned_engineer || "N/A"}</td>
-                      {/* <td>
+                      <td>
                         <div className="d-flex gap-2">
                           <button className="btn btn-sm btn-outline-primary">
                             <FaEye />
@@ -277,8 +277,8 @@ updated_by: "Service Manager"
                             <FaTrash />
                           </button>
                         </div>
-                      </td> */}
-                      <td>
+                      </td>
+                      {/* <td>
                         <button
                           className={`btn btn-sm ${item.status === "Accepted" ? "btn-secondary disabled" : "btn-primary"}`}
                           onClick={() => handleAssignClick(item)}
@@ -286,7 +286,7 @@ updated_by: "Service Manager"
                         >
                           Assign
                         </button>
-                      </td>
+                      </td> */}
                     </tr>
                   ))
                 ) : (
@@ -299,7 +299,7 @@ updated_by: "Service Manager"
           </div>
 
           {/* Pagination */}
-          {/* {filteredData.length > 0 && (
+          {filteredData.length > 0 && (
             <div className="pagination-controls d-flex justify-content-center mt-3">
               <button
                 className="btn btn-outline-primary me-2"
@@ -319,41 +319,7 @@ updated_by: "Service Manager"
                 Next
               </button>
             </div>
-          )} */}
-             {totalPages > 1 && (
-          <nav aria-label="Page navigation">
-            <ul className="pagination justify-content-center">
-              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </button>
-              </li>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <li
-                  key={page}
-                  className={`page-item ${currentPage === page ? "active" : ""}`}
-                >
-                  <button className="page-link" onClick={() => setCurrentPage(page)}>
-                    {page}
-                  </button>
-                </li>
-              ))}
-
-              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        )}
+          )}
         </>
       )}
 

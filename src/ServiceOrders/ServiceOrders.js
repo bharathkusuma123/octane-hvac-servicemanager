@@ -94,7 +94,7 @@ const ServiceOrders = () => {
               <th>S.No</th>
               <th>Order No</th>
               <th>Request ID</th>
-              <th>Source</th>
+              {/* <th>Source</th> */}
               <th>Service Item</th>
               <th>Customer</th>
               <th>Status</th>
@@ -110,7 +110,7 @@ const ServiceOrders = () => {
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>{order.dynamics_service_order_no}</td>
                   <td>{order.service_request_id}</td>
-                  <td>{order.source}</td>
+                  {/* <td>{order.source || "Manual Request"}</td> */}
                   <td>{order.service_item}</td>
                   <td>{order.customer}</td>
                   <td>
