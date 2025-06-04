@@ -102,7 +102,7 @@ const ServiceRequestDetail = () => {
   <div className="assignment-history-section">
         <h3 className="history-title">Assignment History</h3>
         {assignmentHistory.length > 0 ? (
-          <div className="history-table">
+          <div className=" table history-table">
             <div className="history-header">
               <div className="history-header-cell">Service Request ID</div>
               <div className="history-header-cell">Assignment ID</div>

@@ -364,6 +364,7 @@ h2 {
 
 /* Assignment History Styles */
 .assignment-history-section {
+  width: 100%;
   margin-top: 2rem;
   padding: 1rem;
   background-color: #f8f9fa;
@@ -386,10 +387,10 @@ h2 {
 
 .history-header {
   display: flex;
-  background-color: #e9ecef;
+  background-color: #C9FDF2;;
   padding: 0.75rem;
   font-weight: bold;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .history-row {

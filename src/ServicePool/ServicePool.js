@@ -228,9 +228,9 @@ updated_by: "Service Manager"
           </div>
 
           {/* Table */}
-          <div className="table-responsive">
-            <table className="table table-striped table-hover">
-              <thead className="table-dark">
+          <div className="table-responsive mb-4">
+            <table className="table ">
+              <thead className="new-customer-table-header">
                 <tr>
                   <th>S.No</th>
                   <th>Request ID</th>
@@ -265,7 +265,7 @@ updated_by: "Service Manager"
                       </td>
                       <td>{item.status}</td>
                       <td>{item.assigned_engineer || "N/A"}</td>
-                      <td>
+                      {/* <td>
                         <div className="d-flex gap-2">
                           <button className="btn btn-sm btn-outline-primary">
                             <FaEye />
@@ -277,8 +277,8 @@ updated_by: "Service Manager"
                             <FaTrash />
                           </button>
                         </div>
-                      </td>
-                      {/* <td>
+                      </td> */}
+                      <td>
                         <button
                           className={`btn btn-sm ${item.status === "Accepted" ? "btn-secondary disabled" : "btn-primary"}`}
                           onClick={() => handleAssignClick(item)}
@@ -286,7 +286,7 @@ updated_by: "Service Manager"
                         >
                           Assign
                         </button>
-                      </td> */}
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -325,14 +325,104 @@ updated_by: "Service Manager"
 
       {/* Full-Screen Assignment Form */}
       {showAssignmentScreen && (
-        <div className="assignment-screen">
+        // <div className="assignment-screen">
+        //   <h3>Service Assignment for {currentRequest?.request_id}</h3>
+        //   <p>Fill in the service assignment details below</p>
+
+        //   <form onSubmit={handleSubmit} className="assignment-form">
+        //     <div className="form-grid">
+        //       <div className="form-group">
+        //         <label>Assigned Engineer</label>
+        //         <select
+        //           name="engineerId"
+        //           value={formData.engineerId}
+        //           onChange={handleChange}
+        //           required
+        //           className="form-control"
+        //         >
+        //           <option value="">-- Select Engineer --</option>
+        //           {engineers.map(engineer => (
+        //             <option key={engineer.user_id} value={engineer.user_id}>
+        //               {engineer.full_name} ({engineer.user_id})
+        //             </option>
+        //           ))}
+        //         </select>
+        //       </div>
+
+        //       <div className="form-group">
+        //         <label>Estimated Completion Time</label>
+        //         <input
+        //           type="time"
+        //           name="completionTime"
+        //           value={formData.completionTime}
+        //           onChange={handleChange}
+        //           required
+        //           className="form-control"
+        //         />
+        //       </div>
+
+        //       <div className="form-group">
+        //         <label>Estimated Price</label>
+        //         <input
+        //           type="number"
+        //           name="estimatedPrice"
+        //           value={formData.estimatedPrice}
+        //           onChange={handleChange}
+        //           required
+        //           className="form-control"
+        //         />
+        //       </div>
+
+        //       <div className="form-group">
+        //         <label>Estimated Start Date & Time</label>
+        //         <input
+        //           type="datetime-local"
+        //           name="startDateTime"
+        //           value={formData.startDateTime}
+        //           onChange={handleChange}
+        //           required
+        //           className="form-control"
+        //         />
+        //       </div>
+
+        //       <div className="form-group">
+        //         <label>Estimated End Date & Time</label>
+        //         <input
+        //           type="datetime-local"
+        //           name="endDateTime"
+        //           value={formData.endDateTime}
+        //           onChange={handleChange}
+        //           required
+        //           className="form-control"
+        //         />
+        //       </div>
+        //     </div>
+
+        //     <div className="form-actions d-flex justify-content-end gap-2">
+        //       <button
+        //         type="button"
+        //         className="btn btn-outline-secondary"
+        //         onClick={() => setShowAssignmentScreen(false)}
+        //       >
+        //         Cancel
+        //       </button>
+        //       <button type="submit" className="btn btn-primary">
+        //         Save Assignment
+        //       </button>
+        //     </div>
+        //   </form>
+        // </div>
+          <div className="container mt-4 service-request-form">
+     <div className="card">
+              <div className="card-header">
           <h3>Service Assignment for {currentRequest?.request_id}</h3>
           <p>Fill in the service assignment details below</p>
+                  </div>
 
           <form onSubmit={handleSubmit} className="assignment-form">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Assigned Engineer</label>
+            <div className="row mb-3">
+              <div className="col-md-4">
+                <label className="form-label">Assigned Engineer</label>
                 <select
                   name="engineerId"
                   value={formData.engineerId}
@@ -349,8 +439,8 @@ updated_by: "Service Manager"
                 </select>
               </div>
 
-              <div className="form-group">
-                <label>Estimated Completion Time</label>
+              <div className="col-md-4">
+                <label className="form-label" >Estimated Completion Time</label>
                 <input
                   type="time"
                   name="completionTime"
@@ -361,8 +451,8 @@ updated_by: "Service Manager"
                 />
               </div>
 
-              <div className="form-group">
-                <label>Estimated Price</label>
+              <div className="col-md-4">
+                <label className="form-label">Estimated Price</label>
                 <input
                   type="number"
                   name="estimatedPrice"
@@ -373,8 +463,8 @@ updated_by: "Service Manager"
                 />
               </div>
 
-              <div className="form-group">
-                <label>Estimated Start Date & Time</label>
+              <div className="col-md-4 mt-2">
+                <label className="form-label">Estimated Start Date & Time</label>
                 <input
                   type="datetime-local"
                   name="startDateTime"
@@ -385,8 +475,8 @@ updated_by: "Service Manager"
                 />
               </div>
 
-              <div className="form-group">
-                <label>Estimated End Date & Time</label>
+              <div className="col-md-4 mt-2">
+                <label className="form-label">Estimated End Date & Time</label>
                 <input
                   type="datetime-local"
                   name="endDateTime"
@@ -412,8 +502,10 @@ updated_by: "Service Manager"
             </div>
           </form>
         </div>
+           </div>
       )}
     </div>
+   
   );
 };
 

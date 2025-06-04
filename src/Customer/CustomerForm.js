@@ -448,210 +448,210 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
         return (
                 <div className="container mt-4 service-request-form">
                         <div className="card">
-                                  <div className="card-header">
-                                <h2 >New Customer</h2>
-                                <p className="customer-subtitle">Fill in the customer details below</p>
+                                <div className="card-header">
+                                        <h2 >New Customer</h2>
+                                        <p className="customer-subtitle">Fill in the customer details below</p>
                                 </div>
-   <div className="card-body">
-                                <form  onSubmit={handleSubmit}>
-                                        {/* Basic Information */}
-                                        <div className="section-title">Basic Information</div>
-                                        <div className="row mb-3">
-                                                <div className="col-md-6">
-                                                        <label className="form-label">Customer ID</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="e.g. C04049"
-                                                                name="customer_id"
-                                                                value={formData.user_id}
-                                                                onChange={handleChange}
-                                                                required
-                                                        />
+                                <div className="card-body">
+                                        <form onSubmit={handleSubmit}>
+                                                {/* Basic Information */}
+                                                <div className="section-title">Basic Information</div>
+                                                <div className="row mb-3">
+                                                        <div className="col-md-6">
+                                                                <label className="form-label">Customer ID</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="e.g. C04049"
+                                                                        name="customer_id"
+                                                                        value={formData.user_id}
+                                                                        onChange={handleChange}
+                                                                        required
+                                                                />
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                                <label className="form-label">Full Name</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="Enter full name"
+                                                                        name="full_name"
+                                                                        value={formData.full_name}
+                                                                        onChange={handleChange}
+                                                                        required
+                                                                />
+                                                        </div>
                                                 </div>
-                                                <div className="col-md-6">
-                                                        <label className="form-label">Full Name</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="Enter full name"
-                                                                name="full_name"
-                                                                value={formData.full_name}
-                                                                onChange={handleChange}
-                                                                required
-                                                        />
-                                                </div>
-                                        </div>
 
-                                        <div className="row mb-3">
-                                                <div className="col-md-6">
-                                                        <label className="form-label">Username</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="Enter username"
-                                                                name="username"
-                                                                value={formData.username}
-                                                                onChange={handleChange}
-                                                                required
-                                                        />
+                                                <div className="row mb-3">
+                                                        <div className="col-md-6">
+                                                                <label className="form-label">Username</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="Enter username"
+                                                                        name="username"
+                                                                        value={formData.username}
+                                                                        onChange={handleChange}
+                                                                        required
+                                                                />
+                                                        </div>
+                                                        <div className="col-md-6">
+                                                                <label className="form-label">Remarks</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="Enter remarks"
+                                                                        name="remarks"
+                                                                        value={formData.remarks}
+                                                                        onChange={handleChange}
+                                                                />
+                                                        </div>
                                                 </div>
-                                                <div className="col-md-6">
-                                                        <label className="form-label">Remarks</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="Enter remarks"
-                                                                name="remarks"
-                                                                value={formData.remarks}
-                                                                onChange={handleChange}
-                                                        />
-                                                </div>
-                                        </div>
 
-                                        {/* Contact Information */}
-                                        <div className="section-title">Contact Information</div>
-                                        <div className="row mb-3">
-                                                <div className="col-md-4">
-                                                        <label className="form-label">Telephone</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="Landline number"
-                                                                name="telephone"
-                                                                value={formData.telephone}
-                                                                onChange={handleChange}
-                                                        />
+                                                {/* Contact Information */}
+                                                <div className="section-title">Contact Information</div>
+                                                <div className="row mb-3">
+                                                        <div className="col-md-4">
+                                                                <label className="form-label">Telephone</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="Landline number"
+                                                                        name="telephone"
+                                                                        value={formData.telephone}
+                                                                        onChange={handleChange}
+                                                                />
+                                                        </div>
+                                                        <div className="col-md-4">
+                                                                <label className="form-label">Mobile</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="Mobile number"
+                                                                        name="mobile"
+                                                                        value={formData.mobile}
+                                                                        onChange={handleChange}
+                                                                        required
+                                                                />
+                                                        </div>
+                                                        <div className="col-md-4">
+                                                                <label className="form-label">Email</label>
+                                                                <input
+                                                                        type="email"
+                                                                        className="form-control"
+                                                                        placeholder="Email address"
+                                                                        name="email"
+                                                                        value={formData.email}
+                                                                        onChange={handleChange}
+                                                                        required
+                                                                />
+                                                        </div>
                                                 </div>
-                                                <div className="col-md-4">
-                                                        <label className="form-label">Mobile</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="Mobile number"
-                                                                name="mobile"
-                                                                value={formData.mobile}
-                                                                onChange={handleChange}
-                                                                required
-                                                        />
-                                                </div>
-                                                <div className="col-md-4">
-                                                        <label className="form-label">Email</label>
-                                                        <input
-                                                                type="email"
-                                                                className="form-control"
-                                                                placeholder="Email address"
-                                                                name="email"
-                                                                value={formData.email}
-                                                                onChange={handleChange}
-                                                                required
-                                                        />
-                                                </div>
-                                        </div>
 
-                                        {/* Location Information */}
-                                        <div className="section-title">Location Information</div>
-                                        <div className="row mb-3">
-                                                <div className="col-md-4">
-                                                        <label className="form-label">City</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="City name"
-                                                                name="city"
-                                                                value={formData.city}
-                                                                onChange={handleChange}
-                                                        />
+                                                {/* Location Information */}
+                                                <div className="section-title">Location Information</div>
+                                                <div className="row mb-3">
+                                                        <div className="col-md-4">
+                                                                <label className="form-label">City</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="City name"
+                                                                        name="city"
+                                                                        value={formData.city}
+                                                                        onChange={handleChange}
+                                                                />
+                                                        </div>
+                                                        <div className="col-md-4">
+                                                                <label className="form-label">Country Code</label>
+                                                                <input
+                                                                        type="text"
+                                                                        className="form-control"
+                                                                        placeholder="e.g. KSA"
+                                                                        name="country_code"
+                                                                        value={formData.country_code}
+                                                                        onChange={handleChange}
+                                                                />
+                                                        </div>
+                                                        <div className="col-md-4">
+                                                                <label className="form-label">Address</label>
+                                                                <textarea
+                                                                        className="form-control"
+                                                                        placeholder="Full address"
+                                                                        rows="1"
+                                                                        name="address"
+                                                                        value={formData.address}
+                                                                        onChange={handleChange}
+                                                                />
+                                                        </div>
                                                 </div>
-                                                <div className="col-md-4">
-                                                        <label className="form-label">Country Code</label>
-                                                        <input
-                                                                type="text"
-                                                                className="form-control"
-                                                                placeholder="e.g. KSA"
-                                                                name="country_code"
-                                                                value={formData.country_code}
-                                                                onChange={handleChange}
-                                                        />
-                                                </div>
-                                                <div className="col-md-4">
-                                                        <label className="form-label">Address</label>
-                                                        <textarea
-                                                                className="form-control"
-                                                                placeholder="Full address"
-                                                                rows="1"
-                                                                name="address"
-                                                                value={formData.address}
-                                                                onChange={handleChange}
-                                                        />
-                                                </div>
-                                        </div>
 
-                                        {/* Type & Status */}
-                                        <div className="section-title">Type & Status</div>
-                                        <div className="row mb-3 align-items-end">
-                                                <div className="col-md-6">
-                                                        <label className="form-label">Customer Type</label>
-                                                        <select
-                                                                className="form-select"
-                                                                name="customer_type"
-                                                                value={formData.customer_type}
-                                                                onChange={handleChange}
+                                                {/* Type & Status */}
+                                                <div className="section-title">Type & Status</div>
+                                                <div className="row mb-3 align-items-end">
+                                                        <div className="col-md-6">
+                                                                <label className="form-label">Customer Type</label>
+                                                                <select
+                                                                        className="form-select"
+                                                                        name="customer_type"
+                                                                        value={formData.customer_type}
+                                                                        onChange={handleChange}
+                                                                >
+                                                                        <option value="">Select Type</option>
+                                                                        <option value="Individual">Individual</option>
+                                                                        <option value="Business">Business</option>
+                                                                        <option value="Contractor">Contractor</option>
+                                                                </select>
+                                                        </div>
+                                                        <div className="col-md-6 d-flex align-items-center gap-3">
+                                                                <label className="form-label me-2 mb-0">Status</label>
+                                                                <div>
+                                                                        <input
+                                                                                type="radio"
+                                                                                name="status"
+                                                                                className="form-check-input me-1"
+                                                                                value="Active"
+                                                                                checked={formData.status === 'Active'}
+                                                                                onChange={handleChange}
+                                                                        /> Active
+                                                                </div>
+                                                                <div>
+                                                                        <input
+                                                                                type="radio"
+                                                                                name="status"
+                                                                                className="form-check-input me-1"
+                                                                                value="Inactive"
+                                                                                checked={formData.status === 'Inactive'}
+                                                                                onChange={handleChange}
+                                                                        /> Inactive
+                                                                </div>
+                                                                <div>
+                                                                        <input
+                                                                                type="radio"
+                                                                                name="status"
+                                                                                className="form-check-input me-1"
+                                                                                value="Blocked"
+                                                                                checked={formData.status === 'Blocked'}
+                                                                                onChange={handleChange}
+                                                                        /> Blocked
+                                                                </div>
+                                                        </div>
+                                                </div>
+
+                                                <div className="d-flex justify-content-end gap-2">
+                                                        <button
+                                                                type="button"
+                                                                className="btn btn-outline-secondary"
+                                                                onClick={toggleForm}
                                                         >
-                                                                <option value="">Select Type</option>
-                                                                <option value="Individual">Individual</option>
-                                                                <option value="Business">Business</option>
-                                                                <option value="Contractor">Contractor</option>
-                                                        </select>
+                                                                Cancel
+                                                        </button>
+                                                        <button type="submit" className="btn btn-primary">Save Customer</button>
                                                 </div>
-                                                <div className="col-md-6 d-flex align-items-center gap-3">
-                                                        <label className="form-label me-2 mb-0">Status</label>
-                                                        <div>
-                                                                <input
-                                                                        type="radio"
-                                                                        name="status"
-                                                                        className="form-check-input me-1"
-                                                                        value="Active"
-                                                                        checked={formData.status === 'Active'}
-                                                                        onChange={handleChange}
-                                                                /> Active
-                                                        </div>
-                                                        <div>
-                                                                <input
-                                                                        type="radio"
-                                                                        name="status"
-                                                                        className="form-check-input me-1"
-                                                                        value="Inactive"
-                                                                        checked={formData.status === 'Inactive'}
-                                                                        onChange={handleChange}
-                                                                /> Inactive
-                                                        </div>
-                                                        <div>
-                                                                <input
-                                                                        type="radio"
-                                                                        name="status"
-                                                                        className="form-check-input me-1"
-                                                                        value="Blocked"
-                                                                        checked={formData.status === 'Blocked'}
-                                                                        onChange={handleChange}
-                                                                /> Blocked
-                                                        </div>
-                                                </div>
-                                        </div>
-
-                                        <div className="d-flex justify-content-end gap-2">
-                                                <button
-                                                        type="button"
-                                                        className="btn btn-outline-secondary"
-                                                        onClick={toggleForm}
-                                                >
-                                                        Cancel
-                                                </button>
-                                                <button type="submit" className="btn btn-primary">Save Customer</button>
-                                        </div>
-                                </form>
+                                        </form>
+                                </div>
                         </div>
-                                                </div>
 
                 </div>
         );
