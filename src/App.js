@@ -23,6 +23,7 @@ import CustomerComplaints from "./CustomerComplaints/Complaints";
 import ServiceOrders from "./ServiceOrders/ServiceOrders";
 
 import ServiceRequestDetail from './ServicePool/ServiceRequestDetail';
+import logo from "./Logos/hvac-logo-new.jpg";
 
 // Placeholder for ServiceOrders component (create this if not available yet)
 // const ServiceOrders = () => <div>Service Orders Page</div>;
@@ -77,7 +78,13 @@ const TopNavbar = () => {
   return (
     <nav className="top-navbar">
       <div className="nav-container">
-        <div className="nav-brand">Service Manager Panel</div>
+        <div className="nav-brand">
+          <img
+                src={logo}
+                alt="Company Logo"
+                style={{ width: "100px", height: "50px" }}
+            />
+        </div>
         <div className="nav-links">
           {navItems.map((item) =>
             item.dropdown ? (
