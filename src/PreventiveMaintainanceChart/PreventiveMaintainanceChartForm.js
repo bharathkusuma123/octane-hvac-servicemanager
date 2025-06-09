@@ -6,7 +6,7 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
       <div className="card">
         <div className="card-header">
           <h5 className="mb-1">Add Chart</h5>
-          <h6 className="text" style={{ color: "#acaeb0" }}>
+          <h6 className="text" style={{ color: "white" }}>
             Fill in chart details below
           </h6>
         </div>

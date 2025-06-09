@@ -79,8 +79,9 @@
 
 .table
 .pm-table-header th {
-  color: #20555c;
-  background-color: #C9FDF2;
+  color: #fafdfd;
+  /* background-color: #C9FDF2; */
+  background-color: #0096D6;
   font-weight: bold;
   text-align: left;
 }
@@ -102,8 +103,11 @@
 }
 
 .service-request-form .card-header {
-    color: #20555c;
-    background-color: #C9FDF2;
+    /* color: #20555c;
+    background-color: #C9FDF2; */
+     color: #fafdfd;
+  /* background-color: #C9FDF2; */
+  background-color: #0096D6;
 }
 
 .service-request-form .form-control, 

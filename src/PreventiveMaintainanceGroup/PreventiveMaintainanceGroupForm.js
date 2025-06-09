@@ -153,7 +153,7 @@ const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
       <div className="card">
         <div className="card-header">
           <h5 className="mb-1">{isEditMode ? 'Edit PM Group' : 'Add PM Group'}</h5>
-          <h6 className="text" style={{ color: '#acaeb0' }}>
+          <h6 className="text" style={{ color: 'white' }}>
             Fill in PM group details below
           </h6>
         </div>

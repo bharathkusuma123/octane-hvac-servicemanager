@@ -14,6 +14,15 @@ const PMGroupTable = ({
   const currentItems = filteredGroups.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredGroups.length / entriesPerPage);
 
+  // Function to format date as dd/mm/yyyy
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -61,8 +70,8 @@ const PMGroupTable = ({
                   <td>{group.pm_group_id}</td>
                   <td>{group.pm_group_name}</td>
                   <td>{group.series}</td>
-                  <td>{group.created_at}</td>
-                  <td>{group.updated_at}</td>
+                  <td>{formatDate(group.created_at)}</td>
+                  <td>{formatDate(group.updated_at)}</td>
                   <td>{group.created_by}</td>
                   <td>{group.updated_by}</td>
                 </tr>
@@ -76,62 +85,40 @@ const PMGroupTable = ({
         </table>
       </div>
 
-      {/* {filteredGroups.length > 0 && (
-        <div className="pagination-controls d-flex justify-content-center mt-3">
-          <button
-            className="btn btn-outline-primary me-2"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(prev => prev - 1)}
-          >
-            Previous
-          </button>
-          <span className="align-self-center mx-2">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            className="btn btn-outline-primary ms-2"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(prev => prev + 1)}
-          >
-            Next
-          </button>
-        </div>
-      )} */}
+      {totalPages > 1 && (
+        <nav aria-label="Page navigation">
+          <ul className="pagination justify-content-center">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage - 1)}
+              >
+                Previous
+              </button>
+            </li>
 
-       {totalPages > 1 && (
-          <nav aria-label="Page navigation">
-            <ul className="pagination justify-content-center">
-              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <li
+                key={page}
+                className={`page-item ${currentPage === page ? "active" : ""}`}
+              >
+                <button className="page-link" onClick={() => setCurrentPage(page)}>
+                  {page}
                 </button>
               </li>
+            ))}
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <li
-                  key={page}
-                  className={`page-item ${currentPage === page ? "active" : ""}`}
-                >
-                  <button className="page-link" onClick={() => setCurrentPage(page)}>
-                    {page}
-                  </button>
-                </li>
-              ))}
-
-              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        )}
+            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage + 1)}
+              >
+                Next
+              </button>
+            </li>
+          </ul>
+        </nav>
+      )}
     </>
   );
 };
