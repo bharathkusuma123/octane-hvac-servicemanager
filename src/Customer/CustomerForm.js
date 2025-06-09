@@ -449,7 +449,7 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
                 <div className="container mt-4 service-request-form">
                         <div className="card">
                                 <div className="card-header">
-                                        <h2 >New Customer</h2>
+                                        <h2 style={{color:'white'}} >New Customer</h2>
                                         <p className="customer-subtitle">Fill in the customer details below</p>
                                 </div>
                                 <div className="card-body">

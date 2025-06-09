@@ -101,8 +101,8 @@
 
 .customer-subtitle {
   font-size: 16px;
-  color: #666;
-  margin-bottom: 20px;
+  color: white;
+
   text-align: left;
 }
 
@@ -168,8 +168,8 @@
 
 .table
 .new-customer-table-header th {
-  color: #20555c;
-  background-color: #C9FDF2;
+  color: #fafbfb;
+  background-color: #0096D6;
   font-weight: bold;
   text-align: left;
 }

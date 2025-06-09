@@ -134,7 +134,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
       <div className="card">
         <div className="card-header">
           <h5 className="mb-1">{isEditMode ? 'Edit' : 'New'} Service Item Card</h5>
-          <h6 className="text" style={{ color: '#acaeb0' }}>Fill in the service item details below</h6>
+          <h6 className="text" style={{ color: 'white' }}>Fill in the service item details below</h6>
         </div>
         <div className="card-body">
           {error && <div className="alert alert-danger">{error}</div>}

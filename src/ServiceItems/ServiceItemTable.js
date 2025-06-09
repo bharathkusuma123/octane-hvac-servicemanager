@@ -10,6 +10,21 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
 
+    // Function to format date as dd/mm/yyyy
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Never';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+
   useEffect(() => {
     if (serviceItems && serviceItems.length > 0) {
       const sortedData = [...serviceItems].sort(
@@ -115,8 +130,8 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
                     <td>{item.location}</td>
                     <td>{item.location_latitude}</td>
                     <td>{item.location_longitude}</td>
-                    <td>{item.installation_date}</td>
-                    <td>{item.warranty_end_date}</td>
+                                 <td>{formatDate(item.installation_date)}</td>
+                    <td>{formatDate(item.warranty_end_date)}</td>
                     <td>
                       <span className={`badge ${
                         item.status === 'Active' ? 'bg-success' :
@@ -133,7 +148,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
                         {item.iot_status}
                       </span>
                     </td>
-                    <td>{item.last_service ? new Date(item.last_service).toLocaleDateString() : 'Never'}</td>
+                     <td>{formatDate(item.last_service)}</td>
                     <td>{item.pm_group || 'N/A'}</td>
                     <td>{item.product_description || 'N/A'}</td>
                     <td>

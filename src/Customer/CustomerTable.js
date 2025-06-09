@@ -122,6 +122,16 @@ useEffect(() => {
   const currentEntries = filteredCustomers.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredCustomers.length / entriesPerPage);
 
+    // Function to format date as dd/mm/yyyy
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <>
 
@@ -196,7 +206,9 @@ useEffect(() => {
                       {customer.status}
                     </span>
                   </td>
-                  <td>{new Date(customer.created_at).toLocaleString()}</td>
+                  {/* <td>{new Date(customer.created_at).toLocaleString()}</td> */}
+                                    <td>{formatDate(customer.created_at).toLocaleString()}</td>
+
                 </tr>
               ))
             ) : (

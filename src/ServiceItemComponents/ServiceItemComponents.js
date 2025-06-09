@@ -165,6 +165,24 @@ const ServiceItemComponents = () => {
     }
   };
 
+
+   // Add this date formatting function
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+
   return (
     <div className="svc-form-wrapper container shadow-sm">
       {!showForm && (
@@ -231,8 +249,8 @@ const ServiceItemComponents = () => {
                       <td>{comp.service_item}</td>
                       <td>{comp.component}</td>
                       <td>{comp.component_serial_number}</td>
-                      <td>{comp.warranty_start_date}</td>
-                      <td>{comp.warranty_end_date}</td>
+                 <td>{formatDate(comp.warranty_start_date)}</td>
+                  <td>{formatDate(comp.warranty_end_date)}</td>
                       <td>{comp.vendor_id || "-"}</td>
                       <td>{comp.created_by}</td>
                       {/* <td>
@@ -308,7 +326,7 @@ const ServiceItemComponents = () => {
           <div className="card">
             <div className="card-header">
               <h5 className="mb-1">{editingId ? "Edit Item Component" : "Add Item Component"}</h5>
-              <h6 className="text" style={{ color: "#acaeb0" }}>
+              <h6 className="text" style={{ color: "white" }}>
                 Fill in component details below
               </h6>
             </div>

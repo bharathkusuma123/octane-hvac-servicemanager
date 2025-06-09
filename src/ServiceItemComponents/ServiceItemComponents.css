@@ -110,8 +110,8 @@
 
 .table
 .service-component-table-header th {
-  color: #20555c;
-  background-color: #C9FDF2;
+  color: white;
+  background-color: #0096D6;
   font-weight: bold;
   text-align: left;
 }
