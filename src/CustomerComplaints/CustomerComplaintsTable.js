@@ -52,6 +52,23 @@ const CustomerComplaintsTable = () => {
   const currentItems = filteredComplaints.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredComplaints.length / entriesPerPage);
 
+    // Add this date formatting function
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid date';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      
+      return `${day}/${month}/${year}`;
+    } catch (e) {
+      return 'Invalid date';
+    }
+  };
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -115,13 +132,13 @@ const CustomerComplaintsTable = () => {
                   <td>{complaint.service_manager_email}</td>
                   <td>{complaint.gm_email}</td>
                   <td>{complaint.resolution_details || "—"}</td>
-                  <td>{complaint.resolved_at ? new Date(complaint.resolved_at).toLocaleString() : "—"}</td>
+                           <td>{formatDate(complaint.resolved_at)}</td>
                   <td>{complaint.created_by}</td>
                   <td>{complaint.updated_by}</td>
                   <td>{complaint.company}</td>
                   <td>{complaint.customer}</td>
                   <td>{complaint.service_order}</td>
-                  <td>{new Date(complaint.created_at).toLocaleString()}</td>
+                     <td>{formatDate(complaint.created_at)}</td>
                    <td>
                     <span className={`badge ${
                       complaint.status === 'Open' ? 'bg-warning' :

@@ -184,7 +184,7 @@ const ServiceItemComponents = () => {
   };
 
   return (
-    <div className="svc-form-wrapper container shadow-sm">
+    <div className="svc-form-wrapper  shadow-sm">
       {!showForm && (
         <div className="svc-header mb-4 d-flex justify-content-between align-items-center mb-3 flex-wrap">
           <div>
