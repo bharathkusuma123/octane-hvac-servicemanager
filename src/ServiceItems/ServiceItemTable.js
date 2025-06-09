@@ -138,6 +138,8 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
                     <td>{item.product_description || 'N/A'}</td>
                     <td>
                       <FaEdit
+
+                      
                         style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
                         onClick={() => onEdit(item)}
                       />

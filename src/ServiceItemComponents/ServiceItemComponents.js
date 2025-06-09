@@ -235,12 +235,14 @@ const ServiceItemComponents = () => {
                       <td>{comp.warranty_end_date}</td>
                       <td>{comp.vendor_id || "-"}</td>
                       <td>{comp.created_by}</td>
-                      <td>
+                      {/* <td>
                         <button
                           className="btn btn-sm btn-outline-primary me-2"
                           onClick={() => startEdit(comp)}
                           title="Edit"
                         >
+
+                          
                           <FaEdit />
                         </button>
                         <button
@@ -250,7 +252,19 @@ const ServiceItemComponents = () => {
                         >
                           <FaTrash />
                         </button>
-                      </td>
+                      </td> */}
+                       <td>
+                                            <FaEdit
+                      
+                                            
+                                              style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
+                                                onClick={() => startEdit(comp)}
+                                            />
+                                            <FaTrash
+                                              style={{ cursor: 'pointer', color: 'red' }}
+                                              onClick={() => deleteComponent(comp.service_component_id)}
+                                            />
+                                          </td>
 
                     </tr>
                   ))
