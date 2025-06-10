@@ -19,7 +19,8 @@ const ServicePoolTable = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [engineers, setEngineers] = useState([]);
-const navigate = useNavigate();
+  const [dateError, setDateError] = useState("");
+  const navigate = useNavigate();
 
   // Search and pagination states
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,32 +42,30 @@ const navigate = useNavigate();
   }, []);
 
   // Fetch data function
-const fetchData = async () => {
-  setLoading(true);
-  try {
-    const response = await fetch("http://175.29.21.7:8006/service-pools/");
-    if (!response.ok) {
-      throw new Error("Failed to fetch data");
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://175.29.21.7:8006/service-pools/");
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+      const result = await response.json();
+      const responseData = result.data || result;
+      let dataArray = Array.isArray(responseData) ? responseData : [responseData];
+
+      // Sort by created_at descending (most recent first)
+      dataArray.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      setData(dataArray);
+      setFilteredData(dataArray); // Initialize filtered data
+    } catch (err) {
+      setError(err.message);
+      setData([]);
+      setFilteredData([]);
+    } finally {
+      setLoading(false);
     }
-    const result = await response.json();
-    const responseData = result.data || result;
-    let dataArray = Array.isArray(responseData) ? responseData : [responseData];
-
-    // Sort by created_at descending (most recent first)
-    dataArray.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-    setData(dataArray);
-    setFilteredData(dataArray); // Initialize filtered data
-  } catch (err) {
-    setError(err.message);
-    setData([]);
-    setFilteredData([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
-
+  };
 
   useEffect(() => {
     fetchData();
@@ -85,18 +84,66 @@ const fetchData = async () => {
     setCurrentPage(1); // Reset to first page when search changes
   }, [searchTerm, data]);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleDateChange = (e) => {
+    const { name, value } = e.target;
+    const newFormData = { ...formData, [name]: value };
+    
+    // If we're changing the end date, validate it
+    if (name === "endDateTime" && newFormData.startDateTime) {
+      const startDate = new Date(newFormData.startDateTime);
+      const endDate = new Date(value);
+      
+      if (endDate <= startDate) {
+        setDateError("End date must be after start date");
+      } else {
+        setDateError("");
+        // Calculate completion time in hours
+        const diffInHours = Math.abs(endDate - startDate) / 36e5;
+        newFormData.completionTime = `${Math.floor(diffInHours)}:${Math.floor((diffInHours % 1) * 60)}`;
+      }
+    }
+    
+    setFormData(newFormData);
+  };
+
   const handleAssignClick = (request) => {
     setCurrentRequest(request);
+    // Pre-fill the start date with the preferred date from the request
+    setFormData({
+      ...formData,
+      startDateTime: request.preferred_date ? 
+        new Date(request.preferred_date).toISOString().slice(0, 16) : ""
+    });
     setShowAssignmentScreen(true);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate dates before submission
+    if (formData.endDateTime && formData.startDateTime) {
+      const startDate = new Date(formData.startDateTime);
+      const endDate = new Date(formData.endDateTime);
+      
+      if (endDate <= startDate) {
+        setDateError("End date must be after start date");
+        return;
+      }
+    }
 
     const payload = {
       assigned_engineer: formData.engineerId,
@@ -122,15 +169,15 @@ const fetchData = async () => {
       // Then create the assignment history record
       const assignmentPayload = {
         assignment_id: Math.floor(Math.random() * 1000000),
-  request: currentRequest.request_id,
-  assigned_engineer: formData.engineerId,
-  assigned_by: userId,
-  assigned_at: new Date().toISOString(),
-  assignment_type: "Assign",
-  status: "Pending",
-  comments: '',
-  created_by:"Service Manager",
-updated_by: "Service Manager"
+        request: currentRequest.request_id,
+        assigned_engineer: formData.engineerId,
+        assigned_by: userId,
+        assigned_at: new Date().toISOString(),
+        assignment_type: "Assign",
+        status: "Pending",
+        comments: '',
+        created_by: "Service Manager",
+        updated_by: "Service Manager"
       };
 
       await axios.post(
@@ -157,6 +204,7 @@ updated_by: "Service Manager"
         startDateTime: "",
         endDateTime: "",
       });
+      setDateError("");
 
     } catch (err) {
       console.error("Failed to assign engineer:", err);
@@ -190,17 +238,16 @@ updated_by: "Service Manager"
   return (
     <div className="service-container pm-container">
       {/* Header */}
-     {!showAssignmentScreen && (
-      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-        <div>
-          <h2 className="pm-title">Service Pool Details</h2>
-          <p className="pm-subtitle">Manage service requests and assignments</p>
+      {!showAssignmentScreen && (
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+          <div>
+            <h2 className="pm-title">Service Pool Details</h2>
+            <p className="pm-subtitle">Manage service requests and assignments</p>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
       {!showAssignmentScreen && (
-        
         <>
           {/* Search and Entries Per Page */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -235,12 +282,10 @@ updated_by: "Service Manager"
                   <th>S.No</th>
                   <th>Request ID</th>
                   <th>Request By</th>
-                  {/* <th>Source Type</th> */}
                   <th>Service Item</th>
                   <th>Preferred Date/Time</th>
                   <th>Status</th>
                   <th>Engineer</th>
-                  {/* <th>Actions</th> */}
                   <th>Assign</th>
                 </tr>
               </thead>
@@ -249,35 +294,21 @@ updated_by: "Service Manager"
                   currentItems.map((item, index) => (
                     <tr key={item.request_id || index}>
                       <td>{indexOfFirstEntry + index + 1}</td>
-<td>
-  <button 
-    className="btn btn-link p-0 " 
-    onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
-  >
-    {item.request_id}
-  </button>
-</td>                      <td>{item.requested_by || "N/A"}</td>
-                      {/* <td>{item.source_type}</td> */}
+                      <td>
+                        <button 
+                          className="btn btn-link p-0 " 
+                          onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
+                        >
+                          {item.request_id}
+                        </button>
+                      </td>
+                      <td>{item.requested_by || "N/A"}</td>
                       <td>{item.service_item}</td>
                       <td>
-                        {item.preferred_date ? item.preferred_date.split('T')[0] : "N/A"} / 
-                        {item.preferred_time ? item.preferred_time.substring(0, 5) : "N/A"}
+                        {formatDate(item.preferred_date)} 
                       </td>
                       <td>{item.status}</td>
                       <td>{item.assigned_engineer || "N/A"}</td>
-                      {/* <td>
-                        <div className="d-flex gap-2">
-                          <button className="btn btn-sm btn-outline-primary">
-                            <FaEye />
-                          </button>
-                          <button className="btn btn-sm btn-outline-secondary">
-                            <FaEdit />
-                          </button>
-                          <button className="btn btn-sm btn-outline-danger">
-                            <FaTrash />
-                          </button>
-                        </div>
-                      </td> */}
                       <td>
                         <button
                           className={`btn btn-sm ${item.status === "Accepted" ? "btn-secondary disabled" : "btn-primary"}`}
@@ -291,7 +322,7 @@ updated_by: "Service Manager"
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="text-center">No service requests found.</td>
+                    <td colSpan="8" className="text-center">No service requests found.</td>
                   </tr>
                 )}
               </tbody>
@@ -325,187 +356,111 @@ updated_by: "Service Manager"
 
       {/* Full-Screen Assignment Form */}
       {showAssignmentScreen && (
-        // <div className="assignment-screen">
-        //   <h3>Service Assignment for {currentRequest?.request_id}</h3>
-        //   <p>Fill in the service assignment details below</p>
+        <div className="container mt-4 service-request-form">
+          <div className="card">
+            <div className="card-header">
+              <h3>Service Assignment for {currentRequest?.request_id}</h3>
+              <p>Fill in the service assignment details below</p>
+            </div>
 
-        //   <form onSubmit={handleSubmit} className="assignment-form">
-        //     <div className="form-grid">
-        //       <div className="form-group">
-        //         <label>Assigned Engineer</label>
-        //         <select
-        //           name="engineerId"
-        //           value={formData.engineerId}
-        //           onChange={handleChange}
-        //           required
-        //           className="form-control"
-        //         >
-        //           <option value="">-- Select Engineer --</option>
-        //           {engineers.map(engineer => (
-        //             <option key={engineer.user_id} value={engineer.user_id}>
-        //               {engineer.full_name} ({engineer.user_id})
-        //             </option>
-        //           ))}
-        //         </select>
-        //       </div>
+            <form onSubmit={handleSubmit} className="assignment-form">
+              <div className="row mb-3">
+                <div className="col-md-4">
+                  <label className="form-label">Assigned Engineer</label>
+                  <select
+                    name="engineerId"
+                    value={formData.engineerId}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                  >
+                    <option value="">-- Select Engineer --</option>
+                    {engineers.map(engineer => (
+                      <option key={engineer.user_id} value={engineer.user_id}>
+                        {engineer.full_name} ({engineer.user_id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-        //       <div className="form-group">
-        //         <label>Estimated Completion Time</label>
-        //         <input
-        //           type="time"
-        //           name="completionTime"
-        //           value={formData.completionTime}
-        //           onChange={handleChange}
-        //           required
-        //           className="form-control"
-        //         />
-        //       </div>
+                <div className="col-md-4">
+                  <label className="form-label">Estimated Completion Time (HH:MM)</label>
+                  <input
+                    type="text"
+                    name="completionTime"
+                    value={formData.completionTime}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                    readOnly // Make it read-only since it's calculated
+                  />
+                </div>
 
-        //       <div className="form-group">
-        //         <label>Estimated Price</label>
-        //         <input
-        //           type="number"
-        //           name="estimatedPrice"
-        //           value={formData.estimatedPrice}
-        //           onChange={handleChange}
-        //           required
-        //           className="form-control"
-        //         />
-        //       </div>
+                <div className="col-md-4">
+                  <label className="form-label">Estimated Price</label>
+                  <input
+                    type="number"
+                    name="estimatedPrice"
+                    value={formData.estimatedPrice}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                  />
+                </div>
 
-        //       <div className="form-group">
-        //         <label>Estimated Start Date & Time</label>
-        //         <input
-        //           type="datetime-local"
-        //           name="startDateTime"
-        //           value={formData.startDateTime}
-        //           onChange={handleChange}
-        //           required
-        //           className="form-control"
-        //         />
-        //       </div>
+                <div className="col-md-4 mt-2">
+                  <label className="form-label">Estimated Start Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    name="startDateTime"
+                    value={formData.startDateTime}
+                    onChange={handleDateChange}
+                    required
+                    className="form-control"
+                    min={currentRequest?.preferred_date ? 
+                      new Date(currentRequest.preferred_date).toISOString().slice(0, 16) : ""}
+                  />
+                </div>
 
-        //       <div className="form-group">
-        //         <label>Estimated End Date & Time</label>
-        //         <input
-        //           type="datetime-local"
-        //           name="endDateTime"
-        //           value={formData.endDateTime}
-        //           onChange={handleChange}
-        //           required
-        //           className="form-control"
-        //         />
-        //       </div>
-        //     </div>
+                <div className="col-md-4 mt-2">
+                  <label className="form-label">Estimated End Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    name="endDateTime"
+                    value={formData.endDateTime}
+                    onChange={handleDateChange}
+                    required
+                    className="form-control"
+                    min={formData.startDateTime || 
+                      (currentRequest?.preferred_date ? 
+                        new Date(currentRequest.preferred_date).toISOString().slice(0, 16) : "")}
+                  />
+                  {dateError && (
+                    <div className="text-danger small mt-1">{dateError}</div>
+                  )}
+                </div>
+              </div>
 
-        //     <div className="form-actions d-flex justify-content-end gap-2">
-        //       <button
-        //         type="button"
-        //         className="btn btn-outline-secondary"
-        //         onClick={() => setShowAssignmentScreen(false)}
-        //       >
-        //         Cancel
-        //       </button>
-        //       <button type="submit" className="btn btn-primary">
-        //         Save Assignment
-        //       </button>
-        //     </div>
-        //   </form>
-        // </div>
-          <div className="container mt-4 service-request-form">
-     <div className="card">
-              <div className="card-header">
-          <h3>Service Assignment for {currentRequest?.request_id}</h3>
-          <p>Fill in the service assignment details below</p>
-                  </div>
-
-          <form onSubmit={handleSubmit} className="assignment-form">
-            <div className="row mb-3">
-              <div className="col-md-4">
-                <label className="form-label">Assigned Engineer</label>
-                <select
-                  name="engineerId"
-                  value={formData.engineerId}
-                  onChange={handleChange}
-                  required
-                  className="form-control"
+              <div className="form-actions d-flex justify-content-end gap-2">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => {
+                    setShowAssignmentScreen(false);
+                    setDateError("");
+                  }}
                 >
-                  <option value="">-- Select Engineer --</option>
-                  {engineers.map(engineer => (
-                    <option key={engineer.user_id} value={engineer.user_id}>
-                      {engineer.full_name} ({engineer.user_id})
-                    </option>
-                  ))}
-                </select>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Save Assignment
+                </button>
               </div>
-
-              <div className="col-md-4">
-                <label className="form-label" >Estimated Completion Time</label>
-                <input
-                  type="time"
-                  name="completionTime"
-                  value={formData.completionTime}
-                  onChange={handleChange}
-                  required
-                  className="form-control"
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Estimated Price</label>
-                <input
-                  type="number"
-                  name="estimatedPrice"
-                  value={formData.estimatedPrice}
-                  onChange={handleChange}
-                  required
-                  className="form-control"
-                />
-              </div>
-
-              <div className="col-md-4 mt-2">
-                <label className="form-label">Estimated Start Date & Time</label>
-                <input
-                  type="datetime-local"
-                  name="startDateTime"
-                  value={formData.startDateTime}
-                  onChange={handleChange}
-                  required
-                  className="form-control"
-                />
-              </div>
-
-              <div className="col-md-4 mt-2">
-                <label className="form-label">Estimated End Date & Time</label>
-                <input
-                  type="datetime-local"
-                  name="endDateTime"
-                  value={formData.endDateTime}
-                  onChange={handleChange}
-                  required
-                  className="form-control"
-                />
-              </div>
-            </div>
-
-            <div className="form-actions d-flex justify-content-end gap-2">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => setShowAssignmentScreen(false)}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="btn btn-primary">
-                Save Assignment
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
-           </div>
       )}
     </div>
-   
   );
 };
 
