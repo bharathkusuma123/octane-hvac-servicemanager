@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FaEye, FaEdit, FaTrash } from 'react-icons/fa';
+import baseURL from '../ApiUrl/Apiurl';
 
 const ServiceOrders = () => {
   const [serviceOrders, setServiceOrders] = useState([]);
@@ -14,7 +15,7 @@ const ServiceOrders = () => {
   useEffect(() => {
     const fetchServiceOrders = async () => {
       try {
-        const response = await axios.get('http://175.29.21.7:8006/service-orders/');
+         const response = await axios.get(`${baseURL}/service-orders/`); 
         const data = Array.isArray(response.data) ? response.data : response.data.data || [];
         setServiceOrders(data);
         setFilteredOrders(data);

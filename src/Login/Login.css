@@ -14,3 +14,22 @@
 .shadow {
   box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
 }
+
+
+.orText {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.registerText {
+  color: #6c757d;
+  margin-bottom: 0;
+}
+
+.registerLink {
+  font-weight: 500;
+}
+
+.registerLink:hover {
+  text-decoration: underline;
+}

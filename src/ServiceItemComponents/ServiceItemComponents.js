@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
+import baseURL from '../ApiUrl/Apiurl';
 
 import "./ServiceItemComponents.css";
 
@@ -25,17 +26,17 @@ const ServiceItemComponents = () => {
 
   // Initial fetches
   useEffect(() => {
-    fetch("http://175.29.21.7:8006/service-item-components/")
+   fetch(`${baseURL}/service-item-components/`)
       .then((res) => res.json())
       .then((data) => data.data && setComponents(data.data))
       .catch(console.error);
 
-    fetch("http://175.29.21.7:8006/service-items/")
-      .then((res) => res.json())
+  fetch(`${baseURL}/service-items/`)
+        .then((res) => res.json())
       .then((data) => data.data && setServiceItemsOptions(data.data))
       .catch(console.error);
 
-    fetch("http://175.29.21.7:8006/components/")
+       fetch(`${baseURL}/components/`)
       .then((res) => res.json())
       .then((data) => data.data && setComponentOptions(data.data))
       .catch(console.error);
@@ -91,7 +92,7 @@ const ServiceItemComponents = () => {
   const deleteComponent = async (id) => {
     if (!window.confirm("Do you really want to delete this record?")) return;
     try {
-      const res = await fetch(`http://175.29.21.7:8006/service-item-components/${id}/`, { method: "DELETE" });
+     const res = await fetch(`${baseURL}/service-item-components/${id}/`, { method: "DELETE" });
       if (!res.ok) throw new Error(await res.text());
       setComponents((prev) => prev.filter((c) => c.service_component_id !== id));
       alert("🗑️ Deleted successfully!");
@@ -118,7 +119,7 @@ const ServiceItemComponents = () => {
         component: formData.component_id,
       };
       try {
-        const res = await fetch(`http://175.29.21.7:8006/service-item-components/${editingId}/`, {
+         const res = await fetch(`${baseURL}/service-item-components/${editingId}/`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -149,7 +150,7 @@ const ServiceItemComponents = () => {
         component: formData.component_id,
       };
       try {
-        const res = await fetch("http://175.29.21.7:8006/service-item-components/", {
+     const res = await fetch(`${baseURL}/service-item-components/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

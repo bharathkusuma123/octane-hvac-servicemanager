@@ -3,6 +3,7 @@ import './PreventiveMaintainance.css';
 import PMGroupForm from './PreventiveMaintainanceGroupForm';
 import PMGroupTable from './PreventiveMaintainanceGroupTable';
 import { AuthContext } from "../AuthContext/AuthContext";
+import baseURL from '../ApiUrl/Apiurl';
 
 const PreventiveMaintenance = () => { 
   const [showForm, setShowForm] = useState(false);
@@ -18,7 +19,7 @@ const PreventiveMaintenance = () => {
 
   const fetchPmGroups = async () => {
     try {
-      const response = await fetch('http://175.29.21.7:8006/pm-groups/');
+               const response = await fetch(`${baseURL}/pm-groups/`);
       const result = await response.json();
       const sortedData = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setPmGroups(sortedData);

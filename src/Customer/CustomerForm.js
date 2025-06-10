@@ -369,6 +369,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import './NewCustomer.css'
+import baseURL from '../ApiUrl/Apiurl';
+
 const SECURITY_QUESTION_CHOICES = [
         "What is your mother’s maiden name?",
         "What was the name of your first pet?",
@@ -420,7 +422,7 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
                 };
 
                 try {
-                        const response = await axios.post('http://175.29.21.7:8006/customers/', payload, {
+                      const response = await axios.post(`${baseURL}/customers/`, payload, {
                                 headers: {
                                         'Content-Type': 'application/json',
                                 },

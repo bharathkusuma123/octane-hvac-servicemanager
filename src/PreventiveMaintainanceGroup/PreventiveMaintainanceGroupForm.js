@@ -94,6 +94,8 @@
 
 
 import React, { useState } from 'react';
+import baseURL from '../ApiUrl/Apiurl';
+
 // import './Component.css';
 const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
   const isEditMode = !!initialData?.pm_group_id;
@@ -123,8 +125,8 @@ const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
     };
 
     const url = isEditMode
-      ? `http://175.29.21.7:8006/pm-groups/${formData.pm_group_id}/`
-      : 'http://175.29.21.7:8006/pm-groups/';
+ ? `${baseURL}/pm-groups/${formData.pm_group_id}/`
+      : `${baseURL}/pm-groups/`;
     const method = isEditMode ? 'PUT' : 'POST';
 
     try {

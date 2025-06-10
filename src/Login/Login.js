@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import LoginCard from "./LoginCard";
 import { AuthContext } from "../AuthContext/AuthContext"; // adjust the path
+import baseURL from '../ApiUrl/Apiurl';
 
-const AdminLogin = () => {
+const Login = () => {
   const [username, setUsername] = useState(""); 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -17,7 +18,7 @@ const AdminLogin = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://175.29.21.7:8006/user-login/", {
+            const response = await axios.post(`${baseURL}/user-login/`, {
         username,
         password,
       });
@@ -51,4 +52,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin;
+export default Login;

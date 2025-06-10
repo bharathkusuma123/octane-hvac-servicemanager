@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './NewServiceItem.css';
+import baseURL from '../ApiUrl/Apiurl';
 
 const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode }) => {
   const [customers, setCustomers] = useState([]);
@@ -11,7 +12,8 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await fetch('http://175.29.21.7:8006/customers/');
+
+        const response = await fetch(`${baseURL}/customers/`);
         const result = await response.json();
 
         if (result.status === 'success' && Array.isArray(result.data)) {
@@ -30,7 +32,8 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('http://175.29.21.7:8006/products/');
+
+        const response = await fetch(`${baseURL}/products/`);
         const result = await response.json();
         setProducts(result.data);  
       } catch (error) {
@@ -44,7 +47,8 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
   useEffect(() => {
     const fetchPmGroups = async () => {
       try {
-        const response = await fetch('http://175.29.21.7:8006/pm-groups/');
+
+        const response = await fetch(`${baseURL}/pm-groups/`);
         const result = await response.json();
         if (result.status === 'success' && Array.isArray(result.data)) {
           setPmGroups(result.data);
@@ -97,11 +101,11 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
 
     console.log('Submitting:', serviceItemData);
 
-    const token = localStorage.getItem("authToken");
-    const url = isEditMode 
-      ? `http://175.29.21.7:8006/service-items/${formData.service_item_id}/`
-      : "http://175.29.21.7:8006/service-items/";
-    const method = isEditMode ? "PUT" : "POST";
+const token = localStorage.getItem("authToken");
+const url = isEditMode 
+  ? `${baseURL}/service-items/${formData.service_item_id}/`
+  : `${baseURL}/service-items/`;
+const method = isEditMode ? "PUT" : "POST";
 
     try {
       const response = await fetch(url, {

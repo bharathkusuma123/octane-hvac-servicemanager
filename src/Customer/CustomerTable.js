@@ -81,7 +81,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-
+import baseURL from '../ApiUrl/Apiurl';
 const CustomerTable = ({ toggleForm }) => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
@@ -92,7 +92,7 @@ const CustomerTable = ({ toggleForm }) => {
 useEffect(() => {
   const fetchCustomers = async () => {
     try {
-      const response = await axios.get('http://175.29.21.7:8006/customers/');
+      const response = await axios.get(`${baseURL}/customers/`);
       const filteredAndSorted = response.data.data
         .filter(user => user.status === 'Active') 
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));

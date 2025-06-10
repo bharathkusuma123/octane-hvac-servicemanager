@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import ChartTable from "./PreventiveMaintainanceChartTable";
 import ChartForm from "./PreventiveMaintainanceChartForm";
 import "./PreventiveMaintainanceChart.css";
+import baseURL from '../ApiUrl/Apiurl';
 
 const PreventiveMaintainanceChart = () => {
   const [showForm, setShowForm] = useState(false);
@@ -26,7 +27,7 @@ const PreventiveMaintainanceChart = () => {
   useEffect(() => {
     const fetchPmGroups = async () => {
       try {
-        const response = await fetch("http://175.29.21.7:8006/pm-groups/");
+         const response = await fetch(`${baseURL}/pm-groups/`);
         const data = await response.json();
         if (data.status === "success") {
           setPmGroups(data.data);
@@ -45,7 +46,7 @@ const PreventiveMaintainanceChart = () => {
   useEffect(() => {
   const fetchPmGroups = async () => {
     try {
-      const response = await fetch("http://175.29.21.7:8006/pm-groups/");
+               const response = await fetch(`${baseURL}/pm-groups/`);
       const data = await response.json();
       if (data.status === "success") {
         setPmGroups(data.data);
@@ -59,7 +60,8 @@ const PreventiveMaintainanceChart = () => {
 
   const fetchCharts = async () => {
     try {
-      const response = await fetch("http://175.29.21.7:8006/pm-charts/");
+                     const response = await fetch(`${baseURL}/pm-charts/`);
+
       const data = await response.json();
       if (data.status === "success") {
          const sortedCharts = data.data.sort(
@@ -106,7 +108,8 @@ const PreventiveMaintainanceChart = () => {
     };
 
     try {
-      const response = await fetch("http://175.29.21.7:8006/pm-charts/", {
+
+      const response = await fetch(`${baseURL}/pm-charts/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

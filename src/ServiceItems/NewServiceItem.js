@@ -3,7 +3,7 @@ import ServiceItemTable from './ServiceItemTable';
 import ServiceItemForm from './ServiceItemForm';
 import './NewServiceItem.css';
 import axios from 'axios';
-
+import baseURL from '../ApiUrl/Apiurl';
 const ServiceItem = () => {
   const [showForm, setShowForm] = useState(false);
   const [serviceItems, setServiceItems] = useState([]);
@@ -34,7 +34,7 @@ const ServiceItem = () => {
 
   const fetchServiceItems = async () => {
     try {
-      const response = await axios.get("http://175.29.21.7:8006/service-items/");
+      const response = await axios.get(`${baseURL}/service-items/`);
       if (response.data.status === "success") {
         setServiceItems(response.data.data);
       } else {
@@ -93,7 +93,7 @@ const ServiceItem = () => {
     if (window.confirm('Are you sure you want to delete this service item?')) {
       try {
         const token = localStorage.getItem("authToken");
-        await axios.delete(`http://175.29.21.7:8006/service-items/${serviceItemId}/`, {
+        await axios.delete(`${baseURL}/service-items/${serviceItemId}/`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           }
