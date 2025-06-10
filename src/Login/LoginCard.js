@@ -120,7 +120,7 @@ const LoginCard = ({
 }) => {
   return (
      <div className="d-flex align-items-center justify-content-center min-vh-100">
-    <Container className="mt-5">
+    <Container className="mt-3">
       <Row className="justify-content-center">
         <Col md={6} lg={4}>
           <Card className="shadow">
@@ -168,7 +168,7 @@ const LoginCard = ({
                 </Form.Group>
 
                 <Button
-                  variant="primary"
+                style={{backgroundColor:'#0096D6'}}
                   type="submit"
                   className="loginButton shadow"
                 >
