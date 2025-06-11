@@ -1,50 +1,53 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaEye, FaEyeSlash } from "react-icons/fa";
+import axios from "axios";
 import logo from "../Logos/hvac-logo-new.jpg";
 import "./SignUpScreen.css";
+import baseURL from '../ApiUrl/Apiurl';
 
 const SignUpScreen = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
 
     if (!username || !password) {
-      alert("Please enter both username and password.");
+      setError("Please enter both username and password.");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch("http://175.29.21.7:8006/users-login/");
-      if (!response.ok) {
-        throw new Error("Failed to fetch users");
-      }
+      const response = await axios.post(`${baseURL}/user-login/`, {
+        username,
+        password
+      });
 
-      const result = await response.json();
-      const users = result.data || [];
+      const user = response.data.data;
 
-      const matchedUser = users.find(
-        (user) =>
-          user.username === username &&
-          user.password === password
-      );
-
-      if (matchedUser) {
-        navigate("/servicemanager/signupset-password-screen", { state: { user: matchedUser } });
+      if (user) {
+        navigate("/signupset-password-screen", { 
+          state: { user } 
+        });
       } else {
-        alert("Invalid username or password. Please try again.");
+        setError("Invalid username or password. Please try again.");
       }
     } catch (error) {
-      alert("Error checking user details. Please try again later.");
-      console.error("Error fetching users:", error);
+      console.error("Error checking user details:", error);
+      setError(
+        error.response?.data?.message || 
+        "Error checking user details. Please try again later."
+      );
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const togglePasswordVisibility = () => {
@@ -78,6 +81,15 @@ const SignUpScreen = () => {
           />
           <h3 style={{ marginTop: '15px' }}>Sign Up</h3>
         </div>
+
+        {error && (
+          <div 
+            className="alert alert-danger" 
+            style={{ margin: '0 15px 15px 15px' }}
+          >
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '15px', position: 'relative' }}>

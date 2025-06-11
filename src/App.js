@@ -263,6 +263,7 @@ import ServiceOrders from "./ServiceOrders/ServiceOrders";
 import ServiceRequestDetail from './ServicePool/ServiceRequestDetail';
 import SignUpScreen from "./Login/SignUpScreen"; // Import the SignUpScreen component
 import logo from "./Logos/hvac-logo-new.jpg";
+import SignupSetPassword from "./Login/SignupSetPassword";
 
 const TopNavbar = () => {
   const navigate = useNavigate();
@@ -370,6 +371,8 @@ function App() {
         <Routes>
           <Route path="/" element={<ServiceManagerLogin />} />
           <Route path="/signup" element={<SignUpScreen />} /> {/* Added signup route */}
+           <Route path="/signupset-password-screen" element={<SignupSetPassword />} /> {/* Added signup route */}
+
           
           {/* All other routes now directly use PanelLayout without protection */}
           <Route
