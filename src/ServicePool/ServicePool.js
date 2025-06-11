@@ -20,6 +20,8 @@ const ServicePoolTable = () => {
   const [error, setError] = useState(null);
   const [engineers, setEngineers] = useState([]);
   const [dateError, setDateError] = useState("");
+  const [busyEngineers, setBusyEngineers] = useState([]);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
   const navigate = useNavigate();
 
   // Search and pagination states
@@ -93,6 +95,64 @@ const ServicePoolTable = () => {
     return `${day}/${month}/${year}`;
   };
 
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    
+    // Split the time string into hours, minutes, seconds
+    const [hours, minutes] = timeString.split(':').map(Number);
+    
+    // Convert to 12-hour format
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+    
+    // Return formatted time (e.g., "06:40 PM")
+    return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  const checkEngineerAvailability = async (startDateTime, endDateTime) => {
+    if (!startDateTime || !endDateTime) return;
+    
+    setCheckingAvailability(true);
+    try {
+      // Fetch all existing assignments
+      const response = await axios.get("http://175.29.21.7:8006/service-pools/");
+      const allAssignments = response.data.data || response.data;
+      
+      // Convert to array if it's not
+      const assignmentsArray = Array.isArray(allAssignments) ? allAssignments : [allAssignments];
+      
+      // Filter assignments that overlap with our selected time period
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+      
+      const overlappingAssignments = assignmentsArray.filter(assignment => {
+        if (!assignment.est_start_datetime || !assignment.est_end_datetime || assignment.status !== "Assigned") return false;
+        
+        const assignmentStart = new Date(assignment.est_start_datetime);
+        const assignmentEnd = new Date(assignment.est_end_datetime);
+        
+        return (
+          (assignmentStart >= startDate && assignmentStart <= endDate) || // Assignment starts during our period
+          (assignmentEnd >= startDate && assignmentEnd <= endDate) ||    // Assignment ends during our period
+          (assignmentStart <= startDate && assignmentEnd >= endDate)     // Assignment spans our entire period
+        );
+      });
+      
+      // Get unique engineer IDs from overlapping assignments
+      const busyEngineerIds = [...new Set(
+        overlappingAssignments
+          .map(assignment => assignment.assigned_engineer)
+          .filter(id => id) // Remove null/undefined
+      )];
+      
+      setBusyEngineers(busyEngineerIds);
+    } catch (error) {
+      console.error("Error checking engineer availability:", error);
+    } finally {
+      setCheckingAvailability(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -114,7 +174,15 @@ const ServicePoolTable = () => {
         // Calculate completion time in hours
         const diffInHours = Math.abs(endDate - startDate) / 36e5;
         newFormData.completionTime = `${Math.floor(diffInHours)}:${Math.floor((diffInHours % 1) * 60)}`;
+        
+        // Check engineer availability when both dates are set
+        checkEngineerAvailability(newFormData.startDateTime, value);
       }
+    }
+    
+    // Also check availability when start date changes and end date exists
+    if (name === "startDateTime" && newFormData.endDateTime) {
+      checkEngineerAvailability(value, newFormData.endDateTime);
     }
     
     setFormData(newFormData);
@@ -129,6 +197,7 @@ const ServicePoolTable = () => {
         new Date(request.preferred_date).toISOString().slice(0, 16) : ""
     });
     setShowAssignmentScreen(true);
+    setBusyEngineers([]); // Reset busy engineers when opening the form
   };
 
   const handleSubmit = async (e) => {
@@ -305,7 +374,7 @@ const ServicePoolTable = () => {
                       <td>{item.requested_by || "N/A"}</td>
                       <td>{item.service_item}</td>
                       <td>
-                        {formatDate(item.preferred_date)} 
+                        {formatDate(item.preferred_date)} {formatTime(item.preferred_time)}
                       </td>
                       <td>{item.status}</td>
                       <td>{item.assigned_engineer || "N/A"}</td>
@@ -365,49 +434,7 @@ const ServicePoolTable = () => {
 
             <form onSubmit={handleSubmit} className="assignment-form">
               <div className="row mb-3">
-                <div className="col-md-4">
-                  <label className="form-label">Assigned Engineer</label>
-                  <select
-                    name="engineerId"
-                    value={formData.engineerId}
-                    onChange={handleChange}
-                    required
-                    className="form-control"
-                  >
-                    <option value="">-- Select Engineer --</option>
-                    {engineers.map(engineer => (
-                      <option key={engineer.user_id} value={engineer.user_id}>
-                        {engineer.full_name} ({engineer.user_id})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="col-md-4">
-                  <label className="form-label">Estimated Completion Time (HH:MM)</label>
-                  <input
-                    type="text"
-                    name="completionTime"
-                    value={formData.completionTime}
-                    onChange={handleChange}
-                    required
-                    className="form-control"
-                    readOnly // Make it read-only since it's calculated
-                  />
-                </div>
-
-                <div className="col-md-4">
-                  <label className="form-label">Estimated Price</label>
-                  <input
-                    type="number"
-                    name="estimatedPrice"
-                    value={formData.estimatedPrice}
-                    onChange={handleChange}
-                    required
-                    className="form-control"
-                  />
-                </div>
-
+                {/* Row 1: Start Date, End Date, Completion Time */}
                 <div className="col-md-4 mt-2">
                   <label className="form-label">Estimated Start Date & Time</label>
                   <input
@@ -417,8 +444,9 @@ const ServicePoolTable = () => {
                     onChange={handleDateChange}
                     required
                     className="form-control"
-                    min={currentRequest?.preferred_date ? 
-                      new Date(currentRequest.preferred_date).toISOString().slice(0, 16) : ""}
+                    min={currentRequest?.preferred_date
+                      ? new Date(currentRequest.preferred_date).toISOString().slice(0, 16)
+                      : ""}
                   />
                 </div>
 
@@ -431,16 +459,84 @@ const ServicePoolTable = () => {
                     onChange={handleDateChange}
                     required
                     className="form-control"
-                    min={formData.startDateTime || 
-                      (currentRequest?.preferred_date ? 
-                        new Date(currentRequest.preferred_date).toISOString().slice(0, 16) : "")}
+                    min={
+                      formData.startDateTime ||
+                      (currentRequest?.preferred_date
+                        ? new Date(currentRequest.preferred_date).toISOString().slice(0, 16)
+                        : ""
+      )}
                   />
                   {dateError && (
                     <div className="text-danger small mt-1">{dateError}</div>
                   )}
                 </div>
-              </div>
 
+                <div className="col-md-4 mt-2">
+                  <label className="form-label">Estimated Completion Time (HH:MM)</label>
+                  <input
+                    type="text"
+                    name="completionTime"
+                    value={formData.completionTime}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                    readOnly
+                  />
+                </div>
+
+                {/* Row 2: Assigned Engineer, Estimated Price */}
+                <div className="col-md-4 mt-3">
+                  <label className="form-label">Assigned Engineer</label>
+                  <select
+                    name="engineerId"
+                    value={formData.engineerId}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                    disabled={checkingAvailability || (engineers.length > 0 && engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0)}
+                  >
+                    {checkingAvailability ? (
+                      <option value="">Checking engineer availability...</option>
+                    ) : engineers.length === 0 ? (
+                      <option value="">Loading engineers...</option>
+                    ) : engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0 ? (
+                      <option value="" disabled>
+                        No available engineers during this time period. Please adjust your dates.
+                      </option>
+                    ) : (
+                      <>
+                        <option value="">-- Select Engineer --</option>
+                        {engineers
+                          .filter(engineer => !busyEngineers.includes(engineer.user_id))
+                          .map(engineer => (
+                            <option key={engineer.user_id} value={engineer.user_id}>
+                              {engineer.full_name} ({engineer.user_id})
+                            </option>
+                          ))}
+                      </>
+                    )}
+                  </select>
+                  {engineers.length > 0 && 
+                   engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0 &&
+                   !checkingAvailability && (
+                    <div className="text-danger small mt-1">
+                      No engineers available during selected time period. Please choose different dates.
+                    </div>
+                  )}
+                </div>
+
+                <div className="col-md-4 mt-3">
+                  <label className="form-label">Estimated Price</label>
+                  <input
+                    type="number"
+                    name="estimatedPrice"
+                    value={formData.estimatedPrice}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                  />
+                </div>
+              </div>
               <div className="form-actions d-flex justify-content-end gap-2">
                 <button
                   type="button"
@@ -452,8 +548,12 @@ const ServicePoolTable = () => {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Save Assignment
+                <button 
+                  type="submit" 
+                  className="btn btn-primary"
+                  disabled={checkingAvailability || (engineers.length > 0 && engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0)}
+                >
+                  {checkingAvailability ? "Checking Availability..." : "Save Assignment"}
                 </button>
               </div>
             </form>
