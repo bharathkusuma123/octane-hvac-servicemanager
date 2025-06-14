@@ -214,9 +214,20 @@ const ServicePoolTable = () => {
       }
     }
 
+
+function toISOTimeString(start, end) {
+  const startTime = new Date(start);
+  const endTime = new Date(end);
+  const durationMs = endTime - startTime;
+  const durationDate = new Date(durationMs);
+  return durationDate.toISOString().split("T")[1]; // gets only the time part with Z
+}
+
+
+
     const payload = {
       assigned_engineer: formData.engineerId,
-      estimated_completion_time: formData.completionTime,
+     estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
       estimated_price: formData.estimatedPrice,
       est_start_datetime: formData.startDateTime,
       est_end_datetime: formData.endDateTime,
