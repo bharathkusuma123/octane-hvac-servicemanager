@@ -399,6 +399,7 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
 
         const handleSubmit = async (e) => {
                 e.preventDefault();
+                 const selectedCompany = localStorage.getItem("selectedCompany");
 
                 const payload = {
                         customer_id: formData.customer_id,
@@ -418,7 +419,8 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
                         availability: "Available",
                         rating: "0",
                         created_by: "Service Manager",
-                        updated_by: "Service Manager"
+                        updated_by: "Service Manager",
+                        company: selectedCompany
                 };
 
                 try {

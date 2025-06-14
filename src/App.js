@@ -244,9 +244,6 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation,
-  useNavigate,
-  Link,
 } from "react-router-dom";
 import "./App.css";
 
@@ -261,108 +258,9 @@ import AuthProvider from "./AuthContext/AuthContext";
 import CustomerComplaints from "./CustomerComplaints/Complaints";
 import ServiceOrders from "./ServiceOrders/ServiceOrders";
 import ServiceRequestDetail from './ServicePool/ServiceRequestDetail';
-import SignUpScreen from "./Login/SignUpScreen"; // Import the SignUpScreen component
-import logo from "./Logos/hvac-logo-new.jpg";
+import SignUpScreen from "./Login/SignUpScreen";
 import SignupSetPassword from "./Login/SignupSetPassword";
-
-const TopNavbar = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const userRole = localStorage.getItem("userRole");
-
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    navigate("/");
-  };
-
-  if (userRole !== "service-manager") return null;
-
-  const navItems = [
-    {
-      label: "Preventive Maintenance",
-      dropdown: [
-        {
-          path: "/servicemanager/preventive-maintainance-group",
-          label: "P M Group",
-        },
-        {
-          path: "/servicemanager/preventive-maintainance-chart",
-          label: "P M Chart",
-        },
-      ],
-    },
-    {
-      label: "Services",
-      dropdown: [
-        { path: "/servicemanager/service-pool", label: "Service Pool" },
-        { path: "/servicemanager/service-orders", label: "Service Orders" },
-      ],
-    },
-    { path: "/servicemanager/new-customer", label: "Customer" },
-    {
-      label: "Service Items",
-      dropdown: [
-        { path: "/servicemanager/new-service-item", label: "Items" },
-        { path: "/servicemanager/service-item-components", label: "Components" },
-      ],
-    },
-    { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
-  ];
-
-  return (
-    <nav className="top-navbar">
-      <div className="nav-container">
-        <div className="nav-brand">
-          <img
-            src={logo}
-            alt="Company Logo"
-            style={{ width: "100px", height: "50px" }}
-          />
-        </div>
-        <div className="nav-links">
-          {navItems.map((item) =>
-            item.dropdown ? (
-              <div key={item.label} className="dropdown">
-                <button className="dropdown-toggle">{item.label}</button>
-                <div className="dropdown-menu">
-                  {item.dropdown.map((subItem) => (
-                    <Link
-                      key={subItem.path}
-                      to={subItem.path}
-                      className={location.pathname === subItem.path ? "active" : ""}
-                    >
-                      {subItem.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={location.pathname === item.path ? "active" : ""}
-              >
-                {item.label}
-              </Link>
-            )
-          )}
-        </div>
-        <div className="nav-user">
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
-        </div>
-      </div>
-    </nav>
-  );
-};
-
-const PanelLayout = ({ children }) => (
-  <>
-    <TopNavbar />
-    <div className="panel-content">{children}</div>
-  </>
-);
+import PanelLayout from "./Navbar/PanelLayout"
 
 function App() {
   return (
@@ -370,11 +268,9 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<ServiceManagerLogin />} />
-          <Route path="/signup" element={<SignUpScreen />} /> {/* Added signup route */}
-           <Route path="/signupset-password-screen" element={<SignupSetPassword />} /> {/* Added signup route */}
-
+          <Route path="/signup" element={<SignUpScreen />} />
+          <Route path="/signupset-password-screen" element={<SignupSetPassword />} />
           
-          {/* All other routes now directly use PanelLayout without protection */}
           <Route
             path="/servicemanager/new-customer"
             element={

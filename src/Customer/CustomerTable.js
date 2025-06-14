@@ -82,12 +82,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
+import { useCompany } from "../AuthContext/CompanyContext";
 const CustomerTable = ({ toggleForm }) => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const { selectedCompany } = useCompany();
 
 useEffect(() => {
   const fetchCustomers = async () => {
@@ -175,6 +177,7 @@ useEffect(() => {
             <tr>
               <th>S.No</th>
               <th>Customer ID</th>
+               <th>Company</th>
               <th>Full Name</th>
               <th>Username</th>
               <th>Email</th>
@@ -191,6 +194,7 @@ useEffect(() => {
                 <tr key={index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>{customer.customer_id}</td>
+                     <td>{customer.company}</td>
                   <td>{customer.full_name}</td>
                   <td>{customer.username}</td>
                   <td>{customer.email}</td>
