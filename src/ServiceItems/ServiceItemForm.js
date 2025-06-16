@@ -8,6 +8,8 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
   const [error, setError] = useState(null);
   const [products, setProducts] = useState([]);
   const [pmGroups, setPmGroups] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+
 
   useEffect(() => {
     const fetchCustomers = async () => {
@@ -63,6 +65,19 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
     fetchPmGroups();
   }, []);
 
+   const handleCustomerChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Find the selected customer
+    const selectedCustomer = customers.find(c => c.customer_id === value);
+    
+    // Update the form data
+    onChange(e);
+    
+    // Set the company from the customer data
+    setSelectedCompany(selectedCustomer?.company || null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -93,7 +108,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
       updated_at: nowISOString,
       created_by: isEditMode ? formData.created_by : "Service Manager",
       updated_by: "Service Manager",
-      company: null,
+       company: selectedCompany, // Use the selected company here
       product: formData.product,
       customer: formData.customer,
       pm_group: formData.pm_group,
@@ -216,7 +231,7 @@ const method = isEditMode ? "PUT" : "POST";
                   className="form-control"
                   name="customer"
                   value={formData.customer || ''}
-                  onChange={onChange}
+                  onChange={handleCustomerChange}
                   required
                 >
                   <option value="">Select Customer</option>

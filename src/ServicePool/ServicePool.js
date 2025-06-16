@@ -3,6 +3,7 @@ import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
+import { useCompany } from "../AuthContext/CompanyContext";
 
 const ServicePoolTable = () => {
   const userId = localStorage.getItem('userId'); 
@@ -29,6 +30,7 @@ const ServicePoolTable = () => {
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredData, setFilteredData] = useState([]);
+   const { selectedCompany } = useCompany(); // Get selected company from context
 
   useEffect(() => {
     axios.get("http://175.29.21.7:8006/users/")
@@ -74,17 +76,25 @@ const ServicePoolTable = () => {
   }, []);
 
   // Apply search filter whenever searchTerm or data changes
-  useEffect(() => {
-    if (searchTerm === '') {
-      setFilteredData(data);
-    } else {
-      const filtered = data.filter(item =>
-        Object.values(item).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
+   useEffect(() => {
+    let results = data;
+    
+    // First filter by selected company if one is selected
+    if (selectedCompany) {
+      results = results.filter(item => 
+        item.company === selectedCompany
       );
-      setFilteredData(filtered);
     }
-    setCurrentPage(1); // Reset to first page when search changes
-  }, [searchTerm, data]);
+    
+    // Then apply search term filter
+    if (searchTerm) {
+      results = results.filter(item =>
+        Object.values(item).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
+  )}
+    
+    setFilteredData(results);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [selectedCompany, searchTerm, data]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -232,7 +242,7 @@ function toISOTimeString(start, end) {
   est_start_datetime: formData.startDateTime,
   est_end_datetime: formData.endDateTime,
   status: "Assigned",
-  company: "CMID0001", 
+  company: selectedCompany, 
 };
 
     try {
@@ -259,6 +269,7 @@ function toISOTimeString(start, end) {
         comments: '',
         created_by: "Service Manager",
         updated_by: "Service Manager",
+        company: selectedCompany,
         
       };
 
@@ -324,6 +335,11 @@ function toISOTimeString(start, end) {
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
           <div>
             <h2 className="pm-title">Service Pool Details</h2>
+             <p className="pm-subtitle">
+              {selectedCompany 
+                ? `Showing service requests for ${selectedCompany}`
+                : 'Showing all service requests'}
+            </p>
             <p className="pm-subtitle">Manage service requests and assignments</p>
           </div>
         </div>
@@ -363,6 +379,7 @@ function toISOTimeString(start, end) {
                 <tr>
                   <th>S.No</th>
                   <th>Request ID</th>
+                   <th>Company</th>
                   <th>Request By</th>
                   <th>Service Item</th>
                   <th>Preferred Date/Time</th>
@@ -384,6 +401,7 @@ function toISOTimeString(start, end) {
                           {item.request_id}
                         </button>
                       </td>
+                        <td>{item.company}</td>
                       <td>{item.requested_by || "N/A"}</td>
                       <td>{item.service_item}</td>
                       <td>

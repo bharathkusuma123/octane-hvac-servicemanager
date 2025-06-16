@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 import './NewServiceItem.css';
 import axios from 'axios';
 import { FaEdit, FaTrash } from 'react-icons/fa';
+import { useCompany } from "../AuthContext/CompanyContext";
 
 const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
-  const [filteredItems, setFilteredItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const { selectedCompany } = useCompany(); // Get selected company from context
 
     // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
@@ -24,27 +26,48 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
       return 'Invalid date';
     }
   };
-
-  useEffect(() => {
+ useEffect(() => {
     if (serviceItems && serviceItems.length > 0) {
-      const sortedData = [...serviceItems].sort(
+      // First filter by selected company if one is selected
+      let filteredByCompany = serviceItems;
+      if (selectedCompany) {
+        filteredByCompany = serviceItems.filter(item => 
+          item.company === selectedCompany
+        );
+      }
+      
+      // Then sort by date
+      const sortedData = [...filteredByCompany].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
       setFilteredItems(sortedData);
       setLoading(false);
     }
-  }, [serviceItems]);
+  }, [serviceItems, selectedCompany]); // Add selectedCompany to dependencies
 
   useEffect(() => {
-    const filtered = serviceItems.filter(item =>
-      Object.values(item)
-        .join(' ')
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    );
-    setFilteredItems(filtered);
-    setCurrentPage(1);
-  }, [searchTerm, serviceItems]);
+    let results = serviceItems;
+    
+    // First filter by selected company if one is selected
+    if (selectedCompany) {
+      results = results.filter(item => 
+        item.company === selectedCompany
+      );
+    }
+    
+    // Then apply search term filter
+    if (searchTerm) {
+      results = results.filter(item =>
+        Object.values(item)
+          .join(' ')
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    setFilteredItems(results);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [searchTerm, serviceItems, selectedCompany]); 
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
@@ -57,6 +80,11 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
         <div>
           <h2 className="service-item-title mb-0">Service Items</h2>
+           <p className="service-item-subtitle mb-0 text-muted">
+            {selectedCompany 
+              ? `Showing service items for ${selectedCompany}`
+              : 'Showing all service items'}
+          </p>
           <p className="service-item-subtitle text-muted mb-0">Manage service items</p>
         </div>
         <button
@@ -102,6 +130,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
               <tr>
                 <th>S.No</th>
                 <th>Service Item ID</th>
+                  <th>Company</th>
                 <th>Customer</th>
                 <th>Pm Group</th>
                 <th>Product</th>
@@ -124,6 +153,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
                   <tr key={item.service_item_id}>
                     <td>{indexOfFirstEntry + index + 1}</td>
                     <td>{item.service_item_id}</td>
+                       <td>{item.company}</td>
                     <td>{item.customer}</td>
                     <td>{item.pm_group}</td>
                     <td>{item.product}</td>

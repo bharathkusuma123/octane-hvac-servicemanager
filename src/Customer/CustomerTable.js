@@ -83,48 +83,68 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
+
 const CustomerTable = ({ toggleForm }) => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const { selectedCompany } = useCompany();
 
-useEffect(() => {
-  const fetchCustomers = async () => {
-    try {
-      const response = await axios.get(`${baseURL}/customers/`);
-      const filteredAndSorted = response.data.data
-        .filter(user => user.status === 'Active') 
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      setCustomers(filteredAndSorted);
-      setFilteredCustomers(filteredAndSorted);
-    } catch (error) {
-      console.error('Error fetching customer data:', error);
-    }
-  };
-
-  fetchCustomers();
-}, []);
-
   useEffect(() => {
-    const results = customers.filter(customer =>
-      Object.values(customer)
-        .join(" ")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    );
+    const fetchCustomers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get(`${baseURL}/customers/`);
+        const filteredAndSorted = response.data.data
+          .filter(user => user.status === 'Active')
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setCustomers(filteredAndSorted);
+      } catch (error) {
+        console.error('Error fetching customer data:', error);
+        setError('Failed to load customers');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
+
+  // Filter customers based on selected company and search term
+  useEffect(() => {
+    let results = customers;
+    
+    // First filter by selected company if one is selected
+    if (selectedCompany) {
+      results = results.filter(customer => 
+        customer.company === selectedCompany
+      );
+    }
+    
+    // Then apply search term filter
+    if (searchTerm) {
+      results = results.filter(customer =>
+        Object.values(customer)
+          .join(" ")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      );
+    }
+    
     setFilteredCustomers(results);
-    setCurrentPage(1); // Reset to first page on search
-  }, [searchTerm, customers]);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [selectedCompany, searchTerm, customers]);
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
   const currentEntries = filteredCustomers.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredCustomers.length / entriesPerPage);
 
-    // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -134,50 +154,54 @@ useEffect(() => {
     return `${day}/${month}/${year}`;
   };
 
+  if (loading) return <div className="text-center my-4">Loading customers...</div>;
+  if (error) return <div className="alert alert-danger my-4">{error}</div>;
+
   return (
     <>
-
-   <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-  <div>
-    <h2 className="customer-title mb-0">Customers</h2>
-    <p className="customer-subtitle mb-0 text-muted">Manage customer records</p>
-  </div>
-  <button onClick={toggleForm} className="btn btn-primary">
-    Add New Customer
-  </button>
-</div>
+      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <div>
+          <h2 className="customer-title mb-0">Customers</h2>
+          <p className="customer-subtitle mb-0 text-muted">
+            {selectedCompany ? `Showing customers for ${selectedCompany}` : 'Showing all customers'}
+          </p>
+        </div>
+        <button onClick={toggleForm} className="btn btn-primary">
+          Add New Customer
+        </button>
+      </div>
       
-     <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-  <div className="d-flex align-items-center gap-2">
-    Show
-    <select
-      value={entriesPerPage}
-      onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-      className="form-select form-select-sm w-auto"
-    >
-      <option value={5}>5</option>
-      <option value={10}>10</option>
-      <option value={25}>25</option>
-    </select>
-    entries
-  </div>
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div className="d-flex align-items-center gap-2">
+          Show
+          <select
+            value={entriesPerPage}
+            onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+            className="form-select form-select-sm w-auto"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+          </select>
+          entries
+        </div>
 
-  <input
-    type="text"
-    placeholder="Search customers..."
-    className="form-control w-auto"
-    value={searchTerm}
-    onChange={(e) => setSearchTerm(e.target.value)}
-  />
-</div>
+        <input
+          type="text"
+          placeholder="Search customers..."
+          className="form-control w-auto"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
       <div className="table-responsive mb-4">
-        <table className="table ">
+        <table className="table">
           <thead className="new-customer-table-header">
             <tr>
               <th>S.No</th>
               <th>Customer ID</th>
-               <th>Company</th>
+              <th>Company</th>
               <th>Full Name</th>
               <th>Username</th>
               <th>Email</th>
@@ -194,7 +218,7 @@ useEffect(() => {
                 <tr key={index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>{customer.customer_id}</td>
-                     <td>{customer.company}</td>
+                  <td>{customer.company}</td>
                   <td>{customer.full_name}</td>
                   <td>{customer.username}</td>
                   <td>{customer.email}</td>
@@ -210,77 +234,60 @@ useEffect(() => {
                       {customer.status}
                     </span>
                   </td>
-                  {/* <td>{new Date(customer.created_at).toLocaleString()}</td> */}
-                                    <td>{formatDate(customer.created_at).toLocaleString()}</td>
-
+                  <td>{formatDate(customer.created_at)}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="10" className="text-center">No customers found.</td>
+                <td colSpan="11" className="text-center">
+                  {selectedCompany 
+                    ? `No customers found for ${selectedCompany}${searchTerm ? ' matching your search' : ''}`
+                    : 'No customers found'}
+                </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination Controls */}
-      {/* <div className="pagination-controls d-flex justify-content-center mt-3">
-        <button
-          className="btn btn-outline-primary me-2"
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage(prev => prev - 1)}
-        >
-          Previous
-        </button>
-        <span className="align-self-center mx-2">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          className="btn btn-outline-primary ms-2"
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage(prev => prev + 1)}
-        >
-          Next
-        </button>
-      </div> */}
-        {totalPages > 1 && (
-          <nav aria-label="Page navigation">
-            <ul className="pagination justify-content-center">
-              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
+      {totalPages > 1 && (
+        <nav aria-label="Page navigation">
+          <ul className="pagination justify-content-center">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+            </li>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <li
+                key={page}
+                className={`page-item ${currentPage === page ? "active" : ""}`}
+              >
+                <button className="page-link" onClick={() => setCurrentPage(page)}>
+                  {page}
                 </button>
               </li>
+            ))}
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <li
-                  key={page}
-                  className={`page-item ${currentPage === page ? "active" : ""}`}
-                >
-                  <button className="page-link" onClick={() => setCurrentPage(page)}>
-                    {page}
-                  </button>
-                </li>
-              ))}
-
-              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        )}
+            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </li>
+          </ul>
+        </nav>
+      )}
     </>
   );
 };
 
 export default CustomerTable;
-
