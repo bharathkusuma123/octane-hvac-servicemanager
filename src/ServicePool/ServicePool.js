@@ -226,13 +226,14 @@ function toISOTimeString(start, end) {
 
 
     const payload = {
-      assigned_engineer: formData.engineerId,
-     estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
-      estimated_price: formData.estimatedPrice,
-      est_start_datetime: formData.startDateTime,
-      est_end_datetime: formData.endDateTime,
-      status: "Assigned"
-    };
+  assigned_engineer: formData.engineerId,
+  estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
+  estimated_price: Number(formData.estimatedPrice),
+  est_start_datetime: formData.startDateTime,
+  est_end_datetime: formData.endDateTime,
+  status: "Assigned",
+  company: "CMID0001", 
+};
 
     try {
       // First update the service pool record
@@ -257,7 +258,8 @@ function toISOTimeString(start, end) {
         status: "Pending",
         comments: '',
         created_by: "Service Manager",
-        updated_by: "Service Manager"
+        updated_by: "Service Manager",
+        
       };
 
       await axios.post(
