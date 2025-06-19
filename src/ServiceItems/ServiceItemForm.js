@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import './NewServiceItem.css';
 import baseURL from '../ApiUrl/Apiurl';
+import { useCompany } from "../AuthContext/CompanyContext";
 
 const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode }) => {
   const [customers, setCustomers] = useState([]);
+  const { selectedCompany } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [products, setProducts] = useState([]);
   const [pmGroups, setPmGroups] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState(null);
+  
+ 
 
 
   useEffect(() => {
@@ -73,9 +76,6 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
     
     // Update the form data
     onChange(e);
-    
-    // Set the company from the customer data
-    setSelectedCompany(selectedCustomer?.company || null);
   };
 
   const handleSubmit = async (e) => {
