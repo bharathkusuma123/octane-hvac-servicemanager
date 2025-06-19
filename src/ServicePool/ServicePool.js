@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import baseURL from "../ApiUrl/Apiurl";
 import { useNavigate } from 'react-router-dom';
 import { useCompany } from "../AuthContext/CompanyContext";
 
@@ -23,6 +24,7 @@ const ServicePoolTable = () => {
   const [dateError, setDateError] = useState("");
   const [busyEngineers, setBusyEngineers] = useState([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [resources, setResources] = useState([]);
   const navigate = useNavigate();
 
   // Search and pagination states
@@ -32,18 +34,30 @@ const ServicePoolTable = () => {
   const [filteredData, setFilteredData] = useState([]);
    const { selectedCompany } = useCompany(); // Get selected company from context
 
-  useEffect(() => {
-    axios.get("http://175.29.21.7:8006/users/")
-      .then(response => {
-        const serviceEngineers = response.data.filter(
-          user => user.role === "Service Engineer"
-        );
-        setEngineers(serviceEngineers);
-      })
-      .catch(error => {
-        console.error("Error fetching users:", error);
-      });
-  }, []);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      // Fetch users first
+      const usersResponse = await axios.get(`${baseURL}/users/`);
+      const serviceEngineers = usersResponse.data.filter(
+        user => user.role === "Service Engineer"
+      );
+      setEngineers(serviceEngineers);
+
+      // Then fetch resources with the correct parameters
+      if (selectedCompany && userId) {
+        const resourcesResponse = await axios.get(`${baseURL}/resources/?company_id=${selectedCompany}&user_id=${userId}`);
+const resourceArray = Array.isArray(resourcesResponse.data?.data) ? resourcesResponse.data.data : [];
+setResources(resourceArray);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      alert("Failed to load data. Please try again later.");
+    }
+  };
+
+  fetchData();
+}, [selectedCompany, userId]);  // Add dependencies here
 
   // Fetch data function
   const fetchData = async () => {
@@ -119,49 +133,63 @@ const ServicePoolTable = () => {
     return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
 
-  const checkEngineerAvailability = async (startDateTime, endDateTime) => {
-    if (!startDateTime || !endDateTime) return;
-    
-    setCheckingAvailability(true);
-    try {
-      // Fetch all existing assignments
-      const response = await axios.get("http://175.29.21.7:8006/service-pools/");
-      const allAssignments = response.data.data || response.data;
-      
-      // Convert to array if it's not
-      const assignmentsArray = Array.isArray(allAssignments) ? allAssignments : [allAssignments];
-      
-      // Filter assignments that overlap with our selected time period
-      const startDate = new Date(startDateTime);
-      const endDate = new Date(endDateTime);
-      
-      const overlappingAssignments = assignmentsArray.filter(assignment => {
-        if (!assignment.est_start_datetime || !assignment.est_end_datetime || assignment.status !== "Assigned") return false;
-        
-        const assignmentStart = new Date(assignment.est_start_datetime);
-        const assignmentEnd = new Date(assignment.est_end_datetime);
-        
-        return (
-          (assignmentStart >= startDate && assignmentStart <= endDate) || // Assignment starts during our period
-          (assignmentEnd >= startDate && assignmentEnd <= endDate) ||    // Assignment ends during our period
-          (assignmentStart <= startDate && assignmentEnd >= endDate)     // Assignment spans our entire period
-        );
-      });
-      
-      // Get unique engineer IDs from overlapping assignments
-      const busyEngineerIds = [...new Set(
+const checkEngineerAvailability = async (startDateTime, endDateTime) => {
+  if (!startDateTime || !endDateTime) return;
+
+  setCheckingAvailability(true);
+  try {
+    const response = await axios.get("http://175.29.21.7:8006/service-pools/");
+    const allAssignments = response.data.data || response.data;
+    const assignmentsArray = Array.isArray(allAssignments) ? allAssignments : [allAssignments];
+
+    const startDate = new Date(startDateTime);
+    const endDate = new Date(endDateTime);
+
+    const overlappingAssignments = assignmentsArray.filter((assignment) => {
+      if (
+        !assignment.est_start_datetime ||
+        !assignment.est_end_datetime ||
+        assignment.status !== "Assigned"
+      )
+        return false;
+
+      const assignmentStart = new Date(assignment.est_start_datetime);
+      const assignmentEnd = new Date(assignment.est_end_datetime);
+
+      return (
+        (assignmentStart >= startDate && assignmentStart <= endDate) || // starts during
+        (assignmentEnd >= startDate && assignmentEnd <= endDate) ||     // ends during
+        (assignmentStart <= startDate && assignmentEnd >= endDate)      // spans across
+      );
+    });
+
+    // ✅ Get `user_id`s of busy engineers by mapping resource_id → user_id
+    const busyResourceIds = [
+      ...new Set(
         overlappingAssignments
-          .map(assignment => assignment.assigned_engineer)
-          .filter(id => id) // Remove null/undefined
-      )];
-      
-      setBusyEngineers(busyEngineerIds);
-    } catch (error) {
-      console.error("Error checking engineer availability:", error);
-    } finally {
-      setCheckingAvailability(false);
+          .map((assignment) => assignment.assigned_engineer)
+          .filter(Boolean)
+      ),
+    ];
+
+    // Map resource_id → user_id using your `resources` list
+    const busyUserIds = resources
+      .filter((r) => busyResourceIds.includes(r.resource_id))
+      .map((r) => r.user);
+
+    setBusyEngineers(busyUserIds);
+
+    // Optionally clear selected engineer if no longer available
+    if (busyUserIds.includes(formData.engineerId)) {
+      setFormData((prev) => ({ ...prev, engineerId: "" }));
     }
-  };
+  } catch (error) {
+    console.error("Error checking engineer availability:", error);
+  } finally {
+    setCheckingAvailability(false);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -210,109 +238,86 @@ const ServicePoolTable = () => {
     setBusyEngineers([]); // Reset busy engineers when opening the form
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
 
-    // Validate dates before submission
-    if (formData.endDateTime && formData.startDateTime) {
-      const startDate = new Date(formData.startDateTime);
-      const endDate = new Date(formData.endDateTime);
-      
-      if (endDate <= startDate) {
-        setDateError("End date must be after start date");
-        return;
-      }
-    }
-
-
-function toISOTimeString(start, end) {
+  function toISOTimeString(start, end) {
   const startTime = new Date(start);
   const endTime = new Date(end);
   const durationMs = endTime - startTime;
   const durationDate = new Date(durationMs);
-  return durationDate.toISOString().split("T")[1]; // gets only the time part with Z
+  return durationDate.toISOString().split("T")[1]; // HH:MM:SS.ZZZZ
 }
 
 
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const payload = {
-  assigned_engineer: formData.engineerId,
-  estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
-  estimated_price: Number(formData.estimatedPrice),
-  est_start_datetime: formData.startDateTime,
-  est_end_datetime: formData.endDateTime,
-  status: "Assigned",
-  company: selectedCompany, 
+  if (formData.endDateTime && formData.startDateTime) {
+    const startDate = new Date(formData.startDateTime);
+    const endDate = new Date(formData.endDateTime);
+    if (endDate <= startDate) {
+      setDateError("End date must be after start date");
+      return;
+    }
+  }
+
+const selectedEngineerResource = Array.isArray(resources)
+  ? resources.find((resource) => resource.user === formData.engineerId)
+  : null;
+
+if (!selectedEngineerResource) {
+  alert("Engineer resource not found. Please verify the selection.");
+  return;
+}
+
+  const payload = {
+    assigned_engineer: selectedEngineerResource.resource_id,
+    estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
+    estimated_price: Number(formData.estimatedPrice),
+    est_start_datetime: formData.startDateTime,
+    est_end_datetime: formData.endDateTime,
+    status: "Assigned",
+    company: selectedCompany,
+  };
+
+  const assignmentPayload = {
+    assignment_id: `ASG-${Date.now()}`,
+    assignment_type: "Assign",
+    status: "Pending",
+    decline_reason: "",
+    comments: "",
+    created_by: userId,
+    updated_by: userId,
+    company: selectedCompany,
+    request: currentRequest.request_id,
+    assigned_engineer: selectedEngineerResource.resource_id,
+    assigned_by: userId,
+  };
+
+  try {
+    await axios.put(`${baseURL}/service-pools/${currentRequest.request_id}/`, payload);
+
+    await axios.post(`${baseURL}/assignment-history/`, assignmentPayload);
+
+    alert("Assignment successful!");
+    await fetchData();
+    setShowAssignmentScreen(false);
+    setFormData(formData);
+    setDateError("");
+  } catch (err) {
+    console.error("Assignment failed:", err);
+    if (err.response?.data) {
+      console.log("Backend error response:", err.response.data);
+      alert(`Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`);
+    } else {
+      alert(`Assignment failed: ${err.message}`);
+    }
+  }
 };
 
-    try {
-      // First update the service pool record
-      await axios.put(
-        `http://175.29.21.7:8006/service-pools/${currentRequest.request_id}/`,
-        payload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
 
-      // Then create the assignment history record
-      const assignmentPayload = {
-        assignment_id: Math.floor(Math.random() * 1000000),
-        request: currentRequest.request_id,
-        assigned_engineer: formData.engineerId,
-        assigned_by: userId,
-        assigned_at: new Date().toISOString(),
-        assignment_type: "Assign",
-        status: "Pending",
-        comments: '',
-        created_by: "Service Manager",
-        updated_by: "Service Manager",
-        company: selectedCompany,
-        
-      };
 
-      await axios.post(
-        "http://175.29.21.7:8006/assignment-history/",
-        assignmentPayload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
 
-      alert("Engineer assigned successfully and history recorded!");
-      
-      // Refresh data after assignment
-      await fetchData();
-      
-      // Close modal and reset form
-      setShowAssignmentScreen(false);
-      setFormData({
-        engineerId: "",
-        completionTime: "",
-        estimatedPrice: "",
-        startDateTime: "",
-        endDateTime: "",
-      });
-      setDateError("");
 
-    } catch (err) {
-      console.error("Failed to assign engineer:", err);
-      if (err.response) {
-        console.error("Response data:", err.response.data);
-        console.error("Status code:", err.response.status);
-        console.error("Headers:", err.response.headers);
-      } else if (err.request) {
-        console.error("Request was made but no response received:", err.request);
-      } else {
-        console.error("Something went wrong in setting up the request:", err.message);
-      }
-      alert("Failed to assign engineer. Please check the console for more details.");
-    }
-  };
 
   // Pagination calculations
   const indexOfLastEntry = currentPage * entriesPerPage;
