@@ -12,23 +12,28 @@ const ServiceOrders = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchServiceOrders = async () => {
-      try {
-         const response = await axios.get(`${baseURL}/service-orders/`); 
-        const data = Array.isArray(response.data) ? response.data : response.data.data || [];
-        setServiceOrders(data);
-        setFilteredOrders(data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message);
-        setLoading(false);
-        console.error('Error fetching service orders:', err);
-      }
-    };
+useEffect(() => {
+  const fetchServiceOrders = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/service-orders/`);
+      const data = Array.isArray(response.data) ? response.data : response.data.data || [];
 
-    fetchServiceOrders();
-  }, []);
+      // Sort in descending order by created_at
+      const sortedData = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      setServiceOrders(sortedData);
+      setFilteredOrders(sortedData);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+      console.error('Error fetching service orders:', err);
+    }
+  };
+
+  fetchServiceOrders();
+}, []);
+
 
   useEffect(() => {
     if (searchTerm === '') {
@@ -109,7 +114,7 @@ const ServiceOrders = () => {
               currentEntries.map((order, index) => (
                 <tr key={order.dynamics_service_order_no || index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
-                  <td>{order.dynamics_service_order_no}</td>
+                  <td>{order.service_order_id}</td>
                   <td>{order.service_request_id}</td>
                   {/* <td>{order.source || "Manual Request"}</td> */}
                   <td>{order.service_item}</td>
