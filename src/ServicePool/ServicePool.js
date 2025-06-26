@@ -307,7 +307,8 @@ if (!selectedEngineerResource) {
     console.error("Assignment failed:", err);
     if (err.response?.data) {
       console.log("Backend error response:", err.response.data);
-      alert(`Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`);
+      // alert(`Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`);
+      console.log("Assignment failed: ${err.message}")
     } else {
       alert(`Assignment failed: ${err.message}`);
     }

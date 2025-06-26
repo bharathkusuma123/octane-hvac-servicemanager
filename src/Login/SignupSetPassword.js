@@ -72,7 +72,7 @@ const handleSubmit = async (e) => {
       security_question2: q2,
       security_answer1: a1,
       security_answer2: a2,
-      is_registered_by_customer: true,
+      is_registered_by_user: true,
     });
 
     console.log("API Response:", response.data); // Debug log
