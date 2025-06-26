@@ -128,7 +128,9 @@ const LoginCard = ({
     <div className="d-flex align-items-center justify-content-center min-vh-100">
       <Container className="mt-3">
         <Row className="justify-content-center">
-          <Col md={6} lg={4}>
+<Col md={6} lg={5} xl={4}>
+  <div className="login-card-container">
+
             <Card className="shadow">
               <Card.Body>
                 <div className="text-center mb-4">
@@ -195,6 +197,8 @@ const LoginCard = ({
                 </Form>
               </Card.Body>
             </Card>
+              </div>
+
           </Col>
         </Row>
       </Container>

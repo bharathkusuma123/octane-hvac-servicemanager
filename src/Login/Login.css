@@ -1,4 +1,4 @@
-.loginButton {
+/* .loginButton {
   width: 100%;
   background-color: #0096D6;
   padding: 10px;
@@ -32,4 +32,83 @@
 
 .registerLink:hover {
   text-decoration: underline;
+} */
+
+
+
+
+
+
+
+.loginButton {
+  width: 100%;
+  background-color: #0096D6;
+  padding: 10px;
+  border-radius: 12px;
+  border: none;
+  color: white;
+  font-weight: bold;
+  font-size: 20px;
+  margin-top: 20px;
+  cursor: pointer;
+}
+
+.shadow {
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
+ 
+  position: relative;
+}
+
+.orText {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.registerText {
+  color: #6c757d;
+  margin-bottom: 0;
+}
+
+.registerLink {
+  font-weight: 500;
+}
+
+.registerLink:hover {
+  text-decoration: underline;
+}
+
+  .login-card-container {
+    width: 450px;
+    margin: auto;
+  }
+/* 📱 Mobile-first already works well */
+
+/* 🖥️ For larger screens - desktop view */
+@media screen and (min-width: 768px) {
+  .login-card-container {
+    max-width: 450px;
+    margin: auto;
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .login-card-container {
+    max-width: 500px;
+  }
+
+  .loginButton {
+    font-size: 22px;
+    padding: 12px;
+  }
+}
+
+
+@media (min-width: 992px) {
+.login-card-container {
+    padding: 40px;
+  }
+  
+  .shadow  {
+    width: 100%;
+  }
 }
