@@ -65,7 +65,7 @@ const TopNavbar = () => {
       label: "Services",
       dropdown: [
         { path: "/servicemanager/service-pool", label: "Service Pool" },
-        { path: "/servicemanager/service-orders", label: "Service Orders" },
+        // { path: "/servicemanager/service-orders", label: "Service Orders" },
       ],
     },
     { path: "/servicemanager/new-customer", label: "Customer" },
