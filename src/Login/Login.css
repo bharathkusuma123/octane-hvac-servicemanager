@@ -113,9 +113,9 @@ card{
 
 @media (min-width: 992px) {
 
-  .card{
+  /* .card{
   max-width: 500px;
-}
+} */
   .shadow  {
     width: 100%;
     padding: 30px;
