@@ -38,7 +38,9 @@
 
 
 
-
+card{
+  max-width: 500px;
+}
 
 .loginButton {
   width: 100%;
@@ -51,12 +53,18 @@
   font-size: 20px;
   margin-top: 20px;
   cursor: pointer;
+   max-width: 500px;
+
 }
 
 .shadow {
-  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.2);
+ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
  
   position: relative;
+
+  width: 100%;
+        padding: 20px;
+        background-color: white;
 }
 
 .orText {
@@ -92,9 +100,9 @@
 }
 
 @media screen and (min-width: 1200px) {
-  .login-card-container {
-    max-width: 500px;
-  }
+  /* .login-card-container {
+    width: 100%;
+  } */
 
   .loginButton {
     font-size: 22px;
@@ -104,11 +112,13 @@
 
 
 @media (min-width: 992px) {
-.login-card-container {
-    padding: 40px;
-  }
-  
+
+  .card{
+  max-width: 500px;
+}
   .shadow  {
     width: 100%;
+    padding: 30px;
+
   }
 }

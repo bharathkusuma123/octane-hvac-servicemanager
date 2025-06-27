@@ -198,7 +198,17 @@ import axios from "axios";
 import logo from "../Logos/hvac-logo-new.jpg";
 import "./SignUpScreen.css";
 import baseURL from '../ApiUrl/Apiurl';
-
+import {
+  Form,
+  Button,
+  Container,
+  Row,
+  Col,
+  Card,
+  Alert,
+  InputGroup,
+} from "react-bootstrap";
+import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
 const SignUpScreen = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -273,36 +283,38 @@ const SignUpScreen = () => {
         )}
 
         <form onSubmit={handleSubmit} className="signup-form">
-          <div className="input-group">
-            <i className="bi bi-person-fill input-icon"></i>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Enter Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
+      
+           <Form.Group className="mb-1">
+                              <Form.Label>Username</Form.Label>
+                              <Form.Control
+                                type="text"
+                                placeholder="Enter username"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                              />
+                            </Form.Group>
 
-          <div className="input-group">
-            <i className="bi bi-lock-fill input-icon"></i>
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter Password"
-              value={password}
-              className="form-input password-input"
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={togglePasswordVisibility}
-              className="password-toggle"
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
+        
+             <Form.Group className="mb-1">
+                              <Form.Label>Password</Form.Label>
+                              <InputGroup>
+                                <Form.Control
+                                  type={showPassword ? "text" : "password"}
+                                  placeholder="Password"
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  required
+                                />
+                                <Button
+                                  variant="outline-secondary"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? <EyeSlashFill /> : <EyeFill />}
+                                </Button>
+                              </InputGroup>
+                            </Form.Group>
+          
 
           <button 
             type="submit" 
