@@ -72,7 +72,7 @@
 }
 
 .signup-logo {
-  width: auto;
+  width: 150px;
   height: 80px;
   max-width: 100%;
   object-fit: contain;
@@ -176,9 +176,9 @@
     padding: 40px;
   }
   
-  .signup-logo {
+  /* .signup-logo {
     height: 100px;
-  }
+  } */
   
   .signup-title {
     font-size: 1.75rem;

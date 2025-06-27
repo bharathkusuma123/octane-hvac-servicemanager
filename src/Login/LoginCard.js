@@ -137,7 +137,7 @@ const LoginCard = ({
                   <img
                     src={logo}
                     alt="Company Logo"
-                    style={{ width: "150px", height: "80px" }}
+                  className="security-logo"
                   />
                   <h3 className="mt-3">{title}</h3>
                 </div>
@@ -145,7 +145,7 @@ const LoginCard = ({
                 {error && <Alert variant="danger">{error}</Alert>}
 
                 <Form onSubmit={handleSubmit}>
-                  <Form.Group className="mb-3">
+                  <Form.Group className="mb-1">
                     <Form.Label>Username</Form.Label>
                     <Form.Control
                       type="text"
@@ -156,7 +156,7 @@ const LoginCard = ({
                     />
                   </Form.Group>
 
-                  <Form.Group className="mb-3">
+                  <Form.Group className="mb-1">
                     <Form.Label>Password</Form.Label>
                     <InputGroup>
                       <Form.Control
@@ -183,7 +183,7 @@ const LoginCard = ({
                     Login
                   </Button>
 
-                  <p className="orText text-center mt-3 mb-3">Or</p>
+                  <p className="orText text-center mt-3 mb-1">Or</p>
                   <p className="registerText text-center">
                     Don't have an account?{' '}
                     <span 
