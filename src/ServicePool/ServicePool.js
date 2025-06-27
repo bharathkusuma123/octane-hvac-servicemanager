@@ -14,6 +14,7 @@ const ServicePoolTable = () => {
     engineerId: "",
     completionTime: "",
     estimatedPrice: "",
+    dynamics_service_order_no: "",
     startDateTime: "",
     endDateTime: "",
   });
@@ -273,6 +274,7 @@ if (!selectedEngineerResource) {
     assigned_engineer: selectedEngineerResource.resource_id,
     estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
     estimated_price: Number(formData.estimatedPrice),
+    dynamics_service_order_no: formData.dynamics_service_order_no,
     est_start_datetime: formData.startDateTime,
     est_end_datetime: formData.endDateTime,
     status: "Assigned",
@@ -568,6 +570,17 @@ if (!selectedEngineerResource) {
                     type="number"
                     name="estimatedPrice"
                     value={formData.estimatedPrice}
+                    onChange={handleChange}
+                    required
+                    className="form-control"
+                  />
+                </div>
+                 <div className="col-md-4 mt-3">
+                  <label className="form-label">Dynamic Service Order Id</label>
+                  <input
+                    type="text"
+                    name="dynamics_service_order_no"
+                    value={formData.dynamics_service_order_no}
                     onChange={handleChange}
                     required
                     className="form-control"
