@@ -296,9 +296,11 @@ if (!selectedEngineerResource) {
   };
 
   try {
+
+     await axios.post(`${baseURL}/assignment-history/`, assignmentPayload);
     await axios.put(`${baseURL}/service-pools/${currentRequest.request_id}/`, payload);
 
-    await axios.post(`${baseURL}/assignment-history/`, assignmentPayload);
+   
 
     alert("Assignment successful!");
     await fetchData();
@@ -309,8 +311,8 @@ if (!selectedEngineerResource) {
     console.error("Assignment failed:", err);
     if (err.response?.data) {
       console.log("Backend error response:", err.response.data);
-      // alert(`Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`);
-      console.log("Assignment failed: ${err.message}")
+      alert(`Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`);
+      // console.log("Assignment failed: ${err.message}")
     } else {
       alert(`Assignment failed: ${err.message}`);
     }
