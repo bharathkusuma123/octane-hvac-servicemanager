@@ -4,6 +4,7 @@ import ServiceItemForm from './ServiceItemForm';
 import './NewServiceItem.css';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
+import Swal from 'sweetalert2';
 const ServiceItem = () => {
   const [showForm, setShowForm] = useState(false);
   const [serviceItems, setServiceItems] = useState([]);
@@ -89,8 +90,17 @@ const ServiceItem = () => {
     setShowForm(true);
   };
 
-  const handleDelete = async (serviceItemId) => {
-    if (window.confirm('Are you sure you want to delete this service item?')) {
+ const handleDelete = async (serviceItemId) => {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You won't be able to revert this!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!'
+  }).then(async (result) => {
+    if (result.isConfirmed) {
       try {
         const token = localStorage.getItem("authToken");
         await axios.delete(`${baseURL}/service-items/${serviceItemId}/`, {
@@ -99,13 +109,23 @@ const ServiceItem = () => {
           }
         });
         setServiceItems(serviceItems.filter(item => item.service_item_id !== serviceItemId));
-        window.alert('Service item deleted successfully!');
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: 'Service item has been deleted.',
+        });
       } catch (error) {
         console.error('Error deleting service item:', error);
-        window.alert('Failed to delete service item.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to delete service item.',
+        });
       }
     }
-  };
+  });
+};
 
   const resetForm = () => {
     setFormData({

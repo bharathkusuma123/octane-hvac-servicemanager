@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import baseURL from '../ApiUrl/Apiurl';
-
+import Swal from 'sweetalert2';
 import "./ServiceItemComponents.css";
 
 const ServiceItemComponents = () => {
@@ -23,6 +23,7 @@ const ServiceItemComponents = () => {
   const [filteredComponents, setFilteredComponents] = useState([]);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initial fetches
   useEffect(() => {
@@ -90,20 +91,46 @@ const ServiceItemComponents = () => {
   };
 
   const deleteComponent = async (id) => {
-    if (!window.confirm("Do you really want to delete this record?")) return;
-    try {
-     const res = await fetch(`${baseURL}/service-item-components/${id}/`, { method: "DELETE" });
-      if (!res.ok) throw new Error(await res.text());
-      setComponents((prev) => prev.filter((c) => c.service_component_id !== id));
-      alert("🗑️ Deleted successfully!");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Delete failed");
-    }
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await fetch(`${baseURL}/service-item-components/${id}/`, { 
+            method: "DELETE" 
+          });
+          
+          if (!res.ok) throw new Error(await res.text());
+          
+          setComponents((prev) => prev.filter((c) => c.service_component_id !== id));
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: 'The component has been deleted.',
+            confirmButtonColor: '#3085d6',
+          });
+        } catch (err) {
+          console.error(err);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Delete failed',
+            confirmButtonColor: '#d33',
+          });
+        }
+      }
+    });
   };
-
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const now = new Date().toISOString();
 
     if (editingId) {
@@ -118,21 +145,34 @@ const ServiceItemComponents = () => {
         service_item: formData.service_item_id,
         component: formData.component_id,
       };
+      
       try {
-         const res = await fetch(`${baseURL}/service-item-components/${editingId}/`, {
+        const res = await fetch(`${baseURL}/service-item-components/${editingId}/`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
+        
         if (!res.ok) throw new Error(await res.text());
+        
         setComponents((prev) =>
           prev.map((c) => (c.service_component_id === editingId ? { ...c, ...payload } : c))
         );
-        alert("🔄 Updated successfully!");
-        toggleForm();
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Component updated successfully!',
+          confirmButtonColor: '#3085d6',
+        }).then(toggleForm);
       } catch (err) {
         console.error(err);
-        alert("❌ Update failed");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Update failed',
+          confirmButtonColor: '#d33',
+        });
       }
     } else {
       // ➕ Add
@@ -149,21 +189,35 @@ const ServiceItemComponents = () => {
         service_item: formData.service_item_id,
         component: formData.component_id,
       };
+      
       try {
-     const res = await fetch(`${baseURL}/service-item-components/`, {
+        const res = await fetch(`${baseURL}/service-item-components/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
+        
         if (!res.ok) throw new Error(await res.json().then((d) => JSON.stringify(d)));
+        
         setComponents((prev) => [payload, ...prev]);
-        alert("✅ Service Item Component added successfully!");
-        toggleForm();
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Component added successfully!',
+          confirmButtonColor: '#3085d6',
+        }).then(toggleForm);
       } catch (err) {
         console.error(err);
-        alert(`Error: ${err.message}`);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message,
+          confirmButtonColor: '#d33',
+        });
       }
     }
+    setIsSubmitting(false);
   };
 
 
@@ -447,12 +501,13 @@ const ServiceItemComponents = () => {
               </div>
 
               <div className="d-flex justify-content-center mt-3 gap-3">
-                <button
-                  type="submit"
-                  className="submit-btn"
-                >
-                   Save Item Component
-                </button>
+                  <button
+        type="submit"
+        className="submit-btn"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Saving...' : 'Save Item Component'}
+      </button>
                 <button
                   type="button"
                   className="btn btn-secondary"

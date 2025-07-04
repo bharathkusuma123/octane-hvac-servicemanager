@@ -3,6 +3,7 @@ import './NewServiceItem.css';
 import axios from 'axios';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 import { useCompany } from "../AuthContext/CompanyContext";
+import Swal from 'sweetalert2';
 
 const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
   const [filteredItems, setFilteredItems] = useState([]); 
@@ -77,7 +78,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
   return (
     <div className="service-item-container">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+      <div className="d-flex justify-content-between align-items-center  flex-wrap">
         <div>
           <h2 className="service-item-title mb-0">Service Items</h2>
            <p className="service-item-subtitle mb-0 text-muted">

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import './NewServiceItem.css';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
-
+import Swal from 'sweetalert2'; 
 const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode }) => {
   const [customers, setCustomers] = useState([]);
   const { selectedCompany } = useCompany();
@@ -140,9 +140,19 @@ const method = isEditMode ? "PUT" : "POST";
 
       const result = await response.json();
       onSubmit(result.data);
-      window.alert(`Service Item ${isEditMode ? 'updated' : 'added'} successfully!`);
+     // ✅ Success alert
+      Swal.fire({
+        icon: "success",
+        title: isEditMode ? "Updated!" : "Added!",
+        text: `Service Item ${isEditMode ? "updated" : "added"} successfully!`,
+      });
     } catch (err) {
       setError(err.message);
+      Swal.fire({
+        icon: "error",
+        title: "Submission Failed",
+        text: err.message || "Something went wrong while submitting.",
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -172,7 +172,7 @@
 }
 
 .service-item-subtitle {
-  font-size: 14px;
+  /* font-size: 14px; */
   color: #666;
   margin-bottom: 20px;
 }
@@ -273,7 +273,7 @@
 
 .table {
   margin-bottom: 0;
-  font-size: 14px;
+  /* font-size: 14px; */
 }
 
 .table th {

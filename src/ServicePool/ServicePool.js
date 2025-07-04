@@ -342,7 +342,7 @@ if (!selectedEngineerResource) {
     <div className="service-container pm-container">
       {/* Header */}
       {!showAssignmentScreen && (
-        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <div className="d-flex justify-content-between align-items-center  flex-wrap">
           <div>
             <h2 className="pm-title">Service Pool Details</h2>
              <p className="pm-subtitle">
