@@ -11,46 +11,46 @@ const ServiceRequestDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch request details
-        const requestResponse = await axios.get(`http://175.29.21.7:8006/service-pools/${requestId}/`);
-        
-        // Fetch assignment history
-        const historyResponse = await axios.get(`http://175.29.21.7:8006/assignment-history/`);
-        
-        // Check the actual structure of the response
-        let historyData = historyResponse.data;
-        
-        // If the data is nested in a 'data' property (common in many APIs)
-        if (historyData && historyData.data && Array.isArray(historyData.data)) {
-          historyData = historyData.data;
-        }
-        
-        // Ensure we have an array before filtering
-        const filteredHistory = Array.isArray(historyData) 
-          ? historyData.filter(item => item.request === requestId)
-          : [];
-
-        if (requestResponse.data) {
-          setRequestData(requestResponse.data.data || requestResponse.data);
-          setAssignmentHistory(filteredHistory);
-        } else {
-          throw new Error('No data received from server');
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to fetch data');
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch request details
+      const requestResponse = await axios.get(`http://175.29.21.7:8006/service-pools/${requestId}/`);
+      
+      // Fetch assignment history
+      const historyResponse = await axios.get(`http://175.29.21.7:8006/assignment-history/`);
+      
+      let historyData = historyResponse.data;
+      if (historyData && historyData.data && Array.isArray(historyData.data)) {
+        historyData = historyData.data;
       }
-    };
 
-    fetchData();
-  }, [requestId]);
+      // Filter by request and sort by assigned_at DESC
+      const filteredHistory = Array.isArray(historyData)
+        ? historyData
+            .filter(item => item.request === requestId)
+            .sort((a, b) => new Date(b.assigned_at) - new Date(a.assigned_at))
+        : [];
+
+      if (requestResponse.data) {
+        setRequestData(requestResponse.data.data || requestResponse.data);
+        setAssignmentHistory(filteredHistory);
+      } else {
+        throw new Error('No data received from server');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to fetch data');
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [requestId]);
+
 
   if (loading) return <div className="loading">Loading request details...</div>;
   if (error) return <div className="error">Error: {error}</div>;
@@ -58,47 +58,7 @@ const ServiceRequestDetail = () => {
 
   return (
     <div className="service-detail-container">
-      {/* <div className="header-section">
-        <button onClick={() => navigate(-1)} className="btn btn-secondary back-button">
-           Back to Service Pool
-        </button>
-        <h2 className="detail-title">Service Request Details - ID: {requestId}</h2>
-      </div>
-      
-      <div className="detail-card">
-        <div className="detail-row">
-          <span className="detail-label">Requested By:</span>
-          <span className="detail-value">{requestData.requested_by || 'N/A'}</span>
-        </div>
-        <div className="detail-row">
-          <span className="detail-label">Source Type:</span>
-          <span className="detail-value">{requestData.source_type || 'N/A'}</span>
-        </div>
-        <div className="detail-row">
-          <span className="detail-label">Service Item:</span>
-          <span className="detail-value">{requestData.service_item || 'N/A'}</span>
-        </div>
-        <div className="detail-row">
-          <span className="detail-label">Status:</span>
-          <span className="detail-value">{requestData.status || 'N/A'}</span>
-        </div>
-        <div className="detail-row">
-          <span className="detail-label">Assigned Engineer:</span>
-          <span className="detail-value">{requestData.assigned_engineer || 'N/A'}</span>
-        </div>
-        <div className="detail-row">
-          <span className="detail-label">Preferred Date:</span>
-          <span className="detail-value">
-            {requestData.preferred_date ? new Date(requestData.preferred_date).toLocaleDateString() : 'N/A'}
-          </span>
-        </div>
-        <div className="detail-row">
-          <span className="detail-label">Preferred Time:</span>
-          <span className="detail-value">{requestData.preferred_time || 'N/A'}</span>
-        </div>
-      </div> */}
 
-      {/* Assignment History Section */}
   <div className="assignment-history-section">
         <h3 className="history-title">Assignment History</h3>
         {assignmentHistory.length > 0 ? (
