@@ -95,10 +95,11 @@
 
 import React, { useState } from 'react';
 import baseURL from '../ApiUrl/Apiurl';
+import Swal from 'sweetalert2';
 
-// import './Component.css';
 const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
   const isEditMode = !!initialData?.pm_group_id;
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     pm_group_id: initialData.pm_group_id || '',
@@ -113,6 +114,7 @@ const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     const timestamp = new Date().toISOString();
 
@@ -125,7 +127,7 @@ const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
     };
 
     const url = isEditMode
- ? `${baseURL}/pm-groups/${formData.pm_group_id}/`
+      ? `${baseURL}/pm-groups/${formData.pm_group_id}/`
       : `${baseURL}/pm-groups/`;
     const method = isEditMode ? 'PUT' : 'POST';
 
@@ -138,15 +140,32 @@ const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error('Failed to submit PM group');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit PM group');
+      }
 
       await response.json();
-      alert(`PM Group ${isEditMode ? 'updated' : 'added'} successfully!`);
-      fetchPmGroups();
-      toggleForm();
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: `PM Group ${isEditMode ? 'updated' : 'added'} successfully!`,
+        confirmButtonColor: '#3085d6',
+      }).then(() => {
+        fetchPmGroups();
+        toggleForm();
+      });
     } catch (error) {
       console.error('POST error:', error);
-      alert('Failed to save PM group. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'Failed to save PM group. Please try again.',
+        confirmButtonColor: '#d33',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -203,13 +222,18 @@ const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
               </div>
 
               <div className="d-flex justify-content-center mt-3 gap-3">
-                <button type="submit" className="submit-btn">
-                  Submit
+                <button 
+                  type="submit" 
+                  className="submit-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit'}
                 </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={toggleForm}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>

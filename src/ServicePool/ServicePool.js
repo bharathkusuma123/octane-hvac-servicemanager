@@ -5,6 +5,7 @@ import axios from "axios";
 import baseURL from "../ApiUrl/Apiurl";
 import { useNavigate } from 'react-router-dom';
 import { useCompany } from "../AuthContext/CompanyContext";
+import Swal from 'sweetalert2';
 
 const ServicePoolTable = () => {
   const userId = localStorage.getItem('userId'); 
@@ -249,75 +250,89 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
 }
 
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+ const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (formData.endDateTime && formData.startDateTime) {
-    const startDate = new Date(formData.startDateTime);
-    const endDate = new Date(formData.endDateTime);
-    if (endDate <= startDate) {
-      setDateError("End date must be after start date");
+    if (formData.endDateTime && formData.startDateTime) {
+      const startDate = new Date(formData.startDateTime);
+      const endDate = new Date(formData.endDateTime);
+      if (endDate <= startDate) {
+        setDateError("End date must be after start date");
+        return;
+      }
+    }
+
+    const selectedEngineerResource = Array.isArray(resources)
+      ? resources.find((resource) => resource.user === formData.engineerId)
+      : null;
+
+    if (!selectedEngineerResource) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error!',
+        text: 'Engineer resource not found. Please verify the selection.',
+        confirmButtonColor: '#3085d6',
+      });
       return;
     }
-  }
 
-const selectedEngineerResource = Array.isArray(resources)
-  ? resources.find((resource) => resource.user === formData.engineerId)
-  : null;
+    const payload = {
+      assigned_engineer: selectedEngineerResource.resource_id,
+      estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
+      estimated_price: Number(formData.estimatedPrice),
+      dynamics_service_order_no: formData.dynamics_service_order_no,
+      est_start_datetime: formData.startDateTime,
+      est_end_datetime: formData.endDateTime,
+      status: "Assigned",
+      company: selectedCompany,
+    };
 
-if (!selectedEngineerResource) {
-  alert("Engineer resource not found. Please verify the selection.");
-  return;
-}
+    const assignmentPayload = {
+      assignment_id: `ASG-${Date.now()}`,
+      assignment_type: "Assign",
+      status: "Pending",
+      decline_reason: "",
+      comments: "",
+      created_by: userId,
+      updated_by: userId,
+      company: selectedCompany,
+      request: currentRequest.request_id,
+      assigned_engineer: selectedEngineerResource.resource_id,
+      assigned_by: userId,
+    };
 
-  const payload = {
-    assigned_engineer: selectedEngineerResource.resource_id,
-    estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
-    estimated_price: Number(formData.estimatedPrice),
-    dynamics_service_order_no: formData.dynamics_service_order_no,
-    est_start_datetime: formData.startDateTime,
-    est_end_datetime: formData.endDateTime,
-    status: "Assigned",
-    company: selectedCompany,
-  };
+    try {
+      await axios.post(`${baseURL}/assignment-history/`, assignmentPayload);
+      await axios.put(`${baseURL}/service-pools/${currentRequest.request_id}/`, payload);
 
-  const assignmentPayload = {
-    assignment_id: `ASG-${Date.now()}`,
-    assignment_type: "Assign",
-    status: "Pending",
-    decline_reason: "",
-    comments: "",
-    created_by: userId,
-    updated_by: userId,
-    company: selectedCompany,
-    request: currentRequest.request_id,
-    assigned_engineer: selectedEngineerResource.resource_id,
-    assigned_by: userId,
-  };
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Service request assigned successfully!',
+        confirmButtonColor: '#3085d6',
+      });
 
-  try {
+      await fetchData();
+      setShowAssignmentScreen(false);
+      setFormData(formData);
+      setDateError("");
+    } catch (err) {
+      console.error("Assignment failed:", err);
+      let errorMessage = err.message;
+      
+      if (err.response?.data) {
+        console.log("Backend error response:", err.response.data);
+        errorMessage = `Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`;
+      }
 
-     await axios.post(`${baseURL}/assignment-history/`, assignmentPayload);
-    await axios.put(`${baseURL}/service-pools/${currentRequest.request_id}/`, payload);
-
-   
-
-    alert("Assignment successful!");
-    await fetchData();
-    setShowAssignmentScreen(false);
-    setFormData(formData);
-    setDateError("");
-  } catch (err) {
-    console.error("Assignment failed:", err);
-    if (err.response?.data) {
-      console.log("Backend error response:", err.response.data);
-      alert(`Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`);
-      // console.log("Assignment failed: ${err.message}")
-    } else {
-      alert(`Assignment failed: ${err.message}`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Assignment Failed',
+        text: errorMessage,
+        confirmButtonColor: '#3085d6',
+      });
     }
-  }
-};
+  };
 
 
 

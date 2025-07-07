@@ -11,9 +11,11 @@ const ChartTable = ({
   currentPage,
   setCurrentPage,
   totalPages,
-  filteredCharts
+  filteredCharts,
+  onDelete,
+    onEdit // ✅ add this
+
 }) => {
-  // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -71,7 +73,7 @@ const ChartTable = ({
           <tbody>
             {currentItems.length > 0 ? (
               currentItems.map((chart, index) => (
-                <tr key={index}>
+  <tr key={chart.chart_id || index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>{chart.pm_group}</td>
                   <td>{chart.pm_id}</td>
@@ -86,8 +88,16 @@ const ChartTable = ({
                   <td>{chart.created_by}</td>
                   <td>{chart.updated_by}</td>
                   <td>
-                    <FaEdit className="text-primary me-2" role="button" />
-                    <FaTrash className="text-danger" role="button" />
+                   <FaEdit
+        className="text-primary me-2"
+        role="button"
+        onClick={() => onEdit(chart)} // ✅ call onEdit
+      />
+                    <FaTrash 
+                      className="text-danger" 
+                      role="button" 
+                          onClick={() => onDelete(chart.chart_id)} 
+                    />
                   </td>
                 </tr>
               ))

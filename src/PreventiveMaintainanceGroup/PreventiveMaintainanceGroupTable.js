@@ -1,4 +1,5 @@
 import React from 'react';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 const PMGroupTable = ({
   filteredGroups,
@@ -7,15 +8,17 @@ const PMGroupTable = ({
   entriesPerPage,
   setEntriesPerPage,
   currentPage,
-  setCurrentPage
+  setCurrentPage,
+  onDelete,
+    onEdit // added
 }) => {
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
   const currentItems = filteredGroups.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredGroups.length / entriesPerPage);
 
-  // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
+    if (!dateString) return '-';
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -49,7 +52,7 @@ const PMGroupTable = ({
       </div>
 
       <div className="table-responsive mb-4">
-        <table className="table ">
+        <table className="table">
           <thead className="pm-table-header">
             <tr>
               <th>S.No</th>
@@ -60,12 +63,13 @@ const PMGroupTable = ({
               <th>Updated At</th>
               <th>Created By</th>
               <th>Updated By</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {currentItems.length > 0 ? (
               currentItems.map((group, index) => (
-                <tr key={index}>
+                <tr key={group.pm_group_id || index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>{group.pm_group_id}</td>
                   <td>{group.pm_group_name}</td>
@@ -74,11 +78,23 @@ const PMGroupTable = ({
                   <td>{formatDate(group.updated_at)}</td>
                   <td>{group.created_by}</td>
                   <td>{group.updated_by}</td>
+                  <td>
+                       <FaEdit 
+                        className="text-primary me-2" 
+                        role="button" 
+                        onClick={() => onEdit(group)} // trigger edit
+                      />
+                    <FaTrash 
+                      className="text-danger" 
+                      role="button" 
+                      onClick={() => onDelete(group.pm_group_id)} 
+                    />
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="text-center">No PM groups found.</td>
+                <td colSpan="9" className="text-center">No PM groups found.</td>
               </tr>
             )}
           </tbody>
