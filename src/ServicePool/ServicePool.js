@@ -357,7 +357,7 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
     <div className="service-container pm-container">
       {/* Header */}
       {!showAssignmentScreen && (
-        <div className="d-flex justify-content-between align-items-center  flex-wrap">
+        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
           <div>
             <h2 className="pm-title">Service Pool Details</h2>
              <p className="pm-subtitle">
@@ -436,9 +436,9 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
                       <td>{item.assigned_engineer || "N/A"}</td>
                       <td>
                         <button
-                          className={`btn btn-sm ${item.status === "Accepted" ? "btn-secondary disabled" : "btn-primary"}`}
+                          className={`btn btn-sm ${item.status !== "Open" ? "btn-secondary disabled" : "btn-primary"}`}
                           onClick={() => handleAssignClick(item)}
-                          disabled={item.status === "Accepted"}
+                          disabled={item.status !== "Open"}
                         >
                           Assign
                         </button>
