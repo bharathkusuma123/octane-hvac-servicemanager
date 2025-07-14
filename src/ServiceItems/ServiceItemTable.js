@@ -2,16 +2,14 @@ import React, { useEffect, useState } from 'react';
 import './NewServiceItem.css';
 import axios from 'axios';
 import { FaEdit, FaTrash } from 'react-icons/fa';
-import { useCompany } from "../AuthContext/CompanyContext";
 import Swal from 'sweetalert2';
 
-const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
+const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany  }) => { 
   const [filteredItems, setFilteredItems] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-  const { selectedCompany } = useCompany(); // Get selected company from context
 
     // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {

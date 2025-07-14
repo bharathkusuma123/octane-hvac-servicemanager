@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import ServiceItemTable from './ServiceItemTable';
 import ServiceItemForm from './ServiceItemForm';
 import './NewServiceItem.css';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
 import Swal from 'sweetalert2';
-const ServiceItem = () => {
+import { AuthContext } from '../AuthContext/AuthContext';
+import { useCompany } from '../AuthContext/CompanyContext';
+
+const ServiceItem = () => { 
   const [showForm, setShowForm] = useState(false);
   const [serviceItems, setServiceItems] = useState([]);
+   const { selectedCompany } = useCompany();
   const [formData, setFormData] = useState({
     serial_number: "",
     product: "",
@@ -28,14 +32,19 @@ const ServiceItem = () => {
   });
   const [isEditMode, setIsEditMode] = useState(false);
 
+  const { userId } = useContext(AuthContext);
+  console.log("User ID from context:", userId);
+  console.log("Selected Company from context:", selectedCompany);
+
   // Fetch service items on load
   useEffect(() => {
     fetchServiceItems();
-  }, []);
+  }, [selectedCompany]);
 
   const fetchServiceItems = async () => {
     try {
-      const response = await axios.get(`${baseURL}/service-items/`);
+      const response = await axios.get(`${baseURL}/service-items/?user_id=${userId}&company_id=${selectedCompany}`);
+      console.log("url", `${baseURL}/service-items/?user_id=${userId}&company_id=${selectedCompany}`);
       if (response.data.status === "success") {
         setServiceItems(response.data.data);
       } else {
@@ -162,6 +171,7 @@ const ServiceItem = () => {
           onAddNew={toggleForm}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          selectedCompany={selectedCompany} // Pass it as prop
         />
       ) : (
         <ServiceItemForm 
@@ -170,6 +180,7 @@ const ServiceItem = () => {
           onSubmit={handleSubmit} 
           onCancel={toggleForm}
           isEditMode={isEditMode}
+          userId={userId}
         />
       )}
     </div>

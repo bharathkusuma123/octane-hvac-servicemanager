@@ -1,9 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import baseURL from '../ApiUrl/Apiurl';
 import Swal from 'sweetalert2';
 import "./ServiceItemComponents.css";
+import { AuthContext } from '../AuthContext/AuthContext';
+import { useCompany } from '../AuthContext/CompanyContext';
 
 const ServiceItemComponents = () => {
   const [showForm, setShowForm] = useState(false);
@@ -11,6 +13,10 @@ const ServiceItemComponents = () => {
   const [components, setComponents] = useState([]);
   const [serviceItemsOptions, setServiceItemsOptions] = useState([]);
   const [componentOptions, setComponentOptions] = useState([]);
+  const { selectedCompany } = useCompany();
+  const { userId } = useContext(AuthContext);
+  console.log("User ID from context:", userId);
+  console.log("Selected Company from context:", selectedCompany);
   const [formData, setFormData] = useState({
     service_item_id: "",
     component_id: "",
@@ -23,16 +29,17 @@ const ServiceItemComponents = () => {
   const [filteredComponents, setFilteredComponents] = useState([]);
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); 
+  
 
   // Initial fetches
   useEffect(() => {
-   fetch(`${baseURL}/service-item-components/`)
+   fetch(`${baseURL}/service-item-components/?user_id=${userId}&company_id=${selectedCompany}`)
       .then((res) => res.json())
       .then((data) => data.data && setComponents(data.data))
       .catch(console.error);
 
-  fetch(`${baseURL}/service-items/`)
+  fetch(`${baseURL}/service-items/?user_id=${userId}&company_id=${selectedCompany}`)
         .then((res) => res.json())
       .then((data) => data.data && setServiceItemsOptions(data.data))
       .catch(console.error);
@@ -176,8 +183,9 @@ const ServiceItemComponents = () => {
       }
     } else {
       // ➕ Add
-      const payload = {
+      const postpayload = {
         service_component_id: `SC-${Date.now()}`,
+        // component_type: "Component",
         component_serial_number: formData.component_serial_number,
         warranty_start_date: formData.warranty_start_date,
         warranty_end_date: formData.warranty_end_date,
@@ -188,18 +196,21 @@ const ServiceItemComponents = () => {
         updated_by: "service manager",
         service_item: formData.service_item_id,
         component: formData.component_id,
+        company: selectedCompany,
+        user_id: userId,
+        company_id: selectedCompany,
       };
       
       try {
         const res = await fetch(`${baseURL}/service-item-components/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(postpayload),
         });
         
         if (!res.ok) throw new Error(await res.json().then((d) => JSON.stringify(d)));
         
-        setComponents((prev) => [payload, ...prev]);
+        setComponents((prev) => [postpayload, ...prev]);
         
         Swal.fire({
           icon: 'success',

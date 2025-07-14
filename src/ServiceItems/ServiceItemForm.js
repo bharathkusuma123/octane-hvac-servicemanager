@@ -3,7 +3,7 @@ import './NewServiceItem.css';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import Swal from 'sweetalert2'; 
-const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode }) => {
+const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, userId }) => {
   const [customers, setCustomers] = useState([]);
   const { selectedCompany } = useCompany();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,7 +18,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
     const fetchCustomers = async () => {
       try {
 
-        const response = await fetch(`${baseURL}/customers/`);
+        const response = await fetch(`${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`); 
         const result = await response.json();
 
         if (result.status === 'success' && Array.isArray(result.data)) {
@@ -112,6 +112,9 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode })
       product: formData.product,
       customer: formData.customer,
       pm_group: formData.pm_group,
+      user_id: userId, // Include user ID for tracking
+      company_id: selectedCompany, // Include company ID for tracking
+      pcb_serial_number: "pcb"
     };
 
     console.log('Submitting:', serviceItemData);
