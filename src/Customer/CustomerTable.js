@@ -79,10 +79,11 @@
 
 // export default CustomerTable;
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
+import { AuthContext } from "../AuthContext/AuthContext";
 
 const CustomerTable = ({ toggleForm }) => {
   const [customers, setCustomers] = useState([]);
@@ -93,13 +94,24 @@ const CustomerTable = ({ toggleForm }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { selectedCompany } = useCompany();
+  console.log('Selected company object:', selectedCompany);
+   const { userId } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchCustomers = async () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get(`${baseURL}/customers/`);
+        console.log('Selected company:', selectedCompany); // This is already the company ID
+         console.log('User ID:', userId);
+
+      if (!userId || !selectedCompany) {
+        setError('Missing user ID or company ID');
+        return;
+      }
+         const response = await axios.get(
+        `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
+      );
         const filteredAndSorted = response.data.data
           .filter(user => user.status === 'Active')
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -108,7 +120,7 @@ const CustomerTable = ({ toggleForm }) => {
         console.error('Error fetching customer data:', error);
         setError('Failed to load customers');
       } finally {
-        setLoading(false);
+        setLoading(false); 
       }
     };
 

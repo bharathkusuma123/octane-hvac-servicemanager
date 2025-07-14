@@ -669,11 +669,12 @@
 
 
 
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import './NewCustomer.css'
 import baseURL from '../ApiUrl/Apiurl';
 import Swal from 'sweetalert2';
+import { AuthContext } from '../AuthContext/AuthContext';
 
 const SECURITY_QUESTION_CHOICES = [
     "What is your mother's maiden name?",
@@ -700,6 +701,7 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
     };
     const [formData1, setFormData1] = useState(initialForm1Data);
     const [isSubmitting, setIsSubmitting] = useState(false);
+     const { userId } = useContext(AuthContext);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -725,7 +727,9 @@ const CustomerForm = ({ formData, handleChange, toggleForm }) => {
             rating: "0",
             created_by: "Service Manager",
             updated_by: "Service Manager",
-            company: selectedCompany
+            company: selectedCompany,
+            user_id: userId,
+            company_id: selectedCompany
         };
 
         try {
