@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
@@ -6,9 +6,11 @@ import baseURL from "../ApiUrl/Apiurl";
 import { useNavigate } from 'react-router-dom';
 import { useCompany } from "../AuthContext/CompanyContext";
 import Swal from 'sweetalert2';
+import { AuthContext } from "../AuthContext/AuthContext";
 
-const ServicePoolTable = () => {
-  const userId = localStorage.getItem('userId'); 
+const ServicePoolTable = () => { 
+   const { userId } = useContext(AuthContext);
+  // const userId = localStorage.getItem('userId'); 
   const [showAssignmentScreen, setShowAssignmentScreen] = useState(false);
   const [currentRequest, setCurrentRequest] = useState(null);
   const [formData, setFormData] = useState({
@@ -65,7 +67,7 @@ setResources(resourceArray);
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://175.29.21.7:8006/service-pools/");
+      const response = await fetch(`${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`);
       if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
@@ -140,7 +142,7 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
 
   setCheckingAvailability(true);
   try {
-    const response = await axios.get("http://175.29.21.7:8006/service-pools/");
+    const response = await axios.get(`${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`);
     const allAssignments = response.data.data || response.data;
     const assignmentsArray = Array.isArray(allAssignments) ? allAssignments : [allAssignments];
 
@@ -249,6 +251,21 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
   return durationDate.toISOString().split("T")[1]; // HH:MM:SS.ZZZZ
 }
 
+function toDecimalHours(start, end) {
+  const startTime = new Date(start);
+  const endTime = new Date(end);
+  const durationMs = endTime - startTime;
+
+  const totalMinutes = durationMs / (1000 * 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  // Round to 1 decimal place
+  const decimalHours = hours + minutes / 60;
+  return Number(decimalHours.toFixed(1));
+}
+
+
 
  const handleSubmit = async (e) => {
     e.preventDefault();
@@ -278,14 +295,20 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
 
     const payload = {
       assigned_engineer: selectedEngineerResource.resource_id,
-      estimated_completion_time: toISOTimeString(formData.startDateTime, formData.endDateTime),
+      estimated_completion_time: toDecimalHours(
+  formData.startDateTime,
+  formData.endDateTime
+),
       estimated_price: Number(formData.estimatedPrice),
       dynamics_service_order_no: formData.dynamics_service_order_no,
       est_start_datetime: formData.startDateTime,
       est_end_datetime: formData.endDateTime,
       status: "Assigned",
       company: selectedCompany,
+      user_id: userId,
+      company_id: selectedCompany,
     };
+    console.log("Payload for assignment:", JSON.stringify(payload, null, 2));
 
     const assignmentPayload = {
       assignment_id: `ASG-${Date.now()}`,
@@ -299,6 +322,8 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
       request: currentRequest.request_id,
       assigned_engineer: selectedEngineerResource.resource_id,
       assigned_by: userId,
+      company_id: selectedCompany,
+      user_id: userId,
     };
 
     try {
