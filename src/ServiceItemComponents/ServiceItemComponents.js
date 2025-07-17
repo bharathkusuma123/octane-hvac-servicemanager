@@ -7,7 +7,7 @@ import "./ServiceItemComponents.css";
 import { AuthContext } from '../AuthContext/AuthContext';
 import { useCompany } from '../AuthContext/CompanyContext';
 
-const ServiceItemComponents = () => {
+const ServiceItemComponents = () => { 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [components, setComponents] = useState([]);
@@ -48,7 +48,7 @@ const ServiceItemComponents = () => {
       .then((res) => res.json())
       .then((data) => data.data && setComponentOptions(data.data))
       .catch(console.error);
-  }, []);
+  }, [userId, selectedCompany]);
 
   // Filtering effect
   useEffect(() => {

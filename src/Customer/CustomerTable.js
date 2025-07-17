@@ -97,35 +97,36 @@ const CustomerTable = ({ toggleForm }) => {
   console.log('Selected company object:', selectedCompany);
    const { userId } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchCustomers = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        console.log('Selected company:', selectedCompany); // This is already the company ID
-         console.log('User ID:', userId);
+ useEffect(() => {
+  const fetchCustomers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('Selected company:', selectedCompany);
+      console.log('User ID:', userId);
 
       if (!userId || !selectedCompany) {
         setError('Missing user ID or company ID');
         return;
       }
-         const response = await axios.get(
+      
+      const response = await axios.get(
         `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
       );
-        const filteredAndSorted = response.data.data
-          .filter(user => user.status === 'Active')
-          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        setCustomers(filteredAndSorted);
-      } catch (error) {
-        console.error('Error fetching customer data:', error);
-        setError('Failed to load customers');
-      } finally {
-        setLoading(false); 
-      }
-    };
+      const filteredAndSorted = response.data.data
+        .filter(user => user.status === 'Active')
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      setCustomers(filteredAndSorted);
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+      setError('Failed to load customers');
+    } finally {
+      setLoading(false); 
+    }
+  };
 
-    fetchCustomers();
-  }, []);
+  fetchCustomers();
+}, [selectedCompany, userId]); // Add dependencies here
 
   // Filter customers based on selected company and search term
   useEffect(() => {

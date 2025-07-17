@@ -11,6 +11,11 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
   const [products, setProducts] = useState([]);
   const [pmGroups, setPmGroups] = useState([]);
   
+  const generatePCBSerialNumber = () => {
+  const timestamp = Date.now(); // Unique millisecond time
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0'); // 3-digit random number
+  return `pcb-${timestamp}${random}`;
+};
  
 
 
@@ -32,7 +37,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
     };
 
     fetchCustomers();
-  }, []);
+  }, [userId, selectedCompany]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -114,7 +119,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
       pm_group: formData.pm_group,
       user_id: userId, // Include user ID for tracking
       company_id: selectedCompany, // Include company ID for tracking
-      pcb_serial_number: "pcb"
+      pcb_serial_number: generatePCBSerialNumber(),
     };
 
     console.log('Submitting:', serviceItemData);

@@ -71,7 +71,7 @@ setResources(resourceArray);
       if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
-      const result = await response.json();
+      const result = await response.json(); 
       const responseData = result.data || result;
       let dataArray = Array.isArray(responseData) ? responseData : [responseData];
 
@@ -91,7 +91,7 @@ setResources(resourceArray);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [userId, selectedCompany]); // Fetch data when userId or selectedCompany changes
 
   // Apply search filter whenever searchTerm or data changes
    useEffect(() => {

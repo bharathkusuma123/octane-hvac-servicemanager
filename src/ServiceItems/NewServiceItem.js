@@ -39,7 +39,7 @@ const ServiceItem = () => {
   // Fetch service items on load
   useEffect(() => {
     fetchServiceItems();
-  }, [selectedCompany]);
+  }, [selectedCompany, userId]);
 
   const fetchServiceItems = async () => {
     try {
