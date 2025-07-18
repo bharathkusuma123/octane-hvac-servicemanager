@@ -1,31 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './ServicePool.css';
+import { useCompany } from "../AuthContext/CompanyContext";
+import { AuthContext } from "../AuthContext/AuthContext";
 
-const ServiceRequestDetail = () => {
+const ServiceRequestDetail = () => { 
   const { requestId } = useParams();
+   const { userId } = useContext(AuthContext);
   const navigate = useNavigate();
   const [requestData, setRequestData] = useState(null);
   const [assignmentHistory, setAssignmentHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { selectedCompany } = useCompany(); // Get selected company from context
+    console.log("User ID from localStorage:", userId);
+    console.log("Selected Company from context:", selectedCompany);
 
 useEffect(() => {
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      // Fetch request details
-      const requestResponse = await axios.get(`http://175.29.21.7:8006/service-pools/${requestId}/`);
-      
-      // Fetch assignment history
-      const historyResponse = await axios.get(`http://175.29.21.7:8006/assignment-history/`);
-      
-      let historyData = historyResponse.data;
-      if (historyData && historyData.data && Array.isArray(historyData.data)) {
-        historyData = historyData.data;
-      }
+     // Fetch request details (user_id & company_id in request body)
+const requestResponse = await axios({
+  method: 'get',
+  url: `http://175.29.21.7:8006/service-pools/${requestId}/`,
+  params: {
+    user_id: userId,
+    company_id: selectedCompany
+  }
+});
+
+// Fetch assignment history (user_id & company_id in query params)
+const historyResponse = await axios.get(`http://175.29.21.7:8006/assignment-history/`, {
+  params: {
+    user_id: userId,
+    company_id: selectedCompany
+  }
+});
+
+// Normalize history data
+let historyData = historyResponse.data;
+if (historyData && historyData.data && Array.isArray(historyData.data)) {
+  historyData = historyData.data;
+}
+
 
       // Filter by request and sort by assigned_at DESC
       const filteredHistory = Array.isArray(historyData)

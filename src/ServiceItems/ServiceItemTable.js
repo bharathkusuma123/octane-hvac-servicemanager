@@ -2,16 +2,14 @@ import React, { useEffect, useState } from 'react';
 import './NewServiceItem.css';
 import axios from 'axios';
 import { FaEdit, FaTrash } from 'react-icons/fa';
-import { useCompany } from "../AuthContext/CompanyContext";
 import Swal from 'sweetalert2';
 
-const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
+const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany  }) => { 
   const [filteredItems, setFilteredItems] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-  const { selectedCompany } = useCompany(); // Get selected company from context
 
     // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
@@ -27,34 +25,35 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
       return 'Invalid date';
     }
   };
- useEffect(() => {
-    if (serviceItems && serviceItems.length > 0) {
-      // First filter by selected company if one is selected
-      let filteredByCompany = serviceItems;
-      if (selectedCompany) {
-        filteredByCompany = serviceItems.filter(item => 
-          item.company === selectedCompany
-        );
-      }
-      
-      // Then sort by date
-      const sortedData = [...filteredByCompany].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+ 
+  useEffect(() => {
+  if (serviceItems) { // Changed from serviceItems && serviceItems.length > 0
+    // First filter by selected company if one is selected
+    let filteredByCompany = serviceItems;
+    if (selectedCompany) {
+      filteredByCompany = serviceItems.filter(item => 
+        item.company === selectedCompany
       );
-      setFilteredItems(sortedData);
-      setLoading(false);
     }
-  }, [serviceItems, selectedCompany]); // Add selectedCompany to dependencies
+    
+    // Then sort by date
+    const sortedData = [...filteredByCompany].sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+    setFilteredItems(sortedData);
+    setLoading(false);
+  }
+}, [serviceItems, selectedCompany]);
 
   useEffect(() => {
     let results = serviceItems;
     
     // First filter by selected company if one is selected
-    if (selectedCompany) {
-      results = results.filter(item => 
-        item.company === selectedCompany
-      );
-    }
+    // if (selectedCompany) {
+    //   results = results.filter(item => 
+    //     item.company === selectedCompany
+    //   );
+    // }
     
     // Then apply search term filter
     if (searchTerm) {
@@ -68,7 +67,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
     
     setFilteredItems(results);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [searchTerm, serviceItems, selectedCompany]); 
+  }, [searchTerm, serviceItems]); 
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
@@ -122,9 +121,11 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete }) => {
       </div>
 
       {/* Table */}
-      {loading ? (
-        <p>Loading service items...</p>
-      ) : (
+    {loading ? (
+  <p>Loading service items...</p>
+) : filteredItems.length === 0 ? (
+  <div className="alert alert-info">No service items found.</div>
+) : (
         <div className="table-responsive mb-4">
           <table className="table">
             <thead className="service-item-table-header">
