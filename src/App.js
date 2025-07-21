@@ -262,6 +262,7 @@ import SignUpScreen from "./Login/SignUpScreen";
 import SignupSetPassword from "./Login/SignupSetPassword";
 import PanelLayout from "./Navbar/PanelLayout"
 import ContactPage from "./Customer/ContactPage";
+import CustomerSatisfactionSurvey from "./CustomerSurvey/CustomerSatisfactionSurvey";
 
 function App() {
   return (
@@ -326,6 +327,14 @@ function App() {
             element={
               <PanelLayout>
                 <ServicePool />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/customer-feedback"
+            element={
+              <PanelLayout>
+                <CustomerSatisfactionSurvey />
               </PanelLayout>
             }
           />
