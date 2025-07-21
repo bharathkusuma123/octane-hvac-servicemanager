@@ -261,12 +261,14 @@ import ServiceRequestDetail from './ServicePool/ServiceRequestDetail';
 import SignUpScreen from "./Login/SignUpScreen";
 import SignupSetPassword from "./Login/SignupSetPassword";
 import PanelLayout from "./Navbar/PanelLayout"
+import ContactPage from "./Customer/ContactPage";
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+           <Route path="/contact-api" element={<ContactPage />} />
           <Route path="/" element={<ServiceManagerLogin />} />
           <Route path="/signup" element={<SignUpScreen />} />
           <Route path="/signupset-password-screen" element={<SignupSetPassword />} />
