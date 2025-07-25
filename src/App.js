@@ -263,6 +263,8 @@ import SignupSetPassword from "./Login/SignupSetPassword";
 import PanelLayout from "./Navbar/PanelLayout"
 import ContactPage from "./Customer/ContactPage";
 import CustomerSatisfactionSurvey from "./CustomerSurvey/CustomerSatisfactionSurvey";
+import ServiceContractForm from './ServiceItems/ServiceContractForm';
+
 
 function App() {
   return (
@@ -311,6 +313,14 @@ function App() {
             element={
               <PanelLayout>
                 <NewServiceItem />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/service-contract"
+            element={
+              <PanelLayout>
+                <ServiceContractForm />
               </PanelLayout>
             }
           />
