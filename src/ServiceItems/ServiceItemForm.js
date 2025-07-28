@@ -120,6 +120,8 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
       user_id: userId, // Include user ID for tracking
       company_id: selectedCompany, // Include company ID for tracking
       pcb_serial_number: generatePCBSerialNumber(),
+      service_item_name: "somename"
+
     };
 
     console.log('Submitting:', serviceItemData);

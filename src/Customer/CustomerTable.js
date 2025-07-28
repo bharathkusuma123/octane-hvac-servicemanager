@@ -84,6 +84,7 @@ import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const CustomerTable = ({ toggleForm }) => {
   const [customers, setCustomers] = useState([]);
@@ -96,6 +97,7 @@ const CustomerTable = ({ toggleForm }) => {
   const { selectedCompany } = useCompany();
   console.log('Selected company object:', selectedCompany);
    const { userId } = useContext(AuthContext);
+   const navigate = useNavigate();
 
  useEffect(() => {
   const fetchCustomers = async () => {
@@ -182,6 +184,9 @@ const CustomerTable = ({ toggleForm }) => {
         <button onClick={toggleForm} className="btn btn-primary">
           Add New Customer
         </button>
+         {/* <button className="btn btn-primary" onClick={() => navigate('/contact-api')}>
+      Add Contact
+    </button> */}
       </div>
       
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">

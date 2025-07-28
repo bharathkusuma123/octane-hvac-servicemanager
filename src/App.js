@@ -261,12 +261,17 @@ import ServiceRequestDetail from './ServicePool/ServiceRequestDetail';
 import SignUpScreen from "./Login/SignUpScreen";
 import SignupSetPassword from "./Login/SignupSetPassword";
 import PanelLayout from "./Navbar/PanelLayout"
+import ContactPage from "./Customer/ContactPage";
+import CustomerSatisfactionSurvey from "./CustomerSurvey/CustomerSatisfactionSurvey";
+import ServiceContractForm from './ServiceItems/ServiceContractForm';
+
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
+           <Route path="/contact-api" element={<ContactPage />} />
           <Route path="/" element={<ServiceManagerLogin />} />
           <Route path="/signup" element={<SignUpScreen />} />
           <Route path="/signupset-password-screen" element={<SignupSetPassword />} />
@@ -311,6 +316,14 @@ function App() {
               </PanelLayout>
             }
           />
+           <Route
+            path="/servicemanager/service-contract"
+            element={
+              <PanelLayout>
+                <ServiceContractForm />
+              </PanelLayout>
+            }
+          />
           <Route
             path="/servicemanager/customer-complaints"
             element={
@@ -324,6 +337,14 @@ function App() {
             element={
               <PanelLayout>
                 <ServicePool />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/customer-feedback"
+            element={
+              <PanelLayout>
+                <CustomerSatisfactionSurvey />
               </PanelLayout>
             }
           />

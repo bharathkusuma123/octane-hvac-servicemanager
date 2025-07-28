@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './NewServiceItem.css';
-import axios from 'axios';
-import { FaEdit, FaTrash } from 'react-icons/fa';
-import Swal from 'sweetalert2';
+import { FaEdit, FaTrash, FaFileContract } from 'react-icons/fa';
 
-const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany  }) => { 
+const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany }) => { 
   const [filteredItems, setFilteredItems] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
 
-    // Function to format date as dd/mm/yyyy
+  // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
     try {
@@ -27,35 +27,25 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   };
  
   useEffect(() => {
-  if (serviceItems) { // Changed from serviceItems && serviceItems.length > 0
-    // First filter by selected company if one is selected
-    let filteredByCompany = serviceItems;
-    if (selectedCompany) {
-      filteredByCompany = serviceItems.filter(item => 
-        item.company === selectedCompany
+    if (serviceItems) {
+      let filteredByCompany = serviceItems;
+      if (selectedCompany) {
+        filteredByCompany = serviceItems.filter(item => 
+          item.company === selectedCompany
+        );
+      }
+      
+      const sortedData = [...filteredByCompany].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
+      setFilteredItems(sortedData);
+      setLoading(false);
     }
-    
-    // Then sort by date
-    const sortedData = [...filteredByCompany].sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    );
-    setFilteredItems(sortedData);
-    setLoading(false);
-  }
-}, [serviceItems, selectedCompany]);
+  }, [serviceItems, selectedCompany]);
 
   useEffect(() => {
     let results = serviceItems;
     
-    // First filter by selected company if one is selected
-    // if (selectedCompany) {
-    //   results = results.filter(item => 
-    //     item.company === selectedCompany
-    //   );
-    // }
-    
-    // Then apply search term filter
     if (searchTerm) {
       results = results.filter(item =>
         Object.values(item)
@@ -66,8 +56,18 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
     }
     
     setFilteredItems(results);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [searchTerm, serviceItems]); 
+
+  const handleContractClick = (item) => {
+    navigate('/servicemanager/service-contract', {
+      state: {
+        service_item_id: item.service_item_id,
+        customer: item.customer,
+        company: item.company
+      }
+    });
+  };
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
@@ -77,10 +77,10 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   return (
     <div className="service-item-container">
       {/* Header */}
-      <div className="d-flex justify-content-between align-items-center  flex-wrap">
+      <div className="d-flex justify-content-between align-items-center flex-wrap">
         <div>
           <h2 className="service-item-title mb-0">Service Items</h2>
-           <p className="service-item-subtitle mb-0 text-muted">
+          <p className="service-item-subtitle mb-0 text-muted">
             {selectedCompany 
               ? `Showing service items for ${selectedCompany}`
               : 'Showing all service items'}
@@ -121,20 +121,20 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       </div>
 
       {/* Table */}
-    {loading ? (
-  <p>Loading service items...</p>
-) : filteredItems.length === 0 ? (
-  <div className="alert alert-info">No service items found.</div>
-) : (
+      {loading ? (
+        <p>Loading service items...</p>
+      ) : filteredItems.length === 0 ? (
+        <div className="alert alert-info">No service items found.</div>
+      ) : (
         <div className="table-responsive mb-4">
           <table className="table">
             <thead className="service-item-table-header">
               <tr>
                 <th>S.No</th>
                 <th>Service Item ID</th>
-                  <th>Company</th>
+                <th>Company</th>
                 <th>Customer</th>
-                <th>Pm Group</th>
+                <th>PM Group</th>
                 <th>Product</th>
                 <th>Location</th>
                 <th>Latitude</th>
@@ -144,9 +144,9 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                 <th>Status</th>
                 <th>IoT Status</th>
                 <th>Last Service</th>
-                <th>PM Group</th>
                 <th>Description</th>
                 <th>Actions</th>
+                <th>Contract</th>
               </tr>
             </thead>
             <tbody>
@@ -155,14 +155,14 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                   <tr key={item.service_item_id}>
                     <td>{indexOfFirstEntry + index + 1}</td>
                     <td>{item.service_item_id}</td>
-                       <td>{item.company}</td>
+                    <td>{item.company}</td>
                     <td>{item.customer}</td>
                     <td>{item.pm_group}</td>
                     <td>{item.product}</td>
                     <td>{item.location}</td>
                     <td>{item.location_latitude}</td>
                     <td>{item.location_longitude}</td>
-                                 <td>{formatDate(item.installation_date)}</td>
+                    <td>{formatDate(item.installation_date)}</td>
                     <td>{formatDate(item.warranty_end_date)}</td>
                     <td>
                       <span className={`badge ${
@@ -180,21 +180,29 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                         {item.iot_status}
                       </span>
                     </td>
-                     <td>{formatDate(item.last_service)}</td>
-                    <td>{item.pm_group || 'N/A'}</td>
+                    <td>{formatDate(item.last_service)}</td>
                     <td>{item.product_description || 'N/A'}</td>
                     <td>
-                      <FaEdit
-
-                      
-                        style={{ cursor: 'pointer', marginRight: '10px', color: 'blue' }}
-                        onClick={() => onEdit(item)}
-                      />
-                      <FaTrash
-                        style={{ cursor: 'pointer', color: 'red' }}
-                        onClick={() => onDelete(item.service_item_id)}
-                      />
+                      <div className="d-flex gap-2">
+                        <FaEdit
+                          style={{ cursor: 'pointer', color: 'blue' }}
+                          onClick={() => onEdit(item)}
+                        />
+                        <FaTrash
+                          style={{ cursor: 'pointer', color: 'red' }}
+                          onClick={() => onDelete(item.service_item_id)}
+                        />
+                      </div>
                     </td>
+                     <td>
+                      <button
+  className="btn btn-sm btn-primary"
+  onClick={() => handleContractClick(item)}
+>
+  Contract
+</button>
+
+                     </td>
                   </tr>
                 ))
               ) : (
