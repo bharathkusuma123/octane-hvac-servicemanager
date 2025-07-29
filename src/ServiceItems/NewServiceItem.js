@@ -172,6 +172,7 @@ const ServiceItem = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           selectedCompany={selectedCompany} // Pass it as prop
+          userId={userId}
         />
       ) : (
         <ServiceItemForm 

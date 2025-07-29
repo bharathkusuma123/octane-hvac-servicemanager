@@ -2,14 +2,60 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './NewServiceItem.css';
 import { FaEdit, FaTrash, FaFileContract } from 'react-icons/fa';
+import axios from 'axios';
 
-const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany }) => { 
+const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany, userId }) => { 
   const [filteredItems, setFilteredItems] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+  const [contractData, setContractData] = useState([]);
+
+useEffect(() => {
+  const fetchContracts = async () => {
+    try {
+      const response = await axios.get(
+        `http://175.29.21.7:8006/service-contracts/`,
+        {
+          params: {
+            user_id: userId,
+            company_id: selectedCompany,
+          },
+        }
+      );
+
+      console.log("Contract response:", response.data);
+
+      const contracts = Array.isArray(response.data.data)
+        ? response.data.data
+        : [];
+
+      setContractData(contracts);
+    } catch (error) {
+      console.error("Failed to fetch contracts", error);
+      setContractData([]); // fallback to empty array
+    }
+  };
+
+  fetchContracts();
+}, [userId, selectedCompany]);
+
+
+const isButtonDisabled = (serviceItemId) => {
+  if (!Array.isArray(contractData)) return false;
+
+  const matchedContract = contractData.find(
+    (contract) => contract.service_item === serviceItemId
+  );
+
+  if (!matchedContract) return false;
+  return matchedContract.is_alert_sent === false;
+};
+
+
+
 
   // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
@@ -194,15 +240,15 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                         />
                       </div>
                     </td>
-                     <td>
-                      <button
+                      <td>
+             <button
   className="btn btn-sm btn-primary"
+  disabled={isButtonDisabled(item.service_item_id)}
   onClick={() => handleContractClick(item)}
 >
   Contract
 </button>
-
-                     </td>
+            </td>
                   </tr>
                 ))
               ) : (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef  } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
@@ -13,6 +13,7 @@ const ServicePoolTable = () => {
   // const userId = localStorage.getItem('userId'); 
   const [showAssignmentScreen, setShowAssignmentScreen] = useState(false);
   const [currentRequest, setCurrentRequest] = useState(null);
+  const [historyResponse, setHistoryResponse] = useState({ data: [] });
   const [formData, setFormData] = useState({
     engineerId: "",
     completionTime: "",
@@ -30,6 +31,7 @@ const ServicePoolTable = () => {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [resources, setResources] = useState([]);
   const navigate = useNavigate();
+   const ws = useRef(null); // WebSocket reference
 
   // Search and pagination states
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,7 +66,7 @@ setResources(resourceArray);
 }, [selectedCompany, userId]);  // Add dependencies here
 
   // Fetch data function
-  const fetchData = async () => {
+  const fetchPoolData = async () => {
     setLoading(true);
     try {
       const response = await fetch(`${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`);
@@ -90,7 +92,7 @@ setResources(resourceArray);
   };
 
   useEffect(() => {
-    fetchData();
+    fetchPoolData();
   }, [userId, selectedCompany]); // Fetch data when userId or selectedCompany changes
 
   // Apply search filter whenever searchTerm or data changes
@@ -194,6 +196,76 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
   }
 };
 
+useEffect(() => {
+  const fetchAssignmentHistory = async () => {
+    try {
+      const response = await axios.get(`http://175.29.21.7:8006/assignment-history/`, {
+        params: {
+          user_id: userId,
+          company_id: selectedCompany
+        }
+      });
+      // Handle different response structures
+      setHistoryResponse({
+        data: response.data?.data || response.data || []
+      });
+    } catch (error) {
+      console.error("Error fetching assignment history:", error);
+      setHistoryResponse({ data: [] });
+    }
+  };
+
+  if (userId && selectedCompany) {
+    fetchAssignmentHistory();
+  }
+}, [userId, selectedCompany]);
+
+// WebSocket connection
+useEffect(() => {
+  if (!userId || !selectedCompany) return;
+
+  const websocketUrl = `ws://175.29.21.7:8006/ws/assignment-status/?user_id=${userId}&company_id=${selectedCompany}`;
+  console.log('Attempting to connect WebSocket:', websocketUrl);
+
+  ws.current = new WebSocket(websocketUrl);
+
+  ws.current.onopen = () => {
+    console.log('✅ WebSocket connected');
+  };
+
+  ws.current.onmessage = (e) => {
+    try {
+      const message = JSON.parse(e.data);
+      console.log('📩 WebSocket message received:', message);
+
+      setHistoryResponse(prev => {
+        const updatedData = prev.data.map(item =>
+          item.request === message.request_id
+            ? { ...item, status: message.status }
+            : item
+        );
+        return { data: updatedData };
+      });
+    } catch (err) {
+      console.error('❌ Error parsing WebSocket message:', err);
+    }
+  };
+
+  ws.current.onerror = (e) => {
+    console.error('❌ WebSocket error. Possibly backend not running or incorrect URL.', e);
+  };
+
+  ws.current.onclose = (e) => {
+    console.warn('⚠ WebSocket disconnected. Code:', e.code, 'Reason:', e.reason || 'No reason');
+  };
+
+  return () => {
+    if (ws.current) {
+      console.log('🔌 Closing WebSocket connection');
+      ws.current.close();
+    }
+  };
+}, [userId, selectedCompany]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -337,7 +409,7 @@ function toDecimalHours(start, end) {
         confirmButtonColor: '#3085d6',
       });
 
-      await fetchData();
+      await fetchPoolData();
       setShowAssignmentScreen(false);
       setFormData(formData);
       setDateError("");
@@ -358,10 +430,6 @@ function toDecimalHours(start, end) {
       });
     }
   };
-
-
-
-
 
 
   // Pagination calculations
@@ -424,59 +492,80 @@ function toDecimalHours(start, end) {
 
           {/* Table */}
           <div className="table-responsive mb-4">
-            <table className="table ">
-              <thead className="new-customer-table-header">
-                <tr>
-                  <th>S.No</th>
-                  <th>Request ID</th>
-                   <th>Company</th>
-                  <th>Request By</th>
-                  <th>Service Item</th>
-                  <th>Preferred Date/Time</th>
-                  <th>Status</th>
-                  <th>Engineer</th>
-                  <th>Assign</th>
+            <table className="table">
+        <thead className="new-customer-table-header">
+          <tr>
+            <th>S.No</th>
+            <th>Request ID</th>
+            <th>Company</th>
+            <th>Request By</th>
+            <th>Service Item</th>
+            <th>Preferred Date/Time</th>
+            <th>Status</th>
+            <th>Engineer</th>
+            <th>Engineer Status</th>
+            <th>Assign</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentItems.length > 0 ? (
+            currentItems.map((item, index) => {
+              const historyData = historyResponse.data || [];
+              const assignmentHistory = Array.isArray(historyData) 
+                ? historyData.find(history => history.request === item.request_id)
+                : null;
+              const engineerStatus = assignmentHistory?.status || "N/A";
+
+              return (
+                <tr key={item.request_id || index}>
+                  <td>{indexOfFirstEntry + index + 1}</td>
+                  <td>
+                    <button 
+                      className="btn btn-link p-0" 
+                      onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
+                    >
+                      {item.request_id}
+                    </button>
+                  </td>
+                  <td>{item.company}</td>
+                  <td>{item.requested_by || "N/A"}</td>
+                  <td>{item.service_item}</td>
+                  <td>
+                    {formatDate(item.preferred_date)} {formatTime(item.preferred_time)}
+                  </td>
+                  <td>{item.status}</td>
+                  <td>{item.assigned_engineer || "N/A"}</td>
+                  <td>
+                    {engineerStatus === "Pending" && (
+                      <span className="badge bg-warning text-dark">Pending</span>
+                    )}
+                    {engineerStatus === "Accepted" && (
+                      <span className="badge bg-success">Accepted</span>
+                    )}
+                    {engineerStatus === "Declined" && (
+                      <span className="badge bg-danger">Declined</span>
+                    )}
+                    {engineerStatus === "N/A" && "N/A"}
+                  </td>
+                  <td>
+                    <button
+                      className={`btn btn-sm ${item.status !== "Open" ? "btn-secondary disabled" : "btn-primary"}`}
+                      onClick={() => handleAssignClick(item)}
+                      disabled={item.status !== "Open"}
+                    >
+                      Assign
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {currentItems.length > 0 ? (
-                  currentItems.map((item, index) => (
-                    <tr key={item.request_id || index}>
-                      <td>{indexOfFirstEntry + index + 1}</td>
-                      <td>
-                        <button 
-                          className="btn btn-link p-0 " 
-                          onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
-                        >
-                          {item.request_id}
-                        </button>
-                      </td>
-                        <td>{item.company}</td>
-                      <td>{item.requested_by || "N/A"}</td>
-                      <td>{item.service_item}</td>
-                      <td>
-                        {formatDate(item.preferred_date)} {formatTime(item.preferred_time)}
-                      </td>
-                      <td>{item.status}</td>
-                      <td>{item.assigned_engineer || "N/A"}</td>
-                      <td>
-                        <button
-                          className={`btn btn-sm ${item.status !== "Open" ? "btn-secondary disabled" : "btn-primary"}`}
-                          onClick={() => handleAssignClick(item)}
-                          disabled={item.status !== "Open"}
-                        >
-                          Assign
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="8" className="text-center">No service requests found.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+              );
+            })
+          ) : (
+            <tr>
+              <td colSpan="10" className="text-center">No service requests found.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
           </div>
 
           {/* Pagination */}
