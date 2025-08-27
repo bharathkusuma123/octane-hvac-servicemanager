@@ -59,6 +59,10 @@ const TopNavbar = () => {
           path: "/servicemanager/preventive-maintainance-chart",
           label: "P M Chart",
         },
+          {
+          path: "/servicemanager/preventive-maintainance-schedule",
+          label: "P M schedule",
+        },
       ],
     },
     {

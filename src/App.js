@@ -264,6 +264,7 @@ import PanelLayout from "./Navbar/PanelLayout"
 import ContactPage from "./Customer/ContactPage";
 import CustomerSatisfactionSurvey from "./CustomerSurvey/CustomerSatisfactionSurvey";
 import ServiceContractForm from './ServiceItems/ServiceContractForm';
+import PreventiveMaintainanceSchedule from "./PreventiveMaintainanceSchedule/PreventiveMaintainanceSchedule";
 
 
 function App() {
@@ -297,6 +298,14 @@ function App() {
             element={
               <PanelLayout>
                 <PreventiveMaintainance />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/preventive-maintainance-schedule"
+            element={
+              <PanelLayout>
+                <PreventiveMaintainanceSchedule />
               </PanelLayout>
             }
           />
