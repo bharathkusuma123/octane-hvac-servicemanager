@@ -355,86 +355,89 @@ const PreventiveMaintainanceChart = () => {
   // };
 
 
-    const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const payload = {
-      ...formData,
-      frequency_days: parseInt(formData.frequency_days),
-      alert_days: parseInt(formData.alert_days),
-      overdue_alert_days: parseInt(formData.overdue_alert_days),
-      updated_by: "Service Manager"
-    };
+  const payload = {
+    ...formData,
+    frequency_days: parseInt(formData.frequency_days),
+    alert_days: parseInt(formData.alert_days),
+    overdue_alert_days: parseInt(formData.overdue_alert_days),
+    updated_by: "Service Manager"
+  };
 
-    const isEdit = !!selectedChart; // ✅ check if in edit mode
-    const url = isEdit
-      ? `${baseURL}/pm-charts/${selectedChart.chart_id}/`
-      : `${baseURL}/pm-charts/`;
-    const method = isEdit ? "PUT" : "POST";
+  const isEdit = !!selectedChart;
+  const url = isEdit
+    ? `${baseURL}/pm-charts/${selectedChart.chart_id}/`
+    : `${baseURL}/pm-charts/`;
+  const method = isEdit ? "PUT" : "POST";
 
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.status === "success") {
+      if (isEdit) {
+        setCharts(prev =>
+          prev.map(chart =>
+            chart.chart_id === selectedChart.chart_id ? result.data : chart
+          )
+        );
+      } else {
+        setCharts(prev => [result.data, ...prev]);
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: `PM Chart ${isEdit ? "updated" : "created"} successfully!`,
+        confirmButtonColor: "#3085d6",
       });
 
-      const result = await response.json();
+      setFormData({
+        pm_group: "",
+        pm_id: "",
+        description: "",
+        task_type: "",
+        frequency_days: "",
+        alert_days: "",
+        overdue_alert_days: "",
+        responsible: "",
+        remarks: "",
+        created_by: "Service Manager",
+        updated_by: "Service Manager",
+      });
+      toggleForm();
+    } else {
+      console.error(
+        `❌ ${method} ${url} failed with status ${response.status}:`,
+        result
+      );
 
-      if (response.ok && result.status === "success") {
-        if (isEdit) {
-          // ✅ Update in-place
-          setCharts(prev =>
-            prev.map(chart =>
-              chart.chart_id === selectedChart.chart_id ? result.data : chart
-            )
-          );
-        } else {
-          // ✅ Add new chart
-          setCharts(prev => [result.data, ...prev]);
-        }
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: `PM Chart ${isEdit ? 'updated' : 'created'} successfully!`,
-          confirmButtonColor: '#3085d6',
-        });
-
-        setFormData({
-          pm_group: "",
-          pm_id: "",
-          description: "",
-          task_type: "",
-          frequency_days: "",
-          alert_days: "",
-          overdue_alert_days: "",
-          responsible: "",
-          remarks: "",
-          created_by: "Service Manager",
-          updated_by: "Service Manager"
-        });
-        toggleForm();
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: result.message || `Failed to ${isEdit ? 'update' : 'create'} PM Chart`,
-          confirmButtonColor: '#3085d6',
-        });
-      }
-    } catch (error) {
-      console.error("Error during request:", error);
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: `An error occurred while ${isEdit ? 'updating' : 'creating'} the PM Chart`,
-        confirmButtonColor: '#3085d6',
+        icon: "error",
+        title: "Error",
+        text: result.message || `Failed to ${isEdit ? "update" : "create"} PM Chart`,
+        confirmButtonColor: "#3085d6",
       });
     }
-  };
+  } catch (error) {
+    console.error(`⚠️ Error during ${method} ${url}:`, error);
+
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: `An error occurred while ${isEdit ? "updating" : "creating"} the PM Chart`,
+      confirmButtonColor: "#3085d6",
+    });
+  }
+};
+
 
  const handleDelete = async (chartId) => {
   try {
