@@ -11,7 +11,8 @@ import { useCompany } from '../AuthContext/CompanyContext';
 const ServiceItem = () => { 
   const [showForm, setShowForm] = useState(false);
   const [serviceItems, setServiceItems] = useState([]);
-   const { selectedCompany } = useCompany();
+  const { selectedCompany } = useCompany();
+  const [refreshContractFlag, setRefreshContractFlag] = useState(0);
   const [formData, setFormData] = useState({
     serial_number: "",
     product: "",
@@ -40,6 +41,10 @@ const ServiceItem = () => {
   useEffect(() => {
     fetchServiceItems();
   }, [selectedCompany, userId]);
+
+  const refreshContracts = () => {
+    setRefreshContractFlag(prev => prev + 1);
+  };
 
   const fetchServiceItems = async () => {
     try {
@@ -99,42 +104,42 @@ const ServiceItem = () => {
     setShowForm(true);
   };
 
- const handleDelete = async (serviceItemId) => {
-  Swal.fire({
-    title: 'Are you sure?',
-    text: "You won't be able to revert this!",
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#d33',
-    cancelButtonColor: '#3085d6',
-    confirmButtonText: 'Yes, delete it!'
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        const token = localStorage.getItem("authToken");
-        await axios.delete(`${baseURL}/service-items/${serviceItemId}/`, {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          }
-        });
-        setServiceItems(serviceItems.filter(item => item.service_item_id !== serviceItemId));
+  const handleDelete = async (serviceItemId) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const token = localStorage.getItem("authToken");
+          await axios.delete(`${baseURL}/service-items/${serviceItemId}/`, {
+            headers: {
+              ...(token && { Authorization: `Bearer ${token}` }),
+            }
+          });
+          setServiceItems(serviceItems.filter(item => item.service_item_id !== serviceItemId));
 
-        Swal.fire({
-          icon: 'success',
-          title: 'Deleted!',
-          text: 'Service item has been deleted.',
-        });
-      } catch (error) {
-        console.error('Error deleting service item:', error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error!',
-          text: 'Failed to delete service item.',
-        });
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: 'Service item has been deleted.',
+          });
+        } catch (error) {
+          console.error('Error deleting service item:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Failed to delete service item.',
+          });
+        }
       }
-    }
-  });
-};
+    });
+  };
 
   const resetForm = () => {
     setFormData({
@@ -171,8 +176,9 @@ const ServiceItem = () => {
           onAddNew={toggleForm}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          selectedCompany={selectedCompany} // Pass it as prop
+          selectedCompany={selectedCompany}
           userId={userId}
+          refreshContracts={refreshContractFlag}
         />
       ) : (
         <ServiceItemForm 

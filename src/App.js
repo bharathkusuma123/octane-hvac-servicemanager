@@ -264,6 +264,7 @@ import PanelLayout from "./Navbar/PanelLayout"
 import ContactPage from "./Customer/ContactPage";
 import CustomerSatisfactionSurvey from "./CustomerSurvey/CustomerSatisfactionSurvey";
 import ServiceContractForm from './ServiceItems/ServiceContractForm';
+import ServiceRenewalForm from './ServiceItems/ServiceRenewalForm';
 import PreventiveMaintainanceSchedule from "./PreventiveMaintainanceSchedule/PreventiveMaintainanceSchedule";
 
 
@@ -333,6 +334,11 @@ function App() {
               </PanelLayout>
             }
           />
+
+<Route 
+  path="/servicemanager/service-renewal" 
+  element={<PanelLayout><ServiceRenewalForm /></PanelLayout>} 
+/>
           <Route
             path="/servicemanager/customer-complaints"
             element={

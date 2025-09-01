@@ -4,7 +4,7 @@ import './NewServiceItem.css';
 import { FaEdit, FaTrash, FaFileContract } from 'react-icons/fa';
 import axios from 'axios';
 
-const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany, userId }) => { 
+const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany, userId, refreshContracts }) => { 
   const [filteredItems, setFilteredItems] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,7 +13,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const navigate = useNavigate();
   const [contractData, setContractData] = useState([]);
 
-useEffect(() => {
   const fetchContracts = async () => {
     try {
       const response = await axios.get(
@@ -39,23 +38,58 @@ useEffect(() => {
     }
   };
 
-  fetchContracts();
-}, [userId, selectedCompany]);
+  useEffect(() => {
+    fetchContracts();
+  }, [userId, selectedCompany, refreshContracts]);
 
+  const isContractButtonDisabled = (serviceItemId) => {
+    if (!Array.isArray(contractData)) return false;
 
-const isButtonDisabled = (serviceItemId) => {
-  if (!Array.isArray(contractData)) return false;
+    const matchedContract = contractData.find(
+      (contract) => contract.service_item === serviceItemId
+    );
 
-  const matchedContract = contractData.find(
-    (contract) => contract.service_item === serviceItemId
-  );
+    // If contract exists, disable the Contract button
+    return !!matchedContract;
+  };
 
-  if (!matchedContract) return false;
-  return matchedContract.is_alert_sent === false;
-};
+  const hasExistingRenewal = (serviceItemId) => {
+    if (!Array.isArray(contractData)) return false;
+    
+    return contractData.some(contract => 
+      contract.service_item === serviceItemId && 
+      contract.remarks && 
+      contract.remarks.includes("Renewal of contract")
+    );
+  };
 
+  const shouldShowRenewalButton = (serviceItemId) => {
+    if (!Array.isArray(contractData)) return false;
 
+    // Find all contracts for this service item
+    const serviceItemContracts = contractData.filter(
+      (contract) => contract.service_item === serviceItemId
+    );
 
+    // If no contracts exist, don't show renewal button
+    if (serviceItemContracts.length === 0) return false;
+
+    // Sort contracts by creation date to find the latest one
+    const sortedContracts = serviceItemContracts.sort(
+      (a, b) => new Date(b.created_at) - new Date(a.created_at)
+    );
+    
+    const latestContract = sortedContracts[0];
+    
+    // Check if current date is greater than end_date OR is_alert_sent is true
+    const currentDate = new Date();
+    const endDate = new Date(latestContract.end_date);
+    
+    // Don't show renewal button if it's already been renewed
+    if (hasExistingRenewal(serviceItemId)) return false;
+    
+    return  latestContract.is_alert_sent === true;
+  };
 
   // Function to format date as dd/mm/yyyy
   const formatDate = (dateString) => {
@@ -119,6 +153,22 @@ const isButtonDisabled = (serviceItemId) => {
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
   const currentItems = filteredItems.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredItems.length / entriesPerPage);
+
+  const handleRenewalClick = (item) => {
+    // Find the existing contract for this service item
+    const existingContract = contractData.find(
+      contract => contract.service_item === item.service_item_id
+    );
+    
+    navigate('/servicemanager/service-renewal', {
+      state: {
+        service_item_id: item.service_item_id,
+        customer: item.customer,
+        company: item.company,
+        existing_contract: existingContract // Pass only serializable data
+      }
+    });
+  };
 
   return (
     <div className="service-item-container">
@@ -240,20 +290,29 @@ const isButtonDisabled = (serviceItemId) => {
                         />
                       </div>
                     </td>
-                      <td>
-             <button
-  className="btn btn-sm btn-primary"
-  disabled={isButtonDisabled(item.service_item_id)}
-  onClick={() => handleContractClick(item)}
->
-  Contract
-</button>
-            </td>
+                    <td>
+                      {shouldShowRenewalButton(item.service_item_id) ? (
+                        <button
+                          className="btn btn-sm btn-warning"
+                          onClick={() => handleRenewalClick(item)}
+                        >
+                          Renewal
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          disabled={isContractButtonDisabled(item.service_item_id)}
+                          onClick={() => handleContractClick(item)}
+                        >
+                          Contract
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="16" className="text-center">No service items found.</td>
+                  <td colSpan="17" className="text-center">No service items found.</td>
                 </tr>
               )}
             </tbody>
