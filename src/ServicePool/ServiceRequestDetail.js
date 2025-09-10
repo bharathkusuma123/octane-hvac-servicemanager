@@ -4,6 +4,7 @@ import axios from 'axios';
 import './ServicePool.css';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
+import baseURL from '../ApiUrl/Apiurl';
 
 const ServiceRequestDetail = () => { 
   const { requestId } = useParams();
@@ -25,7 +26,7 @@ useEffect(() => {
      // Fetch request details (user_id & company_id in request body)
 const requestResponse = await axios({
   method: 'get',
-  url: `http://175.29.21.7:8006/service-pools/${requestId}/`,
+  url: `${baseURL}/service-pools/${requestId}/`,
   params: {
     user_id: userId,
     company_id: selectedCompany
@@ -33,7 +34,7 @@ const requestResponse = await axios({
 });
 
 // Fetch assignment history (user_id & company_id in query params)
-const historyResponse = await axios.get(`http://175.29.21.7:8006/assignment-history/`, {
+const historyResponse = await axios.get(`${baseURL}/assignment-history/`, {
   params: {
     user_id: userId,
     company_id: selectedCompany

@@ -199,7 +199,7 @@ const checkEngineerAvailability = async (startDateTime, endDateTime) => {
 useEffect(() => {
   const fetchAssignmentHistory = async () => {
     try {
-      const response = await axios.get(`http://175.29.21.7:8006/assignment-history/`, {
+      const response = await axios.get(`${baseURL}/assignment-history/`, {
         params: {
           user_id: userId,
           company_id: selectedCompany

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../AuthContext/AuthContext';
 import { useCompany } from '../AuthContext/CompanyContext';
+import baseURL from '../ApiUrl/Apiurl';
 
 const PreventiveMaintenanceSchedule = () => {
   const { userId } = useContext(AuthContext);
@@ -16,7 +17,7 @@ const PreventiveMaintenanceSchedule = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://175.29.21.7:8006/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`);
+        const response = await fetch(`/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch data');
@@ -51,7 +52,7 @@ const PreventiveMaintenanceSchedule = () => {
     setProcessingId(schedule.pm_schedule_id);
     
     try {
-      const response = await fetch(`http://175.29.21.7:8006/pm-schedules/${schedule.pm_schedule_id}/create-service-request/`, {
+      const response = await fetch(`${baseURL}/pm-schedules/${schedule.pm_schedule_id}/create-service-request/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

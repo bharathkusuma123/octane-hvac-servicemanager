@@ -256,6 +256,7 @@
 
 import React, { useEffect, useState } from 'react';
 import './NewServiceItem.css';
+import baseURL from '../ApiUrl/Apiurl';
 
 const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel }) => {
   const [customers, setCustomers] = useState([]);
@@ -266,7 +267,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel }) => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await fetch('http://175.29.21.7:8006/users/');
+        const response = await fetch(`${baseURL}/users/`);
         const data = await response.json();
         const filtered = data.filter(user => user.role === 'Customer');
         setCustomers(filtered);
@@ -282,7 +283,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel }) => {
 useEffect(() => {
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://175.29.21.7:8006/products/');
+      const response = await fetch(`${baseURL}/products/`);
       const result = await response.json();
       setProducts(result.data);  // <-- this line is the fix
     } catch (error) {
@@ -323,7 +324,7 @@ useEffect(() => {
 
     console.log("Final payload:", payload); // Debugging log
 
-    const response = await fetch('http://175.29.21.7:8006/service-items/', {
+    const response = await fetch(`${baseURL}/service-items/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

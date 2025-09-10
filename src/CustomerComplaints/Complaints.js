@@ -109,6 +109,7 @@
 
 
 import React, { useState, useEffect } from "react";
+import baseURL from "../ApiUrl/Apiurl";
 
 const CustomerComplaints = () => {
   const [complaints, setComplaints] = useState([]);
@@ -133,7 +134,7 @@ const CustomerComplaints = () => {
         }
         
         const response = await fetch(
-          `http://175.29.21.7:8006/customer-complaints/?user_id=${userId}&company_id=${companyId}`
+          `${baseURL}/customer-complaints/?user_id=${userId}&company_id=${companyId}`
         );
         
         if (!response.ok) {

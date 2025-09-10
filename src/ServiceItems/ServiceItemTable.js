@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './NewServiceItem.css';
 import { FaEdit, FaTrash, FaFileContract } from 'react-icons/fa';
 import axios from 'axios';
+import baseURL from '../ApiUrl/Apiurl';
 
 const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany, userId, refreshContracts }) => { 
   const [filteredItems, setFilteredItems] = useState([]); 
@@ -16,7 +17,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const fetchContracts = async () => {
     try {
       const response = await axios.get(
-        `http://175.29.21.7:8006/service-contracts/`,
+        `${baseURL}/service-contracts/`,
         {
           params: {
             user_id: userId,

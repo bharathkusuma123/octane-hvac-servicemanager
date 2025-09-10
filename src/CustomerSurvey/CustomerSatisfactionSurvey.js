@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from "../AuthContext/AuthContext";
 import { useCompany } from "../AuthContext/CompanyContext";
+import baseURL from '../ApiUrl/Apiurl';
 
 const CustomerSatisfactionSurvey = () => {
   const { userId } = useContext(AuthContext);
@@ -17,7 +18,7 @@ const CustomerSatisfactionSurvey = () => {
       try {
         setLoading(true);
         const response = await fetch(
-          `http://175.29.21.7:8006/customer-surveys/?user_id=${userId}&company_id=${selectedCompany}`
+          `${baseURL}/customer-surveys/?user_id=${userId}&company_id=${selectedCompany}`
         );
         
         if (!response.ok) {

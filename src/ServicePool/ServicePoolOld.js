@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
+import baseURL from "../ApiUrl/Apiurl";
 
 const ServicePoolTable = () => {
   const userId = localStorage.getItem('userId'); 
@@ -22,7 +23,7 @@ const ServicePoolTable = () => {
 
 
   useEffect(() => {
-    axios.get("http://175.29.21.7:8006/users/")
+    axios.get(`${baseURL}/users/`)
       .then(response => {
         const serviceEngineers = response.data.filter(
           user => user.role === "Service Engineer"
@@ -38,7 +39,7 @@ const ServicePoolTable = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://175.29.21.7:8006/service-pools/");
+      const response = await fetch(`${baseURL}/service-pools/`);
       if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
@@ -84,7 +85,7 @@ const handleSubmit = async (e) => {
   try {
     // First update the service pool record
     await axios.put(
-      `http://175.29.21.7:8006/service-pools/${currentRequest.request_id}/`,
+      `${baseURL}/service-pools/${currentRequest.request_id}/`,
       payload,
       {
         headers: {
@@ -108,7 +109,7 @@ const handleSubmit = async (e) => {
     console.log("assignmentpayload",assignmentPayload);
 
     await axios.post(
-      "http://175.29.21.7:8006/assignment-history/",
+      `${baseURL}/assignment-history/`,
       assignmentPayload,
       {
         headers: {

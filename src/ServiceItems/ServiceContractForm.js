@@ -114,7 +114,7 @@ const ServiceContractForm = () => {
             }
 
             const response = await axios.post(
-                'http://175.29.21.7:8006/service-contracts/',
+                `${baseURL}/service-contracts/`,
                 formData,
                 {
                     headers: {
