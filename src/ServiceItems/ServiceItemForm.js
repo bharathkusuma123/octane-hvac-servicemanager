@@ -119,9 +119,9 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
       pm_group: formData.pm_group,
       user_id: userId, // Include user ID for tracking
       company_id: selectedCompany, // Include company ID for tracking
-      pcb_serial_number: generatePCBSerialNumber(),
-      service_item_name: "somename"
-
+      // pcb_serial_number: generatePCBSerialNumber(),
+      pcb_serial_number: formData.pcb_serial_number || generatePCBSerialNumber(),
+      service_item_name: formData.service_item_name || 'somename'
     };
 
     console.log('Submitting:', serviceItemData);
@@ -190,6 +190,32 @@ const method = isEditMode ? "PUT" : "POST";
                   value={formData.serial_number || ''}
                   onChange={onChange}
                   placeholder="Enter Service S.No." 
+                  required
+                />
+              </div>
+
+               <div className="col-md-4">
+                <label className="form-label">PCB Serial Number</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  name="pcb_serial_number"
+                  value={formData.pcb_serial_number || ''}
+                  onChange={onChange}
+                  placeholder="Enter PCB Serial Number" 
+                  required
+                />
+              </div>
+
+               <div className="col-md-4">
+                <label className="form-label">Service Item Name</label>
+                <input 
+                  type="text" 
+                  className="form-control" 
+                  name="service_item_name"
+                  value={formData.service_item_name || ''}
+                  onChange={onChange}
+                  placeholder="Enter Service Name" 
                   required
                 />
               </div>
