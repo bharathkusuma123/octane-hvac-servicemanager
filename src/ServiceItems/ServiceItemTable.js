@@ -43,53 +43,43 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
     fetchContracts();
   }, [userId, selectedCompany, refreshContracts]);
 
-  const isContractButtonDisabled = (serviceItemId) => {
-    if (!Array.isArray(contractData)) return false;
-
-    const matchedContract = contractData.find(
-      (contract) => contract.service_item === serviceItemId
+  // Function to get the latest contract for a service item
+  const getLatestContract = (serviceItemId) => {
+    if (!Array.isArray(contractData)) return null;
+    
+    // Filter contracts for this service item
+    const serviceItemContracts = contractData.filter(
+      contract => contract.service_item === serviceItemId
     );
-
-    // If contract exists, disable the Contract button
-    return !!matchedContract;
+    
+    if (serviceItemContracts.length === 0) return null;
+    
+    // Sort by creation date to get the latest contract
+    const sortedContracts = serviceItemContracts.sort(
+      (a, b) => new Date(b.created_at || b.contract_create_date) - new Date(a.created_at || a.contract_create_date)
+    );
+    
+    return sortedContracts[0];
   };
 
-  const hasExistingRenewal = (serviceItemId) => {
-    if (!Array.isArray(contractData)) return false;
+  const isContractButtonDisabled = (serviceItemId) => {
+    const latestContract = getLatestContract(serviceItemId);
     
-    return contractData.some(contract => 
-      contract.service_item === serviceItemId && 
-      contract.remarks && 
-      contract.remarks.includes("Renewal of contract")
-    );
+    // If no contract exists, button should be enabled
+    if (!latestContract) return false;
+    
+    // If latest contract has is_alert_sent: false, button should be disabled
+    return latestContract.is_alert_sent === false;
   };
 
   const shouldShowRenewalButton = (serviceItemId) => {
-    if (!Array.isArray(contractData)) return false;
-
-    // Find all contracts for this service item
-    const serviceItemContracts = contractData.filter(
-      (contract) => contract.service_item === serviceItemId
-    );
-
-    // If no contracts exist, don't show renewal button
-    if (serviceItemContracts.length === 0) return false;
-
-    // Sort contracts by creation date to find the latest one
-    const sortedContracts = serviceItemContracts.sort(
-      (a, b) => new Date(b.created_at) - new Date(a.created_at)
-    );
+    const latestContract = getLatestContract(serviceItemId);
     
-    const latestContract = sortedContracts[0];
+    // If no contract exists, don't show renewal button
+    if (!latestContract) return false;
     
-    // Check if current date is greater than end_date OR is_alert_sent is true
-    const currentDate = new Date();
-    const endDate = new Date(latestContract.end_date);
-    
-    // Don't show renewal button if it's already been renewed
-    if (hasExistingRenewal(serviceItemId)) return false;
-    
-    return  latestContract.is_alert_sent === true;
+    // Show renewal button only if is_alert_sent is true
+    return latestContract.is_alert_sent === true;
   };
 
   // Function to format date as dd/mm/yyyy
@@ -156,17 +146,15 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const totalPages = Math.ceil(filteredItems.length / entriesPerPage);
 
   const handleRenewalClick = (item) => {
-    // Find the existing contract for this service item
-    const existingContract = contractData.find(
-      contract => contract.service_item === item.service_item_id
-    );
+    // Find the latest contract for this service item
+    const latestContract = getLatestContract(item.service_item_id);
     
     navigate('/servicemanager/service-renewal', {
       state: {
         service_item_id: item.service_item_id,
         customer: item.customer,
         company: item.company,
-        existing_contract: existingContract // Pass only serializable data
+        existing_contract: latestContract // Pass only serializable data
       }
     });
   };
