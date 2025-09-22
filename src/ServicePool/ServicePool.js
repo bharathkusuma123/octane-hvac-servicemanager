@@ -547,7 +547,7 @@ function toDecimalHours(start, end) {
                     )}
                     {engineerStatus === "N/A" && "N/A"}
                   </td>
-                  <td>
+                  {/* <td>
                     <button
                       className={`btn btn-sm ${item.status !== "Open" ? "btn-secondary disabled" : "btn-primary"}`}
                       onClick={() => handleAssignClick(item)}
@@ -555,7 +555,43 @@ function toDecimalHours(start, end) {
                     >
                       Assign
                     </button>
-                  </td>
+                  </td> */}
+                  <td>
+  {item.status === "Open" ? (
+    <button
+      className="btn btn-sm btn-primary"
+      onClick={() => handleAssignClick(item)}
+    >
+      Assign
+    </button>
+  ) : item.status === "Closed" ? (
+    <button
+      className="btn btn-sm btn-warning"
+      onClick={() => {
+        // Add your reopen logic here
+        // Example: call API to reopen service or show confirmation
+        Swal.fire({
+          icon: 'question',
+          title: 'Re-open Service?',
+          text: `Are you sure you want to re-open request ${item.request_id}?`,
+          showCancelButton: true,
+          confirmButtonText: 'Yes, Re-open',
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Call your reopen API here
+            console.log(`Re-open service for request: ${item.request_id}`);
+          }
+        });
+      }}
+    >
+      Re-open Service
+    </button>
+  ) : (
+    <button className="btn btn-sm btn-secondary disabled">
+      Assign
+    </button>
+  )}
+</td>
                 </tr>
               );
             })
@@ -746,3 +782,17 @@ function toDecimalHours(start, end) {
 };
 
 export default ServicePoolTable;
+
+
+
+
+
+
+
+
+
+
+
+
+
+

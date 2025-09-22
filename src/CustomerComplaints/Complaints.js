@@ -108,10 +108,14 @@
 
 
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import baseURL from "../ApiUrl/Apiurl";
+import { AuthContext } from '../AuthContext/AuthContext';
+import { useCompany } from '../AuthContext/CompanyContext';
 
 const CustomerComplaints = () => {
+    const { userId } = useContext(AuthContext);
+      const { selectedCompany } = useCompany();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -126,15 +130,15 @@ const CustomerComplaints = () => {
         setLoading(true);
         
         // Get userId and company_id from localStorage
-        const userId = localStorage.getItem("userId");
-        const companyId = localStorage.getItem("company_id") || "COMP1"; // Fallback to COMP1 if not found
+        // const userId = localStorage.getItem("userId");
+        // const companyId = localStorage.getItem("company_id") || "COMP1"; // Fallback to COMP1 if not found
         
         if (!userId) {
           throw new Error("User ID not found in localStorage");
         }
         
         const response = await fetch(
-          `${baseURL}/customer-complaints/?user_id=${userId}&company_id=${companyId}`
+          `${baseURL}/customer-complaints/?user_id=${userId}&company_id=${selectedCompany}`
         );
         
         if (!response.ok) {
@@ -157,7 +161,7 @@ const CustomerComplaints = () => {
     };
 
     fetchComplaints();
-  }, []);
+  }, [selectedCompany]);
 
   // Filter complaints based on search term
   const filteredComplaints = complaints.filter((complaint) =>
