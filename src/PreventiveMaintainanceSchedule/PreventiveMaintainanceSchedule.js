@@ -17,7 +17,7 @@ const PreventiveMaintenanceSchedule = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`);
+        const response = await fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch data');
