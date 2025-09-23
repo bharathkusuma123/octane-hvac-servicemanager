@@ -227,7 +227,7 @@ const ServicePoolTable = () => {
     }
   }, [userId, selectedCompany]);
 
-  // WebSocket connection - Updated to handle latest assignment status
+  // WebSocket connection
   useEffect(() => {
     if (!userId || !selectedCompany) return;
 
@@ -545,6 +545,9 @@ const ServicePoolTable = () => {
                     const latestAssignment = getLatestAssignment(item.request_id);
                     const engineerStatus = latestAssignment?.status || "N/A";
 
+                    // Determine if Assign button should be enabled
+                    const canAssign = item.status === "Open" || engineerStatus === "Declined";
+
                     return (
                       <tr key={item.request_id || index}>
                         <td>{indexOfFirstEntry + index + 1}</td>
@@ -577,7 +580,7 @@ const ServicePoolTable = () => {
                           {engineerStatus === "N/A" && "N/A"}
                         </td>
                         <td>
-                          {item.status === "Open" ? (
+                          {canAssign ? (
                             <button
                               className="btn btn-sm btn-primary"
                               onClick={() => handleAssignClick(item, false)}
@@ -652,7 +655,6 @@ const ServicePoolTable = () => {
 
             <form onSubmit={handleSubmit} className="assignment-form">
               <div className="row mb-3">
-                {/* Form fields remain the same */}
                 <div className="col-md-4 mt-2">
                   <label className="form-label">Estimated Start Date & Time</label>
                   <input
