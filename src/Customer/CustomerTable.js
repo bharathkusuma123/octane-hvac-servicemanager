@@ -85,6 +85,7 @@ import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { FaTrashAlt } from 'react-icons/fa';
 
 const CustomerTable = ({ toggleForm }) => {
   const [customers, setCustomers] = useState([]);
@@ -99,7 +100,7 @@ const CustomerTable = ({ toggleForm }) => {
    const { userId } = useContext(AuthContext);
    const navigate = useNavigate();
 
- useEffect(() => {
+
   const fetchCustomers = async () => {
     setLoading(true);
     setError(null);
@@ -127,6 +128,7 @@ const CustomerTable = ({ toggleForm }) => {
     }
   };
 
+useEffect(() => {
   fetchCustomers();
 }, [selectedCompany, userId]); // Add dependencies here
 
@@ -168,6 +170,24 @@ const CustomerTable = ({ toggleForm }) => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  const handleDeleteCustomer = (customerId) => {
+  if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+    axios
+      .delete(`${baseURL}/customers/${customerId}/?user_id=${userId}&company_id=${selectedCompany}`)
+      .then(response => {
+        console.log("Customer deleted successfully", response);
+        // Refresh the customer list or remove the deleted customer from state
+        alert('Customer deleted successfully');
+        // You might want to refetch the data or filter out the deleted customer
+        fetchCustomers(); // Assuming you have a function to fetch customers
+      })
+      .catch(error => {
+        console.error("Error deleting customer:", error);
+        alert("Failed to delete customer. Please try again.");
+      });
+  }
+};
 
   if (loading) return <div className="text-center my-4">Loading customers...</div>;
   if (error) return <div className="alert alert-danger my-4">{error}</div>;
@@ -214,58 +234,70 @@ const CustomerTable = ({ toggleForm }) => {
       </div>
 
       <div className="table-responsive mb-4">
-        <table className="table">
-          <thead className="new-customer-table-header">
-            <tr>
-              <th>S.No</th>
-              <th>Customer ID</th>
-              <th>Company</th>
-              <th>Full Name</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Mobile</th>
-              <th>City</th>
-              <th>Type</th>
-              <th>Status</th>
-              <th>Created At</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentEntries.length > 0 ? (
-              currentEntries.map((customer, index) => (
-                <tr key={index}>
-                  <td>{indexOfFirstEntry + index + 1}</td>
-                  <td>{customer.customer_id}</td>
-                  <td>{customer.company}</td>
-                  <td>{customer.full_name}</td>
-                  <td>{customer.username}</td>
-                  <td>{customer.email}</td>
-                  <td>{customer.mobile}</td>
-                  <td>{customer.city}</td>
-                  <td>{customer.customer_type}</td>
-                  <td>
-                    <span className={`badge ${
-                      customer.status === 'Active' ? 'bg-success' :
-                      customer.status === 'Inactive' ? 'bg-warning text-dark' :
-                      'bg-danger'
-                    }`}>
-                      {customer.status}
-                    </span>
-                  </td>
-                  <td>{formatDate(customer.created_at)}</td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="11" className="text-center">
-                  {selectedCompany 
-                    ? `No customers found for ${selectedCompany}${searchTerm ? ' matching your search' : ''}`
-                    : 'No customers found'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+       <table className="table">
+  <thead className="new-customer-table-header">
+    <tr>
+      <th>S.No</th>
+      <th>Customer ID</th>
+      <th>Company</th>
+      <th>Full Name</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Mobile</th>
+      <th>City</th>
+      <th>Type</th>
+      <th>Status</th>
+      <th>Created At</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {currentEntries.length > 0 ? (
+      currentEntries.map((customer, index) => (
+        <tr key={index}>
+          <td>{indexOfFirstEntry + index + 1}</td>
+          <td>{customer.customer_id}</td>
+          <td>{customer.company}</td>
+          <td>{customer.full_name}</td>
+          <td>{customer.username}</td>
+          <td>{customer.email}</td>
+          <td>{customer.mobile}</td>
+          <td>{customer.city}</td>
+          <td>{customer.customer_type}</td>
+          <td>
+            <span className={`badge ${
+              customer.status === 'Active' ? 'bg-success' :
+              customer.status === 'Inactive' ? 'bg-warning text-dark' :
+              'bg-danger'
+            }`}>
+              {customer.status}
+            </span>
+          </td>
+          <td>{formatDate(customer.created_at)}</td>
+          <td>
+            <FaTrashAlt 
+              style={{ 
+                color: "#dc3545", 
+                cursor: "pointer",
+                fontSize: "18px"
+              }}
+              onClick={() => handleDeleteCustomer(customer.customer_id)}
+              title="Delete Customer"
+            />
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="12" className="text-center">
+          {selectedCompany 
+            ? `No customers found for ${selectedCompany}${searchTerm ? ' matching your search' : ''}`
+            : 'No customers found'}
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
       </div>
 
       {totalPages > 1 && (

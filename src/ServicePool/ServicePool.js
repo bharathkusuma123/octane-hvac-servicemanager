@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef  } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import "./ServicePool.css";
 import { FaEye, FaEdit, FaTrash } from "react-icons/fa";
 import axios from "axios";
@@ -9,10 +9,10 @@ import Swal from 'sweetalert2';
 import { AuthContext } from "../AuthContext/AuthContext";
 
 const ServicePoolTable = () => { 
-   const { userId } = useContext(AuthContext);
-  // const userId = localStorage.getItem('userId'); 
+  const { userId } = useContext(AuthContext);
   const [showAssignmentScreen, setShowAssignmentScreen] = useState(false);
   const [currentRequest, setCurrentRequest] = useState(null);
+  const [isReopening, setIsReopening] = useState(false);
   const [historyResponse, setHistoryResponse] = useState({ data: [] });
   const [formData, setFormData] = useState({
     engineerId: "",
@@ -31,41 +31,57 @@ const ServicePoolTable = () => {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [resources, setResources] = useState([]);
   const navigate = useNavigate();
-   const ws = useRef(null); // WebSocket reference
+  const ws = useRef(null);
 
   // Search and pagination states
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredData, setFilteredData] = useState([]);
-   const { selectedCompany } = useCompany(); // Get selected company from context
+  const { selectedCompany } = useCompany();
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      // Fetch users first
-      const usersResponse = await axios.get(`${baseURL}/users/`);
-      const serviceEngineers = usersResponse.data.filter(
-        user => user.role === "Service Engineer"
-      );
-      setEngineers(serviceEngineers);
-
-      // Then fetch resources with the correct parameters
-      if (selectedCompany && userId) {
-        const resourcesResponse = await axios.get(`${baseURL}/resources/?company_id=${selectedCompany}&user_id=${userId}`);
-const resourceArray = Array.isArray(resourcesResponse.data?.data) ? resourcesResponse.data.data : [];
-setResources(resourceArray);
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      alert("Failed to load data. Please try again later.");
-    }
+  // Function to get the latest assignment for a request
+  const getLatestAssignment = (requestId) => {
+    if (!historyResponse.data || !Array.isArray(historyResponse.data)) return null;
+    
+    // Filter assignments for this request
+    const requestAssignments = historyResponse.data.filter(
+      history => history.request === requestId
+    );
+    
+    if (requestAssignments.length === 0) return null;
+    
+    // Sort by assigned_at date (newest first) and return the first one
+    const sortedAssignments = requestAssignments.sort((a, b) => 
+      new Date(b.assigned_at) - new Date(a.assigned_at)
+    );
+    
+    return sortedAssignments[0];
   };
 
-  fetchData();
-}, [selectedCompany, userId]);  // Add dependencies here
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const usersResponse = await axios.get(`${baseURL}/users/`);
+        const serviceEngineers = usersResponse.data.filter(
+          user => user.role === "Service Engineer"
+        );
+        setEngineers(serviceEngineers);
 
-  // Fetch data function
+        if (selectedCompany && userId) {
+          const resourcesResponse = await axios.get(`${baseURL}/resources/?company_id=${selectedCompany}&user_id=${userId}`);
+          const resourceArray = Array.isArray(resourcesResponse.data?.data) ? resourcesResponse.data.data : [];
+          setResources(resourceArray);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        alert("Failed to load data. Please try again later.");
+      }
+    };
+
+    fetchData();
+  }, [selectedCompany, userId]);
+
   const fetchPoolData = async () => {
     setLoading(true);
     try {
@@ -77,11 +93,9 @@ setResources(resourceArray);
       const responseData = result.data || result;
       let dataArray = Array.isArray(responseData) ? responseData : [responseData];
 
-      // Sort by created_at descending (most recent first)
       dataArray.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
       setData(dataArray);
-      setFilteredData(dataArray); // Initialize filtered data
+      setFilteredData(dataArray);
     } catch (err) {
       setError(err.message);
       setData([]);
@@ -93,27 +107,24 @@ setResources(resourceArray);
 
   useEffect(() => {
     fetchPoolData();
-  }, [userId, selectedCompany]); // Fetch data when userId or selectedCompany changes
+  }, [userId, selectedCompany]);
 
-  // Apply search filter whenever searchTerm or data changes
-   useEffect(() => {
+  useEffect(() => {
     let results = data;
     
-    // First filter by selected company if one is selected
     if (selectedCompany) {
       results = results.filter(item => 
         item.company === selectedCompany
       );
     }
     
-    // Then apply search term filter
     if (searchTerm) {
       results = results.filter(item =>
         Object.values(item).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
-  )}
+      )}
     
     setFilteredData(results);
-    setCurrentPage(1); // Reset to first page when filters change
+    setCurrentPage(1);
   }, [selectedCompany, searchTerm, data]);
 
   const formatDate = (dateString) => {
@@ -127,145 +138,141 @@ setResources(resourceArray);
 
   const formatTime = (timeString) => {
     if (!timeString) return '';
-    
-    // Split the time string into hours, minutes, seconds
     const [hours, minutes] = timeString.split(':').map(Number);
-    
-    // Convert to 12-hour format
     const period = hours >= 12 ? 'PM' : 'AM';
-    const hours12 = hours % 12 || 12; // Convert 0 to 12 for 12 AM
-    
-    // Return formatted time (e.g., "06:40 PM")
+    const hours12 = hours % 12 || 12;
     return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
   };
 
-const checkEngineerAvailability = async (startDateTime, endDateTime) => {
-  if (!startDateTime || !endDateTime) return;
+  const checkEngineerAvailability = async (startDateTime, endDateTime) => {
+    if (!startDateTime || !endDateTime) return;
 
-  setCheckingAvailability(true);
-  try {
-    const response = await axios.get(`${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`);
-    const allAssignments = response.data.data || response.data;
-    const assignmentsArray = Array.isArray(allAssignments) ? allAssignments : [allAssignments];
-
-    const startDate = new Date(startDateTime);
-    const endDate = new Date(endDateTime);
-
-    const overlappingAssignments = assignmentsArray.filter((assignment) => {
-      if (
-        !assignment.est_start_datetime ||
-        !assignment.est_end_datetime ||
-        assignment.status !== "Assigned"
-      )
-        return false;
-
-      const assignmentStart = new Date(assignment.est_start_datetime);
-      const assignmentEnd = new Date(assignment.est_end_datetime);
-
-      return (
-        (assignmentStart >= startDate && assignmentStart <= endDate) || // starts during
-        (assignmentEnd >= startDate && assignmentEnd <= endDate) ||     // ends during
-        (assignmentStart <= startDate && assignmentEnd >= endDate)      // spans across
-      );
-    });
-
-    // ✅ Get `user_id`s of busy engineers by mapping resource_id → user_id
-    const busyResourceIds = [
-      ...new Set(
-        overlappingAssignments
-          .map((assignment) => assignment.assigned_engineer)
-          .filter(Boolean)
-      ),
-    ];
-
-    // Map resource_id → user_id using your `resources` list
-    const busyUserIds = resources
-      .filter((r) => busyResourceIds.includes(r.resource_id))
-      .map((r) => r.user);
-
-    setBusyEngineers(busyUserIds);
-
-    // Optionally clear selected engineer if no longer available
-    if (busyUserIds.includes(formData.engineerId)) {
-      setFormData((prev) => ({ ...prev, engineerId: "" }));
-    }
-  } catch (error) {
-    console.error("Error checking engineer availability:", error);
-  } finally {
-    setCheckingAvailability(false);
-  }
-};
-
-useEffect(() => {
-  const fetchAssignmentHistory = async () => {
+    setCheckingAvailability(true);
     try {
-      const response = await axios.get(`${baseURL}/assignment-history/`, {
-        params: {
-          user_id: userId,
-          company_id: selectedCompany
-        }
-      });
-      // Handle different response structures
-      setHistoryResponse({
-        data: response.data?.data || response.data || []
-      });
-    } catch (error) {
-      console.error("Error fetching assignment history:", error);
-      setHistoryResponse({ data: [] });
-    }
-  };
+      const response = await axios.get(`${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`);
+      const allAssignments = response.data.data || response.data;
+      const assignmentsArray = Array.isArray(allAssignments) ? allAssignments : [allAssignments];
 
-  if (userId && selectedCompany) {
-    fetchAssignmentHistory();
-  }
-}, [userId, selectedCompany]);
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
 
-// WebSocket connection
-useEffect(() => {
-  if (!userId || !selectedCompany) return;
+      const overlappingAssignments = assignmentsArray.filter((assignment) => {
+        if (
+          !assignment.est_start_datetime ||
+          !assignment.est_end_datetime ||
+          assignment.status !== "Assigned"
+        )
+          return false;
 
-  const websocketUrl = `ws://175.29.21.7:8006/ws/assignment-status/?user_id=${userId}&company_id=${selectedCompany}`;
-  console.log('Attempting to connect WebSocket:', websocketUrl);
+        const assignmentStart = new Date(assignment.est_start_datetime);
+        const assignmentEnd = new Date(assignment.est_end_datetime);
 
-  ws.current = new WebSocket(websocketUrl);
-
-  ws.current.onopen = () => {
-    console.log('✅ WebSocket connected');
-  };
-
-  ws.current.onmessage = (e) => {
-    try {
-      const message = JSON.parse(e.data);
-      console.log('📩 WebSocket message received:', message);
-
-      setHistoryResponse(prev => {
-        const updatedData = prev.data.map(item =>
-          item.request === message.request_id
-            ? { ...item, status: message.status }
-            : item
+        return (
+          (assignmentStart >= startDate && assignmentStart <= endDate) ||
+          (assignmentEnd >= startDate && assignmentEnd <= endDate) ||
+          (assignmentStart <= startDate && assignmentEnd >= endDate)
         );
-        return { data: updatedData };
       });
-    } catch (err) {
-      console.error('❌ Error parsing WebSocket message:', err);
+
+      const busyResourceIds = [
+        ...new Set(
+          overlappingAssignments
+            .map((assignment) => assignment.assigned_engineer)
+            .filter(Boolean)
+        ),
+      ];
+
+      const busyUserIds = resources
+        .filter((r) => busyResourceIds.includes(r.resource_id))
+        .map((r) => r.user);
+
+      setBusyEngineers(busyUserIds);
+
+      if (busyUserIds.includes(formData.engineerId)) {
+        setFormData((prev) => ({ ...prev, engineerId: "" }));
+      }
+    } catch (error) {
+      console.error("Error checking engineer availability:", error);
+    } finally {
+      setCheckingAvailability(false);
     }
   };
 
-  ws.current.onerror = (e) => {
-    console.error('❌ WebSocket error. Possibly backend not running or incorrect URL.', e);
-  };
+  useEffect(() => {
+    const fetchAssignmentHistory = async () => {
+      try {
+        const response = await axios.get(`${baseURL}/assignment-history/`, {
+          params: {
+            user_id: userId,
+            company_id: selectedCompany
+          }
+        });
+        
+        let historyData = response.data?.data || response.data || [];
+        
+        // Ensure it's an array and sort by assigned_at date (newest first)
+        if (Array.isArray(historyData)) {
+          historyData.sort((a, b) => new Date(b.assigned_at) - new Date(a.assigned_at));
+        }
+        
+        setHistoryResponse({ data: historyData });
+      } catch (error) {
+        console.error("Error fetching assignment history:", error);
+        setHistoryResponse({ data: [] });
+      }
+    };
 
-  ws.current.onclose = (e) => {
-    console.warn('⚠ WebSocket disconnected. Code:', e.code, 'Reason:', e.reason || 'No reason');
-  };
-
-  return () => {
-    if (ws.current) {
-      console.log('🔌 Closing WebSocket connection');
-      ws.current.close();
+    if (userId && selectedCompany) {
+      fetchAssignmentHistory();
     }
-  };
-}, [userId, selectedCompany]);
+  }, [userId, selectedCompany]);
+
+  // WebSocket connection - Updated to handle latest assignment status
+  useEffect(() => {
+    if (!userId || !selectedCompany) return;
+
+    const websocketUrl = `ws://175.29.21.7:8006/ws/assignment-status/?user_id=${userId}&company_id=${selectedCompany}`;
+    console.log('Attempting to connect WebSocket:', websocketUrl);
+
+    ws.current = new WebSocket(websocketUrl);
+
+    ws.current.onopen = () => {
+      console.log('✅ WebSocket connected');
+    };
+
+    ws.current.onmessage = (e) => {
+      try {
+        const message = JSON.parse(e.data);
+        console.log('📩 WebSocket message received:', message);
+
+        setHistoryResponse(prev => {
+          const updatedData = prev.data.map(item =>
+            item.assignment_id === message.assignment_id
+              ? { ...item, status: message.status }
+              : item
+          );
+          return { data: updatedData };
+        });
+      } catch (err) {
+        console.error('❌ Error parsing WebSocket message:', err);
+      }
+    };
+
+    ws.current.onerror = (e) => {
+      console.error('❌ WebSocket error. Possibly backend not running or incorrect URL.', e);
+    };
+
+    ws.current.onclose = (e) => {
+      console.warn('⚠ WebSocket disconnected. Code:', e.code, 'Reason:', e.reason || 'No reason');
+    };
+
+    return () => {
+      if (ws.current) {
+        console.log('🔌 Closing WebSocket connection');
+        ws.current.close();
+      }
+    };
+  }, [userId, selectedCompany]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -276,7 +283,6 @@ useEffect(() => {
     const { name, value } = e.target;
     const newFormData = { ...formData, [name]: value };
     
-    // If we're changing the end date, validate it
     if (name === "endDateTime" && newFormData.startDateTime) {
       const startDate = new Date(newFormData.startDateTime);
       const endDate = new Date(value);
@@ -285,16 +291,12 @@ useEffect(() => {
         setDateError("End date must be after start date");
       } else {
         setDateError("");
-        // Calculate completion time in hours
         const diffInHours = Math.abs(endDate - startDate) / 36e5;
         newFormData.completionTime = `${Math.floor(diffInHours)}:${Math.floor((diffInHours % 1) * 60)}`;
-        
-        // Check engineer availability when both dates are set
         checkEngineerAvailability(newFormData.startDateTime, value);
       }
     }
     
-    // Also check availability when start date changes and end date exists
     if (name === "startDateTime" && newFormData.endDateTime) {
       checkEngineerAvailability(value, newFormData.endDateTime);
     }
@@ -302,44 +304,53 @@ useEffect(() => {
     setFormData(newFormData);
   };
 
-  const handleAssignClick = (request) => {
+  const handleAssignClick = (request, isReopen = false) => {
     setCurrentRequest(request);
-    // Pre-fill the start date with the preferred date from the request
-    setFormData({
-      ...formData,
-      startDateTime: request.preferred_date ? 
-        new Date(request.preferred_date).toISOString().slice(0, 16) : ""
-    });
+    setIsReopening(isReopen);
+    
+    if (isReopen && request) {
+      setFormData({
+        engineerId: "",
+        completionTime: "",
+        estimatedPrice: request.estimated_price || "",
+        dynamics_service_order_no: request.dynamics_service_order_no || "",
+        startDateTime: request.est_start_datetime ? 
+          new Date(request.est_start_datetime).toISOString().slice(0, 16) : 
+          (request.preferred_date ? 
+            new Date(request.preferred_date).toISOString().slice(0, 16) : ""),
+        endDateTime: request.est_end_datetime ? 
+          new Date(request.est_end_datetime).toISOString().slice(0, 16) : "",
+      });
+    } else {
+      setFormData({
+        engineerId: "",
+        completionTime: "",
+        estimatedPrice: "",
+        dynamics_service_order_no: "",
+        startDateTime: request.preferred_date ? 
+          new Date(request.preferred_date).toISOString().slice(0, 16) : "",
+        endDateTime: "",
+      });
+    }
+    
     setShowAssignmentScreen(true);
-    setBusyEngineers([]); // Reset busy engineers when opening the form
+    setBusyEngineers([]);
   };
 
+  const toDecimalHours = (start, end) => {
+    const startTime = new Date(start);
+    const endTime = new Date(end);
+    const durationMs = endTime - startTime;
 
-  function toISOTimeString(start, end) {
-  const startTime = new Date(start);
-  const endTime = new Date(end);
-  const durationMs = endTime - startTime;
-  const durationDate = new Date(durationMs);
-  return durationDate.toISOString().split("T")[1]; // HH:MM:SS.ZZZZ
-}
+    const totalMinutes = durationMs / (1000 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
 
-function toDecimalHours(start, end) {
-  const startTime = new Date(start);
-  const endTime = new Date(end);
-  const durationMs = endTime - startTime;
+    const decimalHours = hours + minutes / 60;
+    return Number(decimalHours.toFixed(1));
+  };
 
-  const totalMinutes = durationMs / (1000 * 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  // Round to 1 decimal place
-  const decimalHours = hours + minutes / 60;
-  return Number(decimalHours.toFixed(1));
-}
-
-
-
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.endDateTime && formData.startDateTime) {
@@ -367,10 +378,7 @@ function toDecimalHours(start, end) {
 
     const payload = {
       assigned_engineer: selectedEngineerResource.resource_id,
-      estimated_completion_time: toDecimalHours(
-  formData.startDateTime,
-  formData.endDateTime
-),
+      estimated_completion_time: toDecimalHours(formData.startDateTime, formData.endDateTime),
       estimated_price: Number(formData.estimatedPrice),
       dynamics_service_order_no: formData.dynamics_service_order_no,
       est_start_datetime: formData.startDateTime,
@@ -380,14 +388,13 @@ function toDecimalHours(start, end) {
       user_id: userId,
       company_id: selectedCompany,
     };
-    console.log("Payload for assignment:", JSON.stringify(payload, null, 2));
 
     const assignmentPayload = {
       assignment_id: `ASG-${Date.now()}`,
-      assignment_type: "Assign",
+      assignment_type: isReopening ? "Reassign" : "Assign",
       status: "Pending",
       decline_reason: "",
-      comments: "",
+      comments: isReopening ? "Service reopened and reassigned" : "",
       created_by: userId,
       updated_by: userId,
       company: selectedCompany,
@@ -405,13 +412,21 @@ function toDecimalHours(start, end) {
       Swal.fire({
         icon: 'success',
         title: 'Success!',
-        text: 'Service request assigned successfully!',
+        text: `Service request ${isReopening ? 'reopened and ' : ''}assigned successfully!`,
         confirmButtonColor: '#3085d6',
       });
 
       await fetchPoolData();
       setShowAssignmentScreen(false);
-      setFormData(formData);
+      setFormData({
+        engineerId: "",
+        completionTime: "",
+        estimatedPrice: "",
+        dynamics_service_order_no: "",
+        startDateTime: "",
+        endDateTime: "",
+      });
+      setIsReopening(false);
       setDateError("");
     } catch (err) {
       console.error("Assignment failed:", err);
@@ -431,6 +446,22 @@ function toDecimalHours(start, end) {
     }
   };
 
+  const handleReopenService = (request) => {
+    Swal.fire({
+      icon: 'question',
+      title: 'Re-open Service?',
+      text: `Are you sure you want to re-open request ${request.request_id}? This will allow you to assign it to an engineer.`,
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Re-open',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        handleAssignClick(request, true);
+      }
+    });
+  };
 
   // Pagination calculations
   const indexOfLastEntry = currentPage * entriesPerPage;
@@ -453,7 +484,7 @@ function toDecimalHours(start, end) {
         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
           <div>
             <h2 className="pm-title">Service Pool Details</h2>
-             <p className="pm-subtitle">
+            <p className="pm-subtitle">
               {selectedCompany 
                 ? `Showing service requests for ${selectedCompany}`
                 : 'Showing all service requests'}
@@ -493,115 +524,89 @@ function toDecimalHours(start, end) {
           {/* Table */}
           <div className="table-responsive mb-4">
             <table className="table">
-        <thead className="new-customer-table-header">
-          <tr>
-            <th>S.No</th>
-            <th>Request ID</th>
-            <th>Company</th>
-            <th>Request By</th>
-            <th>Service Item</th>
-            <th>Preferred Date/Time</th>
-            <th>Status</th>
-            <th>Engineer</th>
-            <th>Engineer Status</th>
-            <th>Assign</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentItems.length > 0 ? (
-            currentItems.map((item, index) => {
-              const historyData = historyResponse.data || [];
-              const assignmentHistory = Array.isArray(historyData) 
-                ? historyData.find(history => history.request === item.request_id)
-                : null;
-              const engineerStatus = assignmentHistory?.status || "N/A";
-
-              return (
-                <tr key={item.request_id || index}>
-                  <td>{indexOfFirstEntry + index + 1}</td>
-                  <td>
-                    <button 
-                      className="btn btn-link p-0" 
-                      onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
-                    >
-                      {item.request_id}
-                    </button>
-                  </td>
-                  <td>{item.company}</td>
-                  <td>{item.requested_by || "N/A"}</td>
-                  <td>{item.service_item}</td>
-                  <td>
-                    {formatDate(item.preferred_date)} {formatTime(item.preferred_time)}
-                  </td>
-                  <td>{item.status}</td>
-                  <td>{item.assigned_engineer || "N/A"}</td>
-                  <td>
-                    {engineerStatus === "Pending" && (
-                      <span className="badge bg-warning text-dark">Pending</span>
-                    )}
-                    {engineerStatus === "Accepted" && (
-                      <span className="badge bg-success">Accepted</span>
-                    )}
-                    {engineerStatus === "Declined" && (
-                      <span className="badge bg-danger">Declined</span>
-                    )}
-                    {engineerStatus === "N/A" && "N/A"}
-                  </td>
-                  {/* <td>
-                    <button
-                      className={`btn btn-sm ${item.status !== "Open" ? "btn-secondary disabled" : "btn-primary"}`}
-                      onClick={() => handleAssignClick(item)}
-                      disabled={item.status !== "Open"}
-                    >
-                      Assign
-                    </button>
-                  </td> */}
-                  <td>
-  {item.status === "Open" ? (
-    <button
-      className="btn btn-sm btn-primary"
-      onClick={() => handleAssignClick(item)}
-    >
-      Assign
-    </button>
-  ) : item.status === "Closed" ? (
-    <button
-      className="btn btn-sm btn-warning"
-      onClick={() => {
-        // Add your reopen logic here
-        // Example: call API to reopen service or show confirmation
-        Swal.fire({
-          icon: 'question',
-          title: 'Re-open Service?',
-          text: `Are you sure you want to re-open request ${item.request_id}?`,
-          showCancelButton: true,
-          confirmButtonText: 'Yes, Re-open',
-        }).then((result) => {
-          if (result.isConfirmed) {
-            // Call your reopen API here
-            console.log(`Re-open service for request: ${item.request_id}`);
-          }
-        });
-      }}
-    >
-      Re-open Service
-    </button>
-  ) : (
-    <button className="btn btn-sm btn-secondary disabled">
-      Assign
-    </button>
-  )}
-</td>
+              <thead className="new-customer-table-header">
+                <tr>
+                  <th>S.No</th>
+                  <th>Request ID</th>
+                  <th>Company</th>
+                  <th>Request By</th>
+                  <th>Service Item</th>
+                  <th>Preferred Date/Time</th>
+                  <th>Status</th>
+                  <th>Engineer</th>
+                  <th>Engineer Status</th>
+                  <th>Actions</th>
                 </tr>
-              );
-            })
-          ) : (
-            <tr>
-              <td colSpan="10" className="text-center">No service requests found.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+              </thead>
+              <tbody>
+                {currentItems.length > 0 ? (
+                  currentItems.map((item, index) => {
+                    // Get the latest assignment for this request
+                    const latestAssignment = getLatestAssignment(item.request_id);
+                    const engineerStatus = latestAssignment?.status || "N/A";
+
+                    return (
+                      <tr key={item.request_id || index}>
+                        <td>{indexOfFirstEntry + index + 1}</td>
+                        <td>
+                          <button 
+                            className="btn btn-link p-0" 
+                            onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
+                          >
+                            {item.request_id}
+                          </button>
+                        </td>
+                        <td>{item.company}</td>
+                        <td>{item.requested_by || "N/A"}</td>
+                        <td>{item.service_item}</td>
+                        <td>
+                          {formatDate(item.preferred_date)} {formatTime(item.preferred_time)}
+                        </td>
+                        <td>{item.status}</td>
+                        <td>{item.assigned_engineer || "N/A"}</td>
+                        <td>
+                          {engineerStatus === "Pending" && (
+                            <span className="badge bg-warning text-dark">Pending</span>
+                          )}
+                          {engineerStatus === "Accepted" && (
+                            <span className="badge bg-success">Accepted</span>
+                          )}
+                          {engineerStatus === "Declined" && (
+                            <span className="badge bg-danger">Declined</span>
+                          )}
+                          {engineerStatus === "N/A" && "N/A"}
+                        </td>
+                        <td>
+                          {item.status === "Open" ? (
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => handleAssignClick(item, false)}
+                            >
+                              Assign
+                            </button>
+                          ) : item.status === "Closed" ? (
+                            <button
+                              className="btn btn-sm btn-warning"
+                              onClick={() => handleReopenService(item)}
+                            >
+                              Re-open Service
+                            </button>
+                          ) : (
+                            <button className="btn btn-sm btn-secondary disabled">
+                              Assign
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="10" className="text-center">No service requests found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
 
           {/* Pagination */}
@@ -634,13 +639,20 @@ function toDecimalHours(start, end) {
         <div className="container mt-4 service-request-form">
           <div className="card">
             <div className="card-header">
-              <h3>Service Assignment for {currentRequest?.request_id}</h3>
-              <p>Fill in the service assignment details below</p>
+              <h3>
+                {isReopening ? 'Re-open Service Assignment' : 'Service Assignment'} 
+                for {currentRequest?.request_id}
+              </h3>
+              <p>
+                {isReopening 
+                  ? 'Reassign this service to an engineer' 
+                  : 'Fill in the service assignment details below'}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="assignment-form">
               <div className="row mb-3">
-                {/* Row 1: Start Date, End Date, Completion Time */}
+                {/* Form fields remain the same */}
                 <div className="col-md-4 mt-2">
                   <label className="form-label">Estimated Start Date & Time</label>
                   <input
@@ -670,7 +682,8 @@ function toDecimalHours(start, end) {
                       (currentRequest?.preferred_date
                         ? new Date(currentRequest.preferred_date).toISOString().slice(0, 16)
                         : ""
-      )}
+                      )
+                    }
                   />
                   {dateError && (
                     <div className="text-danger small mt-1">{dateError}</div>
@@ -690,7 +703,6 @@ function toDecimalHours(start, end) {
                   />
                 </div>
 
-                {/* Row 2: Assigned Engineer, Estimated Price */}
                 <div className="col-md-4 mt-3">
                   <label className="form-label">Assigned Engineer</label>
                   <select
@@ -742,7 +754,7 @@ function toDecimalHours(start, end) {
                     className="form-control"
                   />
                 </div>
-                 <div className="col-md-4 mt-3">
+                <div className="col-md-4 mt-3">
                   <label className="form-label">Dynamic Service Order Id</label>
                   <input
                     type="text"
@@ -761,6 +773,7 @@ function toDecimalHours(start, end) {
                   onClick={() => {
                     setShowAssignmentScreen(false);
                     setDateError("");
+                    setIsReopening(false);
                   }}
                 >
                   Cancel
@@ -770,7 +783,11 @@ function toDecimalHours(start, end) {
                   className="btn btn-primary"
                   disabled={checkingAvailability || (engineers.length > 0 && engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0)}
                 >
-                  {checkingAvailability ? "Checking Availability..." : "Save Assignment"}
+                  {checkingAvailability 
+                    ? "Checking Availability..." 
+                    : isReopening 
+                      ? "Re-open and Assign" 
+                      : "Save Assignment"}
                 </button>
               </div>
             </form>
@@ -782,17 +799,3 @@ function toDecimalHours(start, end) {
 };
 
 export default ServicePoolTable;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
