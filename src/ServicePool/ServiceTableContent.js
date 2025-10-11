@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import baseURL from '../ApiUrl/Apiurl'; // Make sure to import your baseURL
 
 const ServiceTableContent = ({
   selectedCompany,
@@ -12,8 +14,40 @@ const ServiceTableContent = ({
   historyResponse,
   navigate,
   handleAssignClick,
-  handleReopenService
+  handleReopenService,
+  getCustomerName,
+  userId // Add userId as prop
 }) => {
+  const [serviceItems, setServiceItems] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+
+  // Fetch service items data
+  useEffect(() => {
+    const fetchServiceItems = async () => {
+      if (!selectedCompany || !userId) return;
+      
+      try {
+        setLoadingLocations(true);
+        const response = await axios.get(`${baseURL}/service-items/`, {
+          params: {
+            user_id: userId,
+            company_id: selectedCompany
+          }
+        });
+
+        if (response.data && response.data.data) {
+          setServiceItems(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching service items:", error);
+      } finally {
+        setLoadingLocations(false);
+      }
+    };
+
+    fetchServiceItems();
+  }, [selectedCompany, userId]);
+
   // Utility functions
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -30,6 +64,14 @@ const ServiceTableContent = ({
     const period = hours >= 12 ? 'PM' : 'AM';
     const hours12 = hours % 12 || 12;
     return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Function to get location from service_item ID
+  const getServiceItemLocation = (serviceItemId) => {
+    if (!serviceItemId || serviceItems.length === 0) return "Loading...";
+    
+    const serviceItem = serviceItems.find(item => item.service_item_id === serviceItemId);
+    return serviceItem ? serviceItem.location : "Location not found";
   };
 
   // Pagination calculations
@@ -85,11 +127,13 @@ const ServiceTableContent = ({
             <tr>
               <th>S.No</th>
               <th>Request ID</th>
-              <th>Company</th>
-              <th>Request By</th>
-            <th>Request Details</th>
+              {/* <th>Company</th> */}
+              <th>Requested By</th>
+              <th>Request Details</th>
               <th>Service Item</th>
+              <th>Location</th> {/* New Location column */}
               <th>Preferred Date/Time</th>
+              <th>Created Date/Time</th>
               <th>Status</th>
               <th>Engineer</th>
               <th>Engineer Status</th>
@@ -111,17 +155,29 @@ const ServiceTableContent = ({
                     <td>
                       <button 
                         className="btn btn-link p-0" 
-                        onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`)}
+                        onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`, { 
+                          state: { service_item: item.service_item } 
+                        })}
                       >
                         {item.request_id}
                       </button>
                     </td>
-                    <td>{item.company}</td>
-                    <td>{item.requested_by || "N/A"}</td>
+                    {/* <td>{item.company}</td> */}
+                    <td>{getCustomerName(item.requested_by)}</td>
                     <td>{item.request_details || "N/A"}</td>
                     <td>{item.service_item}</td>
                     <td>
+                      {loadingLocations ? (
+                        <span className="text-muted">Loading...</span>
+                      ) : (
+                        getServiceItemLocation(item.service_item)
+                      )}
+                    </td>
+                    <td>
                       {formatDate(item.preferred_date)} {formatTime(item.preferred_time)}
+                    </td>
+                    <td>
+                      {formatDate(item.created_at)} {formatTime(item.created_at)}
                     </td>
                     <td>{item.status}</td>
                     <td>{item.assigned_engineer || "N/A"}</td>
@@ -163,7 +219,7 @@ const ServiceTableContent = ({
               })
             ) : (
               <tr>
-                <td colSpan="10" className="text-center">No service requests found.</td>
+                <td colSpan="13" className="text-center">No service requests found.</td>
               </tr>
             )}
           </tbody>

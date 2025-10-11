@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { useCompany } from "../AuthContext/CompanyContext";
 import Swal from 'sweetalert2';
 import { AuthContext } from "../AuthContext/AuthContext";
-import ServiceTableContent from "./ServiceTableContent";
 import AssignmentForm from "./AssignmentForm";
+import ServiceTableContent from "./ServiceTableContent";
 
 const ServicePoolTable = () => { 
   const { userId } = useContext(AuthContext);
@@ -23,12 +23,34 @@ const ServicePoolTable = () => {
   const [engineers, setEngineers] = useState([]);
   const [resources, setResources] = useState([]);
   const [historyResponse, setHistoryResponse] = useState({ data: [] });
+  const [customers, setCustomers] = useState([]); // New state for customers
   
   // Search and pagination states
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredData, setFilteredData] = useState([]);
+
+  // Fetch customers
+  const fetchCustomers = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/customers/`, {
+        params: {
+          user_id: userId,
+          company_id: selectedCompany
+        }
+      });
+      
+      if (response.data.status === "success" && Array.isArray(response.data.data)) {
+        setCustomers(response.data.data);
+      } else {
+        setCustomers([]);
+      }
+    } catch (error) {
+      console.error("Error fetching customers:", error);
+      setCustomers([]);
+    }
+  };
 
   // Fetch engineers and resources
   useEffect(() => {
@@ -44,6 +66,9 @@ const ServicePoolTable = () => {
           const resourcesResponse = await axios.get(`${baseURL}/resources/?company_id=${selectedCompany}&user_id=${userId}`);
           const resourceArray = Array.isArray(resourcesResponse.data?.data) ? resourcesResponse.data.data : [];
           setResources(resourceArray);
+          
+          // Fetch customers when company and user are available
+          await fetchCustomers();
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -127,14 +152,23 @@ const ServicePoolTable = () => {
     setCurrentPage(1);
   }, [selectedCompany, searchTerm, data]);
 
+  // Get customer name by ID
+  const getCustomerName = (customerId) => {
+    if (!customerId) return "N/A";
+    
+    const customer = customers.find(cust => cust.customer_id === customerId);
+    return customer ? customer.full_name || customer.username || "N/A" : customerId;
+  };
+
   // Handle assign click
   const handleAssignClick = (request) => {
     setCurrentRequest(request);
     setShowAssignmentScreen(true);
   };
 
-  // Handle reopen service
+  // Handle reopen service (keep your existing implementation)
   const handleReopenService = async (item) => {
+    // Your existing handleReopenService implementation
     const result = await Swal.fire({
       icon: 'question',
       title: 'Re-open Service?',
@@ -253,6 +287,8 @@ const ServicePoolTable = () => {
           navigate={navigate}
           handleAssignClick={handleAssignClick}
           handleReopenService={handleReopenService}
+          getCustomerName={getCustomerName} // Pass the function as prop
+           userId={userId} // Pass userId as prop
         />
       ) : (
         <AssignmentForm
