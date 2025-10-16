@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 const ServiceTableContent = ({
   selectedCompany,
@@ -21,6 +21,8 @@ const ServiceTableContent = ({
   const [engineerStatusFilter, setEngineerStatusFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [createdDateFilter, setCreatedDateFilter] = useState("");
+  const [displayDateFilter, setDisplayDateFilter] = useState("");
+  const dateInputRef = useRef(null);
 
   // Utility functions
   const formatDate = (dateString) => {
@@ -84,24 +86,57 @@ const ServiceTableContent = ({
     }
   };
 
-  // Convert dd/mm/yyyy to yyyy-mm-dd for date input
-  const convertToInputFormat = (ddmmyyyy) => {
+  // Convert dd/mm/yyyy to yyyy-mm-dd for filtering
+  const convertToISOFormat = (ddmmyyyy) => {
     if (!ddmmyyyy) return '';
     const parts = ddmmyyyy.split('/');
-    if (parts.length === 3) {
+    if (parts.length === 3 && parts[0].length === 2 && parts[1].length === 2 && parts[2].length === 4) {
       return `${parts[2]}-${parts[1]}-${parts[0]}`; // yyyy-mm-dd
     }
-    return ddmmyyyy;
+    return '';
   };
 
   // Convert yyyy-mm-dd to dd/mm/yyyy
-  const convertToDisplayFormat = (yyyymmdd) => {
+  const convertFromISOFormat = (yyyymmdd) => {
     if (!yyyymmdd) return '';
     const parts = yyyymmdd.split('-');
     if (parts.length === 3) {
       return `${parts[2]}/${parts[1]}/${parts[0]}`; // dd/mm/yyyy
     }
-    return yyyymmdd;
+    return '';
+  };
+
+  // Handle date picker change
+  const handleDatePickerChange = (e) => {
+    const isoDate = e.target.value; // yyyy-mm-dd
+    setCreatedDateFilter(isoDate);
+    setDisplayDateFilter(convertFromISOFormat(isoDate));
+  };
+
+  // Handle text input change
+  const handleDateInputChange = (e) => {
+    let value = e.target.value.replace(/[^0-9/]/g, ''); // Keep only numbers and slashes
+    
+    // Auto-format as dd/mm/yyyy
+    const numbers = value.replace(/\//g, '');
+    if (numbers.length >= 2) {
+      value = numbers.slice(0, 2) + '/' + numbers.slice(2);
+    }
+    if (numbers.length >= 4) {
+      value = numbers.slice(0, 2) + '/' + numbers.slice(2, 4) + '/' + numbers.slice(4, 8);
+    }
+    
+    setDisplayDateFilter(value);
+    
+    // If complete date (dd/mm/yyyy), convert to ISO format for filtering
+    if (value.length === 10) {
+      const isoDate = convertToISOFormat(value);
+      if (isoDate) {
+        setCreatedDateFilter(isoDate);
+      }
+    } else {
+      setCreatedDateFilter('');
+    }
   };
 
   // Function to get service item details
@@ -155,6 +190,7 @@ const ServiceTableContent = ({
     setEngineerStatusFilter("");
     setStatusFilter("");
     setCreatedDateFilter("");
+    setDisplayDateFilter("");
   };
 
   return (
@@ -228,19 +264,45 @@ const ServiceTableContent = ({
           </select>
         </div>
         <div className="col-md-3">
-          <label className="form-label small">Created Date</label>
-          <input
-            type="date"
-            value={createdDateFilter}
-            onChange={(e) => setCreatedDateFilter(e.target.value)}
-            className="form-control form-control-sm"
-            placeholder="DD/MM/YYYY"
-          />
-          {/* {createdDateFilter && (
-            <small className="text-muted d-block mt-1">
-              Selected: {convertToDisplayFormat(createdDateFilter)}
-            </small>
-          )} */}
+          <label className="form-label small">Created Date (DD/MM/YYYY)</label>
+          <div className="position-relative">
+            <input
+              type="text"
+              value={displayDateFilter}
+              onChange={handleDateInputChange}
+              className="form-control form-control-sm"
+              placeholder="DD/MM/YYYY"
+              maxLength="10"
+              style={{ paddingRight: '35px' }}
+            />
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={createdDateFilter}
+              onChange={handleDatePickerChange}
+              className="position-absolute"
+              style={{
+                top: '0',
+                right: '0',
+                width: '30px',
+                height: '100%',
+                opacity: '0',
+                cursor: 'pointer'
+              }}
+            />
+            <span 
+              className="position-absolute"
+              style={{
+                top: '50%',
+                right: '8px',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                color: '#6c757d'
+              }}
+            >
+              📅
+            </span>
+          </div>
         </div>
         <div className="col-md-3 d-flex align-items-end">
           <button
