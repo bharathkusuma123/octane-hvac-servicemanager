@@ -1,3 +1,4 @@
+// In your TopNavbar.js
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "../Logos/hvac-logo-new.jpg";
@@ -15,8 +16,8 @@ const TopNavbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("userRole");
     localStorage.removeItem("userId");
-     localStorage.removeItem("selectedCompany"); // Remove from localStorage
-  updateCompany("");
+    localStorage.removeItem("selectedCompany");
+    updateCompany("");
     navigate("/");
   };
 
@@ -59,7 +60,7 @@ const TopNavbar = () => {
           path: "/servicemanager/preventive-maintainance-chart",
           label: "P M Chart",
         },
-          {
+        {
           path: "/servicemanager/preventive-maintainance-schedule",
           label: "P M schedule",
         },
@@ -69,6 +70,7 @@ const TopNavbar = () => {
       label: "Services",
       dropdown: [
         { path: "/servicemanager/service-pool", label: "Service Pool" },
+        { path: "/servicemanager/service-table-history", label: "Service Table History" },
         // { path: "/servicemanager/service-orders", label: "Service Orders" },
       ],
     },
@@ -81,7 +83,6 @@ const TopNavbar = () => {
       ],
     },
     { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
-    //  { path: "/servicemanager/customer-feedback", label: "Customer Satisfaction Survey" },
   ];
 
   return (

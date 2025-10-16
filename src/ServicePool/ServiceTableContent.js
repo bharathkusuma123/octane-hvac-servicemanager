@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import baseURL from '../ApiUrl/Apiurl'; // Make sure to import your baseURL
 
 const ServiceTableContent = ({
   selectedCompany,
@@ -16,69 +14,128 @@ const ServiceTableContent = ({
   handleAssignClick,
   handleReopenService,
   getCustomerName,
-  userId // Add userId as prop
+  userId,
+  serviceItems
 }) => {
-  const [serviceItems, setServiceItems] = useState([]);
-  const [loadingLocations, setLoadingLocations] = useState(true);
-
-  // Fetch service items data
-  useEffect(() => {
-    const fetchServiceItems = async () => {
-      if (!selectedCompany || !userId) return;
-      
-      try {
-        setLoadingLocations(true);
-        const response = await axios.get(`${baseURL}/service-items/`, {
-          params: {
-            user_id: userId,
-            company_id: selectedCompany
-          }
-        });
-
-        if (response.data && response.data.data) {
-          setServiceItems(response.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching service items:", error);
-      } finally {
-        setLoadingLocations(false);
-      }
-    };
-
-    fetchServiceItems();
-  }, [selectedCompany, userId]);
+  // New filter states
+  const [engineerStatusFilter, setEngineerStatusFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [createdDateFilter, setCreatedDateFilter] = useState("");
 
   // Utility functions
   const formatDate = (dateString) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month}/${day}/${year}`; // Changed to mm/dd/yyyy format as per your requirement
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '-';
+    }
   };
 
-  const formatTime = (timeString) => {
-    if (!timeString) return '';
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const hours12 = hours % 12 || 12;
-    return `${hours12.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  const formatTime = (dateTimeString) => {
+    if (!dateTimeString) return '';
+    try {
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return '';
+      
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      
+      // Convert to 12-hour format
+      hours = hours % 12 || 12;
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '';
+    }
   };
 
-  // Function to get location from service_item ID
-  const getServiceItemLocation = (serviceItemId) => {
-    if (!serviceItemId || serviceItems.length === 0) return "Loading...";
+  // Format datetime for display (combines date and time)
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return '-';
+    try {
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return '-';
+      
+      // Format date as mm/dd/yyyy
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const year = date.getFullYear();
+      
+      // Format time as HH:MM AM/PM
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      
+      return `${month}/${day}/${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      console.error('Error formatting datetime:', error);
+      return '-';
+    }
+  };
+
+  // Function to get service item details
+  const getServiceItemDetails = (serviceItemId) => {
+    if (!serviceItemId || serviceItems.length === 0) return { location: "Loading..." };
     
     const serviceItem = serviceItems.find(item => item.service_item_id === serviceItemId);
-    return serviceItem ? serviceItem.location : "Location not found";
+    return serviceItem ? serviceItem : { location: "Location not found" };
   };
 
-  // Pagination calculations
+  // Get current items for display (after all filters)
+  const getFilteredData = () => {
+    let results = filteredData;
+
+    // Apply Engineer Status filter
+    if (engineerStatusFilter) {
+      const historyData = historyResponse.data || [];
+      results = results.filter(item => {
+        const latestAssignment = Array.isArray(historyData) 
+          ? historyData.find(history => history.request === item.request_id)
+          : null;
+        const engineerStatus = latestAssignment?.status || "N/A";
+        return engineerStatus === engineerStatusFilter;
+      });
+    }
+
+    // Apply Status filter
+    if (statusFilter) {
+      results = results.filter(item => item.status === statusFilter);
+    }
+
+    // Apply Created Date filter
+    if (createdDateFilter) {
+      results = results.filter(item => {
+        const itemDate = new Date(item.created_at).toISOString().split('T')[0];
+        return itemDate === createdDateFilter;
+      });
+    }
+
+    return results;
+  };
+
+  const finalFilteredData = getFilteredData();
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentItems = filteredData.slice(indexOfFirstEntry, indexOfLastEntry);
-  const totalPages = Math.ceil(filteredData.length / entriesPerPage);
+  const currentItems = finalFilteredData.slice(indexOfFirstEntry, indexOfLastEntry);
+  const totalPages = Math.ceil(finalFilteredData.length / entriesPerPage);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setEngineerStatusFilter("");
+    setStatusFilter("");
+    setCreatedDateFilter("");
+  };
 
   return (
     <>
@@ -120,6 +177,55 @@ const ServiceTableContent = ({
         />
       </div>
 
+      {/* Filter Controls */}
+      <div className="row mb-3">
+        <div className="col-md-3">
+          <label className="form-label small">Engineer Status</label>
+          <select
+            value={engineerStatusFilter}
+            onChange={(e) => setEngineerStatusFilter(e.target.value)}
+            className="form-select form-select-sm"
+          >
+            <option value="">All Engineer Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Accepted">Accepted</option>
+          </select>
+        </div>
+        <div className="col-md-3">
+          <label className="form-label small">Status</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="form-select form-select-sm"
+          >
+            <option value="">All Status</option>
+            <option value="Open">Open</option>
+            <option value="Assigned">Assigned</option>
+            <option value="UnderProgress">UnderProgress</option>
+            <option value="Reopened">Reopened</option>
+            <option value="Closed">Closed</option>
+            <option value="Waiting for Quote">Waiting for Quote</option>
+          </select>
+        </div>
+        <div className="col-md-3">
+          <label className="form-label small">Created Date</label>
+          <input
+            type="date"
+            value={createdDateFilter}
+            onChange={(e) => setCreatedDateFilter(e.target.value)}
+            className="form-control form-control-sm"
+          />
+        </div>
+        <div className="col-md-3 d-flex align-items-end">
+          <button
+            onClick={clearFilters}
+            className="btn btn-outline-secondary btn-sm"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
       {/* Table */}
       <div className="table-responsive mb-4">
         <table className="table">
@@ -127,11 +233,10 @@ const ServiceTableContent = ({
             <tr>
               <th>S.No</th>
               <th>Request ID</th>
-              {/* <th>Company</th> */}
               <th>Requested By</th>
               <th>Request Details</th>
               <th>Service Item</th>
-              <th>Location</th> {/* New Location column */}
+              <th>Location</th>
               <th>Preferred Date/Time</th>
               <th>Created Date/Time</th>
               <th>Status</th>
@@ -148,6 +253,7 @@ const ServiceTableContent = ({
                   ? historyData.find(history => history.request === item.request_id)
                   : null;
                 const engineerStatus = latestAssignment?.status || "N/A";
+                const serviceItemDetails = getServiceItemDetails(item.service_item);
 
                 return (
                   <tr key={item.request_id || index}>
@@ -162,22 +268,23 @@ const ServiceTableContent = ({
                         {item.request_id}
                       </button>
                     </td>
-                    {/* <td>{item.company}</td> */}
                     <td>{getCustomerName(item.requested_by)}</td>
                     <td>{item.request_details || "N/A"}</td>
                     <td>{item.service_item}</td>
                     <td>
-                      {loadingLocations ? (
-                        <span className="text-muted">Loading...</span>
-                      ) : (
-                        getServiceItemLocation(item.service_item)
-                      )}
+                      {serviceItemDetails.location || "Location not found"}
                     </td>
                     <td>
-                      {formatDate(item.preferred_date)} {formatTime(item.preferred_time)}
+                      {/* Combined preferred date and time display */}
+                      {item.preferred_date && item.preferred_time 
+                        ? formatDateTime(`${item.preferred_date}T${item.preferred_time}`)
+                        : item.preferred_date 
+                          ? formatDate(item.preferred_date)
+                          : '-'
+                      }
                     </td>
                     <td>
-                      {formatDate(item.created_at)} {formatTime(item.created_at)}
+                      {formatDateTime(item.created_at)}
                     </td>
                     <td>{item.status}</td>
                     <td>{item.assigned_engineer || "N/A"}</td>
@@ -219,7 +326,7 @@ const ServiceTableContent = ({
               })
             ) : (
               <tr>
-                <td colSpan="13" className="text-center">No service requests found.</td>
+                <td colSpan="12" className="text-center">No service requests found.</td>
               </tr>
             )}
           </tbody>
@@ -227,7 +334,7 @@ const ServiceTableContent = ({
       </div>
 
       {/* Pagination */}
-      {filteredData.length > 0 && (
+      {finalFilteredData.length > 0 && (
         <div className="pagination-controls d-flex justify-content-center mt-3">
           <button
             className="btn btn-outline-primary me-2"
