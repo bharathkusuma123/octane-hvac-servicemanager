@@ -20,7 +20,6 @@ const ServicePoolTable = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [engineers, setEngineers] = useState([]);
   const [resources, setResources] = useState([]);
   const [historyResponse, setHistoryResponse] = useState({ data: [] });
   const [customers, setCustomers] = useState([]); // New state for customers
@@ -52,16 +51,10 @@ const ServicePoolTable = () => {
     }
   };
 
-  // Fetch engineers and resources
+  // Fetch resources
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const usersResponse = await axios.get(`${baseURL}/users/`);
-        const serviceEngineers = usersResponse.data.filter(
-          user => user.role === "Service Engineer"
-        );
-        setEngineers(serviceEngineers);
-
         if (selectedCompany && userId) {
           const resourcesResponse = await axios.get(`${baseURL}/resources/?company_id=${selectedCompany}&user_id=${userId}`);
           const resourceArray = Array.isArray(resourcesResponse.data?.data) ? resourcesResponse.data.data : [];
@@ -288,13 +281,12 @@ const ServicePoolTable = () => {
           handleAssignClick={handleAssignClick}
           handleReopenService={handleReopenService}
           getCustomerName={getCustomerName} // Pass the function as prop
-           userId={userId} // Pass userId as prop
+          userId={userId} // Pass userId as prop
         />
       ) : (
         <AssignmentForm
           currentRequest={currentRequest}
-          engineers={engineers}
-          resources={resources}
+          resources={resources} 
           selectedCompany={selectedCompany}
           userId={userId}
           onClose={() => setShowAssignmentScreen(false)}

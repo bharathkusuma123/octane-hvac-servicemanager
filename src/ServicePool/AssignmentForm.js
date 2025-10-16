@@ -5,7 +5,6 @@ import baseURL from "../ApiUrl/Apiurl";
 
 const AssignmentForm = ({ 
   currentRequest, 
-  engineers, 
   resources, 
   selectedCompany, 
   userId, 
@@ -29,6 +28,11 @@ const AssignmentForm = ({
   const [busyEngineers, setBusyEngineers] = useState([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [selectedEngineerHourlyRate, setSelectedEngineerHourlyRate] = useState(0);
+
+  // Filter active resources (engineers)
+  const activeResources = Array.isArray(resources) 
+    ? resources.filter(resource => resource.status === "Active")
+    : [];
 
   // Check engineer availability
   const checkEngineerAvailability = async (startDateTime, endDateTime) => {
@@ -336,38 +340,31 @@ const AssignmentForm = ({
                 onChange={handleEngineerChange}
                 required
                 className="form-control"
-                disabled={checkingAvailability || (engineers.length > 0 && engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0)}
+                disabled={checkingAvailability || (activeResources.length > 0 && activeResources.filter(r => !busyEngineers.includes(r.user)).length === 0)}
               >
                 {checkingAvailability ? (
                   <option value="">Checking engineer availability...</option>
-                ) : engineers.length === 0 ? (
-                  <option value="">Loading engineers...</option>
-                ) : engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0 ? (
-                  <option value="" disabled>
-                    No available engineers during this time period. Please adjust your dates.
-                  </option>
+                ) : activeResources.length === 0 ? (
+                  <option value="">No active engineers available</option>
+                // ) : activeResources.filter(r => !busyEngineers.includes(r.user)).length === 0 ? (
+                //   <option value="" disabled>
+                //     No available engineers during this time period. Please adjust your dates.
+                //   </option>
                 ) : (
                   <>
                     <option value="">-- Select Engineer --</option>
-                    {engineers
-                      .filter(engineer => !busyEngineers.includes(engineer.user_id))
-                      .map(engineer => {
-                        const engineerResource = Array.isArray(resources)
-                          ? resources.find((resource) => resource.user === engineer.user_id)
-                          : null;
-                        const hourlyRate = engineerResource ? ` - ₹${engineerResource.hourly_rate}/hr` : '';
-                        
-                        return (
-                          <option key={engineer.user_id} value={engineer.user_id}>
-                            {engineer.full_name} ({engineer.user_id}){hourlyRate}
-                          </option>
-                        );
-                      })}
+                    {activeResources
+                      .filter(resource => !busyEngineers.includes(resource.user))
+                      .map(resource => (
+                        <option key={resource.user} value={resource.user}>
+                          {resource.full_name} ({resource.user}) - ₹{resource.hourly_rate}/hr
+                        </option>
+                      ))}
                   </>
                 )}
               </select>
-              {engineers.length > 0 && 
-               engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0 &&
+              {activeResources.length > 0 && 
+               activeResources.filter(r => !busyEngineers.includes(r.user)).length === 0 &&
                !checkingAvailability && (
                 <div className="text-danger small mt-1">
                   No engineers available during selected time period. Please choose different dates.
@@ -387,10 +384,11 @@ const AssignmentForm = ({
                 className="form-control"
                 step="0.01"
                 min="0"
+                readOnly
               />
               {selectedEngineerHourlyRate > 0 && (
                 <div className="text-muted small mt-1">
-                  Calculated from {selectedEngineerHourlyRate}/hr × {formData.completionTime || '0'} hours
+                  Calculated from ₹{selectedEngineerHourlyRate}/hr × {formData.completionTime || '0'} hours
                 </div>
               )}
             </div>
@@ -420,7 +418,7 @@ const AssignmentForm = ({
             <button 
               type="submit" 
               className="btn btn-primary"
-              disabled={checkingAvailability || (engineers.length > 0 && engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0)}
+              disabled={checkingAvailability || (activeResources.length > 0 && activeResources.filter(r => !busyEngineers.includes(r.user)).length === 0)}
             >
               {checkingAvailability ? "Checking Availability..." : "Save Assignment"}
             </button>
