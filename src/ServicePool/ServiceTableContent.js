@@ -32,7 +32,7 @@ const ServiceTableContent = ({
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear();
-      return `${month}/${day}/${year}`; // Changed to mm/dd/yyyy format as per your requirement
+      return `${day}/${month}/${year}`; // dd/mm/yyyy format
     } catch (error) {
       console.error('Error formatting date:', error);
       return '-';
@@ -66,9 +66,9 @@ const ServiceTableContent = ({
       const date = new Date(dateTimeString);
       if (isNaN(date.getTime())) return '-';
       
-      // Format date as mm/dd/yyyy
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      // Format date as dd/mm/yyyy
       const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
       const year = date.getFullYear();
       
       // Format time as HH:MM AM/PM
@@ -77,11 +77,31 @@ const ServiceTableContent = ({
       const period = hours >= 12 ? 'PM' : 'AM';
       hours = hours % 12 || 12;
       
-      return `${month}/${day}/${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+      return `${day}/${month}/${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
     } catch (error) {
       console.error('Error formatting datetime:', error);
       return '-';
     }
+  };
+
+  // Convert dd/mm/yyyy to yyyy-mm-dd for date input
+  const convertToInputFormat = (ddmmyyyy) => {
+    if (!ddmmyyyy) return '';
+    const parts = ddmmyyyy.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`; // yyyy-mm-dd
+    }
+    return ddmmyyyy;
+  };
+
+  // Convert yyyy-mm-dd to dd/mm/yyyy
+  const convertToDisplayFormat = (yyyymmdd) => {
+    if (!yyyymmdd) return '';
+    const parts = yyyymmdd.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`; // dd/mm/yyyy
+    }
+    return yyyymmdd;
   };
 
   // Function to get service item details
@@ -214,7 +234,13 @@ const ServiceTableContent = ({
             value={createdDateFilter}
             onChange={(e) => setCreatedDateFilter(e.target.value)}
             className="form-control form-control-sm"
+            placeholder="DD/MM/YYYY"
           />
+          {/* {createdDateFilter && (
+            <small className="text-muted d-block mt-1">
+              Selected: {convertToDisplayFormat(createdDateFilter)}
+            </small>
+          )} */}
         </div>
         <div className="col-md-3 d-flex align-items-end">
           <button
