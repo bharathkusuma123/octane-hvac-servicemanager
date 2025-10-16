@@ -10,22 +10,168 @@ const AssignmentForm = ({
   selectedCompany, 
   userId, 
   onClose, 
-  onSuccess 
+  onSuccess,
+  customers,
+  serviceItems,
+  getCustomerDetails,
+  getServiceItemDetails,
+  dataLoading
 }) => {
+  // Helper function to combine date and time into datetime-local format (24-hour format)
+  const combineDateAndTime = (dateString, timeString) => {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    // If timeString is provided, use it; otherwise use default time (09:00)
+    if (timeString) {
+      const [hours, minutes, seconds] = timeString.split(':').map(Number);
+      date.setHours(hours, minutes || 0, seconds || 0, 0);
+    } else {
+      // Default to 9:00 AM if no time provided
+      date.setHours(9, 0, 0, 0);
+    }
+    
+    // Convert to local timezone and format for datetime-local input
+    const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  // Helper function to convert time string to 24-hour format for datetime-local
+  const timeTo24HourFormat = (timeString) => {
+    if (!timeString) return '09:00'; // Default to 9:00 AM
+    
+    // If time is already in 24-hour format (contains only numbers and colons)
+    if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(timeString)) {
+      return timeString.split(':').slice(0, 2).join(':');
+    }
+    
+    // If time is in 12-hour format with AM/PM
+    const timeMatch = timeString.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (timeMatch) {
+      let [_, hours, minutes, period] = timeMatch;
+      hours = parseInt(hours);
+      minutes = parseInt(minutes);
+      
+      if (period.toUpperCase() === 'PM' && hours < 12) {
+        hours += 12;
+      } else if (period.toUpperCase() === 'AM' && hours === 12) {
+        hours = 0;
+      }
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
+    
+    return '09:00'; // Default fallback
+  };
+
   const [formData, setFormData] = useState({
     engineerId: "",
     completionTime: "",
     estimatedPrice: "",
     dynamics_service_order_no: "",
-    startDateTime: currentRequest?.preferred_date 
-      ? new Date(currentRequest.preferred_date).toISOString().slice(0, 16) 
-      : "",
+    startDateTime: combineDateAndTime(currentRequest?.preferred_date, currentRequest?.preferred_time),
     endDateTime: "",
   });
   
   const [dateError, setDateError] = useState("");
   const [busyEngineers, setBusyEngineers] = useState([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+  
+  // Customer and Service Item details state
+  const [customerDetails, setCustomerDetails] = useState(null);
+  const [serviceItemDetails, setServiceItemDetails] = useState(null);
+  const [detailsLoading, setDetailsLoading] = useState(true);
+
+  // Debug function to see what time we're getting from the API
+  const debugTimeInfo = () => {
+    if (!currentRequest) return null;
+    
+    console.log('Debug Time Info:');
+    console.log('Preferred Date:', currentRequest.preferred_date);
+    console.log('Preferred Time:', currentRequest.preferred_time);
+    console.log('Combined DateTime:', combineDateAndTime(currentRequest.preferred_date, currentRequest.preferred_time));
+    console.log('Form Start DateTime:', formData.startDateTime);
+  };
+
+  // Re-initialize form data when currentRequest changes
+  useEffect(() => {
+    if (currentRequest) {
+      const initialStartDateTime = combineDateAndTime(currentRequest.preferred_date, currentRequest.preferred_time);
+      setFormData(prev => ({
+        ...prev,
+        startDateTime: initialStartDateTime,
+        endDateTime: ""
+      }));
+    }
+  }, [currentRequest]);
+
+  // Call debug on render to see what's happening
+  useEffect(() => {
+    debugTimeInfo();
+  }, [currentRequest, formData.startDateTime]);
+
+  // Fetch customer and service item details when component mounts or currentRequest changes
+  useEffect(() => {
+    const fetchDetails = async () => {
+      if (!currentRequest) return;
+      
+      setDetailsLoading(true);
+      
+      try {
+        // Get customer details
+        const customerId = currentRequest.customer?.id || currentRequest.customer || currentRequest.requested_by;
+        let customer = null;
+        
+        if (getCustomerDetails) {
+          customer = getCustomerDetails(customerId);
+        } else if (customers && customers.length > 0) {
+          customer = customers.find(cust => cust.customer_id === customerId) || null;
+        }
+        
+        setCustomerDetails(customer);
+
+        // Get service item details
+        const serviceItemId = currentRequest.service_item?.id || currentRequest.service_item;
+        let serviceItem = null;
+        
+        if (getServiceItemDetails) {
+          serviceItem = getServiceItemDetails(serviceItemId);
+        } else if (serviceItems && serviceItems.length > 0) {
+          serviceItem = serviceItems.find(item => item.service_item_id === serviceItemId) || null;
+        }
+        
+        setServiceItemDetails(serviceItem);
+      } catch (error) {
+        console.error("Error fetching details:", error);
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [currentRequest, customers, serviceItems, getCustomerDetails, getServiceItemDetails]);
+
+  // Show loading state if data is still loading
+  if (dataLoading || detailsLoading) {
+    return (
+      <div className="container mt-4 service-request-form">
+        <div className="card">
+          <div className="card-header">
+            <h3>Service Assignment for {currentRequest?.request_id}</h3>
+            <p>Loading customer and service item details...</p>
+          </div>
+          <div className="card-body text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-3">Please wait while we load the details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Check engineer availability
   const checkEngineerAvailability = async (startDateTime, endDateTime) => {
@@ -113,7 +259,9 @@ const AssignmentForm = ({
       } else {
         setDateError("");
         const diffInHours = Math.abs(endDate - startDate) / 36e5;
-        newFormData.completionTime = `${Math.floor(diffInHours)}:${Math.floor((diffInHours % 1) * 60)}`;
+        const hours = Math.floor(diffInHours);
+        const minutes = Math.floor((diffInHours % 1) * 60);
+        newFormData.completionTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         checkEngineerAvailability(newFormData.startDateTime, value);
       }
     }
@@ -210,6 +358,73 @@ const AssignmentForm = ({
     }
   };
 
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${month}/${day}/${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '-';
+    }
+  };
+
+  // Format time for display (12-hour format)
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    try {
+      let date;
+      if (timeString.includes('T') || timeString.includes(' ')) {
+        // It's a datetime string
+        date = new Date(timeString);
+      } else {
+        // It's a time string, combine with today's date
+        const today = new Date().toISOString().split('T')[0];
+        date = new Date(`${today}T${timeString}`);
+      }
+      
+      if (isNaN(date.getTime())) return '';
+      
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '';
+    }
+  };
+
+  // Format datetime for display in form fields (12-hour format)
+  const formatDateTimeForDisplay = (dateTimeString) => {
+    if (!dateTimeString) return '';
+    try {
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return '';
+      
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      const year = date.getFullYear();
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      
+      return `${month}/${day}/${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      console.error('Error formatting datetime:', error);
+      return '';
+    }
+  };
+
   return (
     <div className="container mt-4 service-request-form">
       <div className="card">
@@ -218,7 +433,90 @@ const AssignmentForm = ({
           <p>Fill in the service assignment details below</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="assignment-form">
+        {/* Customer and Service Item Details Section */}
+        <div className="card-body border-bottom">
+          <h5 className="mb-3">Request Details</h5>
+          <div className="row">
+            {/* Customer Details */}
+            <div className="col-md-6">
+              <div className="card bg-light">
+                <div className="card-header py-2">
+                  <h6 className="mb-0">Customer Information</h6>
+                </div>
+                <div className="card-body">
+                  {customerDetails ? (
+                    <>
+                      <p><strong>Name:</strong> {customerDetails.full_name || customerDetails.username || 'N/A'}</p>
+                      <p><strong>Email:</strong> {customerDetails.email || 'N/A'}</p>
+                      <p><strong>Phone:</strong> {customerDetails.phone || 'N/A'}</p>
+                      <p><strong>Address:</strong> {customerDetails.address || 'N/A'}</p>
+                    </>
+                  ) : (
+                    <p className="text-muted">Customer details not found</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Service Item Details */}
+            <div className="col-md-6">
+              <div className="card bg-light">
+                <div className="card-header py-2">
+                  <h6 className="mb-0">Service Item Information</h6>
+                </div>
+                <div className="card-body">
+                  {serviceItemDetails ? (
+                    <>
+                      <p><strong>Item Name:</strong> {serviceItemDetails.item_name || 'N/A'}</p>
+                      <p><strong>Location:</strong> {serviceItemDetails.location || 'N/A'}</p>
+                      <p><strong>Category:</strong> {serviceItemDetails.category || 'N/A'}</p>
+                      <p><strong>Model:</strong> {serviceItemDetails.model || 'N/A'}</p>
+                      <p><strong>Serial No:</strong> {serviceItemDetails.serial_number || 'N/A'}</p>
+                    </>
+                  ) : (
+                    <p className="text-muted">Service item details not found</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Service Request Information - All in same row */}
+          <div className="row mt-3">
+            <div className="col-12">
+              <div className="card bg-light">
+                <div className="card-header py-2">
+                  <h6 className="mb-0">Service Request Information</h6>
+                </div>
+                <div className="card-body">
+                  <div className="row">
+                    {/* Preferred Date, Preferred Time, and Alert Details in same row */}
+                    <div className="col-md-4">
+                      <p><strong>Preferred Date:</strong> {formatDate(currentRequest?.preferred_date)}</p>
+                    </div>
+                    <div className="col-md-4">
+                      <p><strong>Preferred Time:</strong> {formatTime(currentRequest?.preferred_time)}</p>
+                    </div>
+                    <div className="col-md-4">
+                      <p><strong>Alert Details:</strong> {currentRequest?.alert_details || 'N/A'}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Request Details in last row */}
+                  <div className="row mt-2">
+                    <div className="col-12">
+                      <p><strong>Request Details:</strong> {currentRequest?.request_details || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Assignment Form */}
+        <form onSubmit={handleSubmit} className="assignment-form p-4">
+          <h5 className="mb-3">Assignment Details</h5>
           <div className="row mb-3">
             {/* Start Date */}
             <div className="col-md-4 mt-2">
@@ -230,10 +528,13 @@ const AssignmentForm = ({
                 onChange={handleDateChange}
                 required
                 className="form-control"
-                min={currentRequest?.preferred_date
-                  ? new Date(currentRequest.preferred_date).toISOString().slice(0, 16)
+                min={currentRequest?.preferred_date 
+                  ? combineDateAndTime(currentRequest.preferred_date, "00:00")
                   : ""}
               />
+              <small className="text-muted">
+                Based on customer preference: {formatDateTimeForDisplay(combineDateAndTime(currentRequest?.preferred_date, currentRequest?.preferred_time))}
+              </small>
             </div>
 
             {/* End Date */}
@@ -248,7 +549,7 @@ const AssignmentForm = ({
                 className="form-control"
                 min={formData.startDateTime ||
                   (currentRequest?.preferred_date
-                    ? new Date(currentRequest.preferred_date).toISOString().slice(0, 16)
+                    ? combineDateAndTime(currentRequest.preferred_date, "00:00")
                     : "")}
               />
               {dateError && <div className="text-danger small mt-1">{dateError}</div>}
@@ -265,6 +566,7 @@ const AssignmentForm = ({
                 required
                 className="form-control"
                 readOnly
+                placeholder="00:00"
               />
             </div>
 
@@ -319,6 +621,8 @@ const AssignmentForm = ({
                 onChange={handleChange}
                 required
                 className="form-control"
+                min="0"
+                step="0.01"
               />
             </div>
 
@@ -332,6 +636,7 @@ const AssignmentForm = ({
                 onChange={handleChange}
                 required
                 className="form-control"
+                placeholder="Enter service order number"
               />
             </div>
           </div>

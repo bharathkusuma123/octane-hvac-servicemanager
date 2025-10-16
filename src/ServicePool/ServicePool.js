@@ -23,7 +23,8 @@ const ServicePoolTable = () => {
   const [engineers, setEngineers] = useState([]);
   const [resources, setResources] = useState([]);
   const [historyResponse, setHistoryResponse] = useState({ data: [] });
-  const [customers, setCustomers] = useState([]); // New state for customers
+  const [customers, setCustomers] = useState([]);
+  const [serviceItems, setServiceItems] = useState([]);
   
   // Search and pagination states
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +53,27 @@ const ServicePoolTable = () => {
     }
   };
 
+  // Fetch service items
+  const fetchServiceItems = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/service-items/`, {
+        params: {
+          user_id: userId,
+          company_id: selectedCompany
+        }
+      });
+
+      if (response.data && response.data.data) {
+        setServiceItems(response.data.data);
+      } else {
+        setServiceItems([]);
+      }
+    } catch (error) {
+      console.error("Error fetching service items:", error);
+      setServiceItems([]);
+    }
+  };
+
   // Fetch engineers and resources
   useEffect(() => {
     const fetchData = async () => {
@@ -67,8 +89,9 @@ const ServicePoolTable = () => {
           const resourceArray = Array.isArray(resourcesResponse.data?.data) ? resourcesResponse.data.data : [];
           setResources(resourceArray);
           
-          // Fetch customers when company and user are available
+          // Fetch customers and service items when company and user are available
           await fetchCustomers();
+          await fetchServiceItems();
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -160,6 +183,18 @@ const ServicePoolTable = () => {
     return customer ? customer.full_name || customer.username || "N/A" : customerId;
   };
 
+  // Get customer details by ID
+  const getCustomerDetails = (customerId) => {
+    if (!customerId) return null;
+    return customers.find(cust => cust.customer_id === customerId) || null;
+  };
+
+  // Get service item details by ID
+  const getServiceItemDetails = (serviceItemId) => {
+    if (!serviceItemId) return null;
+    return serviceItems.find(item => item.service_item_id === serviceItemId) || null;
+  };
+
   // Handle assign click
   const handleAssignClick = (request) => {
     setCurrentRequest(request);
@@ -168,7 +203,6 @@ const ServicePoolTable = () => {
 
   // Handle reopen service (keep your existing implementation)
   const handleReopenService = async (item) => {
-    // Your existing handleReopenService implementation
     const result = await Swal.fire({
       icon: 'question',
       title: 'Re-open Service?',
@@ -287,8 +321,9 @@ const ServicePoolTable = () => {
           navigate={navigate}
           handleAssignClick={handleAssignClick}
           handleReopenService={handleReopenService}
-          getCustomerName={getCustomerName} // Pass the function as prop
-           userId={userId} // Pass userId as prop
+          getCustomerName={getCustomerName}
+          userId={userId}
+          serviceItems={serviceItems}
         />
       ) : (
         <AssignmentForm
@@ -299,6 +334,10 @@ const ServicePoolTable = () => {
           userId={userId}
           onClose={() => setShowAssignmentScreen(false)}
           onSuccess={fetchPoolData}
+          customers={customers}
+          serviceItems={serviceItems}
+          getCustomerDetails={getCustomerDetails}
+          getServiceItemDetails={getServiceItemDetails}
         />
       )}
     </div>

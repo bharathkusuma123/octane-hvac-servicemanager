@@ -235,9 +235,7 @@
 
 
 
-
-
-
+// In your App.js, add the new import and route
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -266,14 +264,14 @@ import CustomerSatisfactionSurvey from "./CustomerSurvey/CustomerSatisfactionSur
 import ServiceContractForm from './ServiceItems/ServiceContractForm';
 import ServiceRenewalForm from './ServiceItems/ServiceRenewalForm';
 import PreventiveMaintainanceSchedule from "./PreventiveMaintainanceSchedule/PreventiveMaintainanceSchedule";
-
+import ServiceTableHistory from "./ServicePool/ServiceHistoryTable"; // Add this import
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-           <Route path="/contact-api" element={<ContactPage />} />
+          <Route path="/contact-api" element={<ContactPage />} />
           <Route path="/" element={<ServiceManagerLogin />} />
           <Route path="/signup" element={<SignUpScreen />} />
           <Route path="/signupset-password-screen" element={<SignupSetPassword />} />
@@ -302,7 +300,7 @@ function App() {
               </PanelLayout>
             }
           />
-           <Route
+          <Route
             path="/servicemanager/preventive-maintainance-schedule"
             element={
               <PanelLayout>
@@ -326,7 +324,7 @@ function App() {
               </PanelLayout>
             }
           />
-           <Route
+          <Route
             path="/servicemanager/service-contract"
             element={
               <PanelLayout>
@@ -334,11 +332,10 @@ function App() {
               </PanelLayout>
             }
           />
-
-<Route 
-  path="/servicemanager/service-renewal" 
-  element={<PanelLayout><ServiceRenewalForm /></PanelLayout>} 
-/>
+          <Route 
+            path="/servicemanager/service-renewal" 
+            element={<PanelLayout><ServiceRenewalForm /></PanelLayout>} 
+          />
           <Route
             path="/servicemanager/customer-complaints"
             element={
@@ -355,7 +352,16 @@ function App() {
               </PanelLayout>
             }
           />
-           <Route
+          {/* Add the new Service Table History route */}
+          <Route
+            path="/servicemanager/service-table-history"
+            element={
+              <PanelLayout>
+                <ServiceTableHistory />
+              </PanelLayout>
+            }
+          />
+          <Route
             path="/servicemanager/customer-feedback"
             element={
               <PanelLayout>
