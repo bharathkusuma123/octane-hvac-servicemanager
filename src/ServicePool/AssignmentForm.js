@@ -74,10 +74,13 @@ const AssignmentForm = ({
     startDateTime: combineDateAndTime(currentRequest?.preferred_date, currentRequest?.preferred_time),
     endDateTime: "",
   });
+
+  console.log("Resources in AssignmentForm:", resources);
   
   const [dateError, setDateError] = useState("");
   const [busyEngineers, setBusyEngineers] = useState([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
+    const [selectedEngineerHourlyRate, setSelectedEngineerHourlyRate] = useState(0);
   
   // Customer and Service Item details state
   const [customerDetails, setCustomerDetails] = useState(null);
@@ -173,6 +176,7 @@ const AssignmentForm = ({
     );
   }
 
+
   // Check engineer availability
   const checkEngineerAvailability = async (startDateTime, endDateTime) => {
     if (!startDateTime || !endDateTime) return;
@@ -220,6 +224,7 @@ const AssignmentForm = ({
 
       if (busyUserIds.includes(formData.engineerId)) {
         setFormData((prev) => ({ ...prev, engineerId: "" }));
+        setSelectedEngineerHourlyRate(0);
       }
     } catch (error) {
       console.error("Error checking engineer availability:", error);
@@ -241,12 +246,56 @@ const AssignmentForm = ({
     return Number(decimalHours.toFixed(1));
   };
 
+  // Calculate estimated price based on hourly rate and completion time
+  const calculateEstimatedPrice = (engineerId, completionTime) => {
+    if (!engineerId || !completionTime) return "";
+
+    const engineerResource = Array.isArray(resources)
+      ? resources.find((resource) => resource.user === engineerId)
+      : null;
+
+    if (!engineerResource || !engineerResource.hourly_rate) return "";
+
+    const hourlyRate = parseFloat(engineerResource.hourly_rate);
+    
+    // Parse completion time (HH:MM format)
+    const [hours, minutes] = completionTime.split(':').map(Number);
+    const totalHours = hours + (minutes / 60);
+    
+    const calculatedPrice = (hourlyRate * totalHours).toFixed(2);
+    return calculatedPrice;
+  };
+
+  const handleEngineerChange = (e) => {
+    const { value } = e.target;
+    
+    // Find the selected engineer's resource to get hourly rate
+    const selectedEngineerResource = Array.isArray(resources)
+      ? resources.find((resource) => resource.user === value)
+      : null;
+
+    const hourlyRate = selectedEngineerResource ? parseFloat(selectedEngineerResource.hourly_rate) : 0;
+    setSelectedEngineerHourlyRate(hourlyRate);
+
+    // Calculate price if completion time is already set
+    let newEstimatedPrice = "";
+    if (value && formData.completionTime) {
+      newEstimatedPrice = calculateEstimatedPrice(value, formData.completionTime);
+    }
+
+    setFormData((prev) => ({ 
+      ...prev, 
+      engineerId: value,
+      estimatedPrice: newEstimatedPrice
+    }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (e) => {
+ const handleDateChange = (e) => {
     const { name, value } = e.target;
     const newFormData = { ...formData, [name]: value };
     
@@ -261,7 +310,16 @@ const AssignmentForm = ({
         const diffInHours = Math.abs(endDate - startDate) / 36e5;
         const hours = Math.floor(diffInHours);
         const minutes = Math.floor((diffInHours % 1) * 60);
-        newFormData.completionTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        const completionTime = `${hours}:${minutes.toString().padStart(2, '0')}`;
+        
+        newFormData.completionTime = completionTime;
+
+        // Calculate estimated price if engineer is selected
+        if (newFormData.engineerId) {
+          const calculatedPrice = calculateEstimatedPrice(newFormData.engineerId, completionTime);
+          newFormData.estimatedPrice = calculatedPrice;
+        }
+
         checkEngineerAvailability(newFormData.startDateTime, value);
       }
     }
@@ -576,7 +634,7 @@ const AssignmentForm = ({
               <select
                 name="engineerId"
                 value={formData.engineerId}
-                onChange={handleChange}
+                onChange={handleEngineerChange}
                 required
                 className="form-control"
                 disabled={checkingAvailability || (engineers.length > 0 && engineers.filter(e => !busyEngineers.includes(e.user_id)).length === 0)}
@@ -594,11 +652,18 @@ const AssignmentForm = ({
                     <option value="">-- Select Engineer --</option>
                     {engineers
                       .filter(engineer => !busyEngineers.includes(engineer.user_id))
-                      .map(engineer => (
-                        <option key={engineer.user_id} value={engineer.user_id}>
-                          {engineer.full_name} ({engineer.user_id})
-                        </option>
-                      ))}
+                      .map(engineer => {
+                        const engineerResource = Array.isArray(resources)
+                          ? resources.find((resource) => resource.user === engineer.user_id)
+                          : null;
+                        const hourlyRate = engineerResource ? ` - ₹${engineerResource.hourly_rate}/hr` : '';
+                        
+                        return (
+                          <option key={engineer.user_id} value={engineer.user_id}>
+                            {engineer.full_name} ({engineer.user_id}){hourlyRate}
+                          </option>
+                        );
+                      })}
                   </>
                 )}
               </select>
@@ -621,9 +686,14 @@ const AssignmentForm = ({
                 onChange={handleChange}
                 required
                 className="form-control"
-                min="0"
                 step="0.01"
+                min="0"
               />
+              {selectedEngineerHourlyRate > 0 && (
+                <div className="text-muted small mt-1">
+                  Calculated from {selectedEngineerHourlyRate}/hr × {formData.completionTime || '0'} hours
+                </div>
+              )}
             </div>
 
             {/* Dynamic Service Order Id */}
