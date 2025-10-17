@@ -308,3 +308,17 @@
         gap: 10px;
     }
 }
+
+
+.service-request-formview .card-header {
+    color: white;
+    background-color: #0096D6;
+}
+
+
+.service-request-formview .table th {
+    width: 25%;
+    background-color: #f5f7fa;
+    font-weight: 600;
+    color: #333;
+}

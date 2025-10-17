@@ -183,8 +183,8 @@ const LoginCard = ({
                     Login
                   </Button>
 
-                  <p className="orText text-center mt-3 mb-1">Or</p>
-                  <p className="registerText text-center">
+                  {/* <p className="orText text-center mt-3 mb-1">Or</p> */}
+                  {/* <p className="registerText text-center">
                     Don't have an account?{' '}
                     <span 
                       className="registerLink" 
@@ -193,7 +193,7 @@ const LoginCard = ({
                     >
                       Register
                     </span>
-                  </p>
+                  </p> */}
                 </Form>
               </Card.Body>
             </Card>
