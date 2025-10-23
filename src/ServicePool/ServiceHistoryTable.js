@@ -207,7 +207,7 @@ const ServiceTableHistory = () => {
       {/* Service History Table */}
       <div className="table-responsive">
         <table className="table table-striped table-hover">
-          <thead className="table-dark">
+          <thead className="">
             <tr>
               <th>Request ID</th>
               <th>Customer</th>

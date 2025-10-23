@@ -1,313 +1,313 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
-import axios from 'axios';
-import './ServicePool.css';
-import { useCompany } from "../AuthContext/CompanyContext";
-import { AuthContext } from "../AuthContext/AuthContext";
-import baseURL from '../ApiUrl/Apiurl';
+// import React, { useState, useEffect, useContext } from 'react';
+// import { useParams, useLocation } from 'react-router-dom';
+// import axios from 'axios';
+// import './ServicePool.css';
+// import { useCompany } from "../AuthContext/CompanyContext";
+// import { AuthContext } from "../AuthContext/AuthContext";
+// import baseURL from '../ApiUrl/Apiurl';
 
-const ServiceRequestDetail = () => { 
-  const { requestId } = useParams();
-  const { userId } = useContext(AuthContext);
-  const [requestData, setRequestData] = useState(null);
-  const [assignmentHistory, setAssignmentHistory] = useState([]);
-  const [serviceItemData, setServiceItemData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [serviceItemLoading, setServiceItemLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('history'); // 'history' or 'serviceItem'
-  const location = useLocation();
-  const serviceItem = location.state?.service_item;
-  const { selectedCompany } = useCompany();
+// const ServiceRequestDetail = () => { 
+//   const { requestId } = useParams();
+//   const { userId } = useContext(AuthContext);
+//   const [requestData, setRequestData] = useState(null);
+//   const [assignmentHistory, setAssignmentHistory] = useState([]);
+//   const [serviceItemData, setServiceItemData] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [serviceItemLoading, setServiceItemLoading] = useState(false);
+//   const [error, setError] = useState(null);
+//   const [activeTab, setActiveTab] = useState('history'); // 'history' or 'serviceItem'
+//   const location = useLocation();
+//   const serviceItem = location.state?.service_item;
+//   const { selectedCompany } = useCompany();
 
-  console.log("User ID from localStorage:", userId);
-  console.log("Selected Company from context:", selectedCompany);
-  console.log("Service Item ID:", serviceItem);
+//   console.log("User ID from localStorage:", userId);
+//   console.log("Selected Company from context:", selectedCompany);
+//   console.log("Service Item ID:", serviceItem);
 
-  // Fetch assignment history and request details
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
+//   // Fetch assignment history and request details
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         setLoading(true);
         
-        // Fetch request details
-        const requestResponse = await axios({
-          method: 'get',
-          url: `${baseURL}/service-pools/${requestId}/`,
-          params: {
-            user_id: userId,
-            company_id: selectedCompany
-          }
-        });
+//         // Fetch request details
+//         const requestResponse = await axios({
+//           method: 'get',
+//           url: `${baseURL}/service-pools/${requestId}/`,
+//           params: {
+//             user_id: userId,
+//             company_id: selectedCompany
+//           }
+//         });
 
-        // Fetch assignment history
-        const historyResponse = await axios.get(`${baseURL}/assignment-history/`, {
-          params: {
-            user_id: userId,
-            company_id: selectedCompany
-          }
-        });
+//         // Fetch assignment history
+//         const historyResponse = await axios.get(`${baseURL}/assignment-history/`, {
+//           params: {
+//             user_id: userId,
+//             company_id: selectedCompany
+//           }
+//         });
 
-        // Normalize history data
-        let historyData = historyResponse.data;
-        if (historyData && historyData.data && Array.isArray(historyData.data)) {
-          historyData = historyData.data;
-        }
+//         // Normalize history data
+//         let historyData = historyResponse.data;
+//         if (historyData && historyData.data && Array.isArray(historyData.data)) {
+//           historyData = historyData.data;
+//         }
 
-        // Filter by request and sort by assigned_at DESC
-        const filteredHistory = Array.isArray(historyData)
-          ? historyData
-              .filter(item => item.request === requestId)
-              .sort((a, b) => new Date(b.assigned_at) - new Date(a.assigned_at))
-          : [];
+//         // Filter by request and sort by assigned_at DESC
+//         const filteredHistory = Array.isArray(historyData)
+//           ? historyData
+//               .filter(item => item.request === requestId)
+//               .sort((a, b) => new Date(b.assigned_at) - new Date(a.assigned_at))
+//           : [];
 
-        if (requestResponse.data) {
-          setRequestData(requestResponse.data.data || requestResponse.data);
-          setAssignmentHistory(filteredHistory);
-        } else {
-          throw new Error('No data received from server');
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || err.message || 'Failed to fetch data');
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+//         if (requestResponse.data) {
+//           setRequestData(requestResponse.data.data || requestResponse.data);
+//           setAssignmentHistory(filteredHistory);
+//         } else {
+//           throw new Error('No data received from server');
+//         }
+//       } catch (err) {
+//         setError(err.response?.data?.message || err.message || 'Failed to fetch data');
+//         console.error('Error fetching data:', err);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
 
-    fetchData();
-  }, [requestId, userId, selectedCompany]);
+//     fetchData();
+//   }, [requestId, userId, selectedCompany]);
 
-  // Fetch service item details when serviceItem is available and tab is active
-  useEffect(() => {
-    const fetchServiceItem = async () => {
-      if (serviceItem && activeTab === 'serviceItem' && !serviceItemData) {
-        try {
-          setServiceItemLoading(true);
-          const response = await axios.get(`${baseURL}/service-items/${serviceItem}/`, {
-            params: {
-              user_id: userId,
-              company_id: selectedCompany
-            }
-          });
+//   // Fetch service item details when serviceItem is available and tab is active
+//   useEffect(() => {
+//     const fetchServiceItem = async () => {
+//       if (serviceItem && activeTab === 'serviceItem' && !serviceItemData) {
+//         try {
+//           setServiceItemLoading(true);
+//           const response = await axios.get(`${baseURL}/service-items/${serviceItem}/`, {
+//             params: {
+//               user_id: userId,
+//               company_id: selectedCompany
+//             }
+//           });
           
-          if (response.data && response.data.data) {
-            setServiceItemData(response.data.data);
-          } else {
-            throw new Error('No service item data received');
-          }
-        } catch (err) {
-          console.error('Error fetching service item:', err);
-          setError(err.response?.data?.message || err.message || 'Failed to fetch service item details');
-        } finally {
-          setServiceItemLoading(false);
-        }
-      }
-    };
+//           if (response.data && response.data.data) {
+//             setServiceItemData(response.data.data);
+//           } else {
+//             throw new Error('No service item data received');
+//           }
+//         } catch (err) {
+//           console.error('Error fetching service item:', err);
+//           setError(err.response?.data?.message || err.message || 'Failed to fetch service item details');
+//         } finally {
+//           setServiceItemLoading(false);
+//         }
+//       }
+//     };
 
-    fetchServiceItem();
-  }, [serviceItem, activeTab, serviceItemData, userId, selectedCompany]);
+//     fetchServiceItem();
+//   }, [serviceItem, activeTab, serviceItemData, userId, selectedCompany]);
 
-  if (loading) return <div className="loading">Loading request details...</div>;
-  if (error) return <div className="error">Error: {error}</div>;
-  if (!requestData) return <div className="error">No request data found</div>;
+//   if (loading) return <div className="loading">Loading request details...</div>;
+//   if (error) return <div className="error">Error: {error}</div>;
+//   if (!requestData) return <div className="error">No request data found</div>;
 
-  return (
-    <div className="service-detail-container">
-      {/* Tab Navigation */}
-      <div className="tab-navigation">
-        <button 
-          className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
-          onClick={() => setActiveTab('history')}
-        >
-          Assignment History
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'serviceItem' ? 'active' : ''}`}
-          onClick={() => setActiveTab('serviceItem')}
-        >
-          Service Item Details
-        </button>
-      </div>
+//   return (
+//     <div className="service-detail-container">
+//       {/* Tab Navigation */}
+//       <div className="tab-navigation">
+//         <button 
+//           className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
+//           onClick={() => setActiveTab('history')}
+//         >
+//           Assignment History
+//         </button>
+//         <button 
+//           className={`tab-button ${activeTab === 'serviceItem' ? 'active' : ''}`}
+//           onClick={() => setActiveTab('serviceItem')}
+//         >
+//           Service Item Details
+//         </button>
+//       </div>
 
-      {/* Tab Content */}
-      <div className="tab-content">
-        {activeTab === 'history' && (
-          <div className="assignment-history-section">
-            <h3 className="history-title">Assignment History</h3>
-            {assignmentHistory.length > 0 ? (
-              <div className="table history-table">
-                <div className="history-header">
-                  <div className="history-header-cell">Service Request ID</div>
-                  <div className="history-header-cell">Assignment ID</div>
-                  <div className="history-header-cell">Assigned At</div>
-                  <div className="history-header-cell">Engineer</div>
-                  <div className="history-header-cell">Status</div>
-                  <div className="history-header-cell">Decline Reason</div>
-                  <div className="history-header-cell">Assigned By</div>
-                  <div className="history-header-cell">Service Item</div>
-                </div>
-                {assignmentHistory.map((assignment) => (
-                  <div key={assignment.assignment_id} className="history-row">
-                    <div className="history-cell">{assignment.request}</div>
-                    <div className="history-cell">{assignment.assignment_id}</div>
-                    <div className="history-cell">
-                      {new Date(assignment.assigned_at).toLocaleString()}
-                    </div>
-                    <div className="history-cell">{assignment.assigned_engineer || assignment.assigned_engineer}</div>
-                    <div className="history-cell">{assignment.status}</div>
-                    <div className="history-cell">{assignment.decline_reason || 'N/A'}</div>
-                    <div className="history-cell">{assignment.assigned_by}</div>
-                    <div className="history-cell">{serviceItem}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="no-history">No assignment history found for this request</div>
-            )}
-          </div>
-        )}
+//       {/* Tab Content */}
+//       <div className="tab-content">
+//         {activeTab === 'history' && (
+//           <div className="assignment-history-section">
+//             <h3 className="history-title">Assignment History</h3>
+//             {assignmentHistory.length > 0 ? (
+//               <div className="table history-table">
+//                 <div className="history-header">
+//                   <div className="history-header-cell">Service Request ID</div>
+//                   <div className="history-header-cell">Assignment ID</div>
+//                   <div className="history-header-cell">Assigned At</div>
+//                   <div className="history-header-cell">Engineer</div>
+//                   <div className="history-header-cell">Status</div>
+//                   <div className="history-header-cell">Decline Reason</div>
+//                   <div className="history-header-cell">Assigned By</div>
+//                   <div className="history-header-cell">Service Item</div>
+//                 </div>
+//                 {assignmentHistory.map((assignment) => (
+//                   <div key={assignment.assignment_id} className="history-row">
+//                     <div className="history-cell">{assignment.request}</div>
+//                     <div className="history-cell">{assignment.assignment_id}</div>
+//                     <div className="history-cell">
+//                       {new Date(assignment.assigned_at).toLocaleString()}
+//                     </div>
+//                     <div className="history-cell">{assignment.assigned_engineer || assignment.assigned_engineer}</div>
+//                     <div className="history-cell">{assignment.status}</div>
+//                     <div className="history-cell">{assignment.decline_reason || 'N/A'}</div>
+//                     <div className="history-cell">{assignment.assigned_by}</div>
+//                     <div className="history-cell">{serviceItem}</div>
+//                   </div>
+//                 ))}
+//               </div>
+//             ) : (
+//               <div className="no-history">No assignment history found for this request</div>
+//             )}
+//           </div>
+//         )}
 
-        {activeTab === 'serviceItem' && (
-          <div className="service-item-section">
-            <h3 className="service-item-title">Service Item Details</h3>
+//         {activeTab === 'serviceItem' && (
+//           <div className="service-item-section">
+//             <h3 className="service-item-title">Service Item Details</h3>
             
-            {serviceItemLoading ? (
-              <div className="loading">Loading service item details...</div>
-            ) : serviceItemData ? (
-              <div className="table history-table">
-                <div className="history-header">
-                  <div className="history-header-cell">Field</div>
-                  <div className="history-header-cell">Value</div>
-                </div>
+//             {serviceItemLoading ? (
+//               <div className="loading">Loading service item details...</div>
+//             ) : serviceItemData ? (
+//               <div className="table history-table">
+//                 <div className="history-header">
+//                   <div className="history-header-cell">Field</div>
+//                   <div className="history-header-cell">Value</div>
+//                 </div>
                 
-                {/* Service Item Details Rows */}
-                <div className="history-row">
-                  <div className="history-cell">Service Item ID</div>
-                  <div className="history-cell">{serviceItemData.service_item_id}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Service Item Name</div>
-                  <div className="history-cell">{serviceItemData.service_item_name}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Serial Number</div>
-                  <div className="history-cell">{serviceItemData.serial_number}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">PCB Serial Number</div>
-                  <div className="history-cell">{serviceItemData.pcb_serial_number}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Location</div>
-                  <div className="history-cell">{serviceItemData.location}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Location Latitude</div>
-                  <div className="history-cell">{serviceItemData.location_latitude}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Location Longitude</div>
-                  <div className="history-cell">{serviceItemData.location_longitude}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Installation Date</div>
-                  <div className="history-cell">{serviceItemData.installation_date}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Warranty Start Date</div>
-                  <div className="history-cell">{serviceItemData.warranty_start_date}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Warranty End Date</div>
-                  <div className="history-cell">{serviceItemData.warranty_end_date}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Contract End Date</div>
-                  <div className="history-cell">{serviceItemData.contract_end_date}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Status</div>
-                  <div className="history-cell">{serviceItemData.status}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">IoT Status</div>
-                  <div className="history-cell">{serviceItemData.iot_status}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Last Checked</div>
-                  <div className="history-cell">
-                    {new Date(serviceItemData.last_checked).toLocaleString()}
-                  </div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Last Service</div>
-                  <div className="history-cell">
-                    {serviceItemData.last_service ? new Date(serviceItemData.last_service).toLocaleString() : 'N/A'}
-                  </div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Product Description</div>
-                  <div className="history-cell">{serviceItemData.product_description}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">BC Number</div>
-                  <div className="history-cell">{serviceItemData.bc_number || 'N/A'}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Ship to Code</div>
-                  <div className="history-cell">{serviceItemData.ship_to_code || 'N/A'}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Created At</div>
-                  <div className="history-cell">
-                    {new Date(serviceItemData.created_at).toLocaleString()}
-                  </div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Updated At</div>
-                  <div className="history-cell">
-                    {new Date(serviceItemData.updated_at).toLocaleString()}
-                  </div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Created By</div>
-                  <div className="history-cell">{serviceItemData.created_by}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Updated By</div>
-                  <div className="history-cell">{serviceItemData.updated_by}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Company</div>
-                  <div className="history-cell">{serviceItemData.company}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Product</div>
-                  <div className="history-cell">{serviceItemData.product}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">Customer</div>
-                  <div className="history-cell">{serviceItemData.customer}</div>
-                </div>
-                <div className="history-row">
-                  <div className="history-cell">PM Group</div>
-                  <div className="history-cell">{serviceItemData.pm_group}</div>
-                </div>
-              </div>
-            ) : (
-              <div className="no-service-item">
-                {serviceItem ? 'No service item details found' : 'No service item ID provided'}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
+//                 {/* Service Item Details Rows */}
+//                 <div className="history-row">
+//                   <div className="history-cell">Service Item ID</div>
+//                   <div className="history-cell">{serviceItemData.service_item_id}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Service Item Name</div>
+//                   <div className="history-cell">{serviceItemData.service_item_name}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Serial Number</div>
+//                   <div className="history-cell">{serviceItemData.serial_number}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">PCB Serial Number</div>
+//                   <div className="history-cell">{serviceItemData.pcb_serial_number}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Location</div>
+//                   <div className="history-cell">{serviceItemData.location}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Location Latitude</div>
+//                   <div className="history-cell">{serviceItemData.location_latitude}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Location Longitude</div>
+//                   <div className="history-cell">{serviceItemData.location_longitude}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Installation Date</div>
+//                   <div className="history-cell">{serviceItemData.installation_date}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Warranty Start Date</div>
+//                   <div className="history-cell">{serviceItemData.warranty_start_date}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Warranty End Date</div>
+//                   <div className="history-cell">{serviceItemData.warranty_end_date}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Contract End Date</div>
+//                   <div className="history-cell">{serviceItemData.contract_end_date}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Status</div>
+//                   <div className="history-cell">{serviceItemData.status}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">IoT Status</div>
+//                   <div className="history-cell">{serviceItemData.iot_status}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Last Checked</div>
+//                   <div className="history-cell">
+//                     {new Date(serviceItemData.last_checked).toLocaleString()}
+//                   </div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Last Service</div>
+//                   <div className="history-cell">
+//                     {serviceItemData.last_service ? new Date(serviceItemData.last_service).toLocaleString() : 'N/A'}
+//                   </div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Product Description</div>
+//                   <div className="history-cell">{serviceItemData.product_description}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">BC Number</div>
+//                   <div className="history-cell">{serviceItemData.bc_number || 'N/A'}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Ship to Code</div>
+//                   <div className="history-cell">{serviceItemData.ship_to_code || 'N/A'}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Created At</div>
+//                   <div className="history-cell">
+//                     {new Date(serviceItemData.created_at).toLocaleString()}
+//                   </div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Updated At</div>
+//                   <div className="history-cell">
+//                     {new Date(serviceItemData.updated_at).toLocaleString()}
+//                   </div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Created By</div>
+//                   <div className="history-cell">{serviceItemData.created_by}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Updated By</div>
+//                   <div className="history-cell">{serviceItemData.updated_by}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Company</div>
+//                   <div className="history-cell">{serviceItemData.company}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Product</div>
+//                   <div className="history-cell">{serviceItemData.product}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">Customer</div>
+//                   <div className="history-cell">{serviceItemData.customer}</div>
+//                 </div>
+//                 <div className="history-row">
+//                   <div className="history-cell">PM Group</div>
+//                   <div className="history-cell">{serviceItemData.pm_group}</div>
+//                 </div>
+//               </div>
+//             ) : (
+//               <div className="no-service-item">
+//                 {serviceItem ? 'No service item details found' : 'No service item ID provided'}
+//               </div>
+//             )}
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
 
-export default ServiceRequestDetail;
+// export default ServiceRequestDetail;
 
 // import React, { useState, useEffect, useContext } from 'react';
 // import { useParams, useNavigate } from 'react-router-dom';
@@ -427,3 +427,355 @@ export default ServiceRequestDetail;
 // };
 
 // export default ServiceRequestDetail;
+
+
+
+
+import React, { useState, useEffect, useContext } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import './ServicePool.css';
+import { useCompany } from "../AuthContext/CompanyContext";
+import { AuthContext } from "../AuthContext/AuthContext";
+import baseURL from '../ApiUrl/Apiurl';
+
+const ServiceRequestDetail = () => { 
+  const { requestId } = useParams();
+  const { userId } = useContext(AuthContext);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { selectedCompany } = useCompany();
+
+  // Get all data passed from navigation
+  const {
+    serviceRequest,
+    serviceItemDetails,
+    engineerStatus,
+    customerName
+  } = location.state || {};
+
+  const [assignmentHistory, setAssignmentHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('requestDetails');
+
+  // Format date and time functions
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '-';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '-';
+    }
+  };
+
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return '-';
+    try {
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return '-';
+      
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      
+      return `${day}/${month}/${year} ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      console.error('Error formatting datetime:', error);
+      return '-';
+    }
+  };
+
+  // Fetch only assignment history
+  useEffect(() => {
+    const fetchAssignmentHistory = async () => {
+      try {
+        setLoading(true);
+        
+        const historyResponse = await axios.get(`${baseURL}/assignment-history/`, {
+          params: {
+            user_id: userId,
+            company_id: selectedCompany
+          }
+        });
+
+        let historyData = historyResponse.data;
+        if (historyData && historyData.data && Array.isArray(historyData.data)) {
+          historyData = historyData.data;
+        }
+
+        const filteredHistory = Array.isArray(historyData)
+          ? historyData
+              .filter(item => item.request === requestId)
+              .sort((a, b) => new Date(b.assigned_at) - new Date(a.assigned_at))
+          : [];
+
+        setAssignmentHistory(filteredHistory);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || 'Failed to fetch assignment history');
+        console.error('Error fetching assignment history:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignmentHistory();
+  }, [requestId, userId, selectedCompany]);
+
+  // Handle back button click
+  const handleBackClick = () => {
+    navigate(-1); // Go back to previous page
+  };
+
+  // If no data was passed, show error
+  if (!serviceRequest) {
+    return (
+      <div className="error">
+        No service request data found. Please go back and click on a request ID from the table.
+        <button 
+          onClick={handleBackClick}
+          className="btn btn-primary mt-3"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="service-detail-container">
+      {/* Page Header with Back Button */}
+      <div className="page-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h1 className="page-title">Service Request Details</h1>
+          <p className="page-subtitle">Request ID: {requestId}</p>
+        </div>
+   <button 
+  onClick={handleBackClick}
+  className="btn btn-outline-primary"
+  style={{
+    borderColor: '#0096d6',
+    color: '#0096d6',
+    transition: 'all 0.3s ease'
+  }}
+  onMouseOver={(e) => {
+    e.target.style.backgroundColor = '#0096d6';
+    e.target.style.color = 'white';
+  }}
+  onMouseOut={(e) => {
+    e.target.style.backgroundColor = 'transparent';
+    e.target.style.color = '#0096d6';
+  }}
+>
+  ← Back
+</button>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="tab-navigation mb-4">
+        <button 
+          className={`tab-button ${activeTab === 'requestDetails' ? 'active' : ''}`}
+          onClick={() => setActiveTab('requestDetails')}
+        >
+          Request Details
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'history' ? 'active' : ''}`}
+          onClick={() => setActiveTab('history')}
+        >
+          Assignment History
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'serviceItem' ? 'active' : ''}`}
+          onClick={() => setActiveTab('serviceItem')}
+        >
+          Service Item Details
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      <div className="tab-content">
+        {activeTab === 'requestDetails' && (
+          <div className="request-details-section">
+            <h3 className="section-title">Service Request Information</h3>
+            <div className="table details-table">
+              <div className="history-header">
+                <div className="history-header-cell">Field</div>
+                <div className="history-header-cell">Value</div>
+              </div>
+              
+              {/* Request Details - All data from table row */}
+              <div className="history-row">
+                <div className="history-cell">Request ID</div>
+                <div className="history-cell">{serviceRequest.request_id}</div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Requested By</div>
+                <div className="history-cell">{customerName || serviceRequest.requested_by}</div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Request Details</div>
+                <div className="history-cell">{serviceRequest.request_details || "N/A"}</div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Service Item ID</div>
+                <div className="history-cell">{serviceRequest.service_item}</div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Location</div>
+                <div className="history-cell">
+                  {serviceItemDetails?.location || "Location not found"}
+                </div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Preferred Date/Time</div>
+                <div className="history-cell">
+                  {serviceRequest.preferred_date && serviceRequest.preferred_time 
+                    ? formatDateTime(`${serviceRequest.preferred_date}T${serviceRequest.preferred_time}`)
+                    : serviceRequest.preferred_date 
+                      ? formatDate(serviceRequest.preferred_date)
+                      : '-'
+                  }
+                </div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Created Date/Time</div>
+                <div className="history-cell">
+                  {formatDateTime(serviceRequest.created_at)}
+                </div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Status</div>
+                <div className="history-cell">{serviceRequest.status}</div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Assigned Engineer</div>
+                <div className="history-cell">{serviceRequest.assigned_engineer || "N/A"}</div>
+              </div>
+              <div className="history-row">
+                <div className="history-cell">Engineer Status</div>
+                <div className="history-cell">
+                  {engineerStatus === "Pending" && (
+                    <span className="badge bg-warning text-dark">Pending</span>
+                  )}
+                  {engineerStatus === "Accepted" && (
+                    <span className="badge bg-success">Accepted</span>
+                  )}
+                  {engineerStatus === "Declined" && (
+                    <span className="badge bg-danger">Rejected</span>
+                  )}
+                  {!engineerStatus || engineerStatus === "N/A" && "N/A"}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="assignment-history-section">
+            <h3 className="section-title">Assignment History</h3>
+            {loading ? (
+              <div className="loading">Loading assignment history...</div>
+            ) : assignmentHistory.length > 0 ? (
+              <div className="table history-table">
+                <div className="history-header">
+                  <div className="history-header-cell">Assignment ID</div>
+                  <div className="history-header-cell">Assigned At</div>
+                  <div className="history-header-cell">Engineer</div>
+                  <div className="history-header-cell">Status</div>
+                  <div className="history-header-cell">Decline Reason</div>
+                  <div className="history-header-cell">Assigned By</div>
+                </div>
+                {assignmentHistory.map((assignment) => (
+                  <div key={assignment.assignment_id} className="history-row">
+                    <div className="history-cell">{assignment.assignment_id}</div>
+                    <div className="history-cell">
+                      {formatDateTime(assignment.assigned_at)}
+                    </div>
+                    <div className="history-cell">{assignment.assigned_engineer || 'N/A'}</div>
+                    <div className="history-cell">{assignment.status}</div>
+                    <div className="history-cell">{assignment.decline_reason || 'N/A'}</div>
+                    <div className="history-cell">{assignment.assigned_by || 'N/A'}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-history">No assignment history found for this request</div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'serviceItem' && (
+          <div className="service-item-section">
+            <h3 className="section-title">Service Item Details</h3>
+            
+            {serviceItemDetails ? (
+              <div className="table history-table">
+                <div className="history-header">
+                  <div className="history-header-cell">Field</div>
+                  <div className="history-header-cell">Value</div>
+                </div>
+                
+                {/* Service Item Details */}
+                <div className="history-row">
+                  <div className="history-cell">Service Item ID</div>
+                  <div className="history-cell">{serviceItemDetails.service_item_id}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Service Item Name</div>
+                  <div className="history-cell">{serviceItemDetails.service_item_name || 'N/A'}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Serial Number</div>
+                  <div className="history-cell">{serviceItemDetails.serial_number || 'N/A'}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Location</div>
+                  <div className="history-cell">{serviceItemDetails.location || 'N/A'}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Installation Date</div>
+                  <div className="history-cell">{serviceItemDetails.installation_date || 'N/A'}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Warranty Start Date</div>
+                  <div className="history-cell">{serviceItemDetails.warranty_start_date || 'N/A'}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Warranty End Date</div>
+                  <div className="history-cell">{serviceItemDetails.warranty_end_date || 'N/A'}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Status</div>
+                  <div className="history-cell">{serviceItemDetails.status || 'N/A'}</div>
+                </div>
+                <div className="history-row">
+                  <div className="history-cell">Product Description</div>
+                  <div className="history-cell">{serviceItemDetails.product_description || 'N/A'}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="no-service-item">
+                No service item details available
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ServiceRequestDetail;

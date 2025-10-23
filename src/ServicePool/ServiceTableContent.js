@@ -827,7 +827,7 @@ const ServiceTableContent = ({
                 return (
                   <tr key={item.request_id || index}>
                     <td>{indexOfFirstEntry + index + 1}</td>
-                    <td>
+                    {/* <td>
                       <button 
                         className="btn btn-link p-0" 
                         onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`, { 
@@ -836,7 +836,23 @@ const ServiceTableContent = ({
                       >
                         {item.request_id}
                       </button>
-                    </td>
+                    </td> */}
+                 
+<td>
+  <button 
+    className="btn btn-link p-0" 
+    onClick={() => navigate(`/servicemanager/service-requests/${item.request_id}`, { 
+      state: { 
+        serviceRequest: item, // Pass the entire service request data
+        serviceItemDetails: getServiceItemDetails(item.service_item), // Pass service item details
+        engineerStatus: engineerStatus, // Pass engineer status
+        customerName: getCustomerName(item.requested_by) // Pass customer name
+      } 
+    })}
+  >
+    {item.request_id}
+  </button>
+</td>
                     <td>{getCustomerName(item.requested_by)}</td>
                     <td>{item.request_details || "N/A"}</td>
                     <td>{item.service_item}</td>
