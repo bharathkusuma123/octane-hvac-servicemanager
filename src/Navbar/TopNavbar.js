@@ -272,12 +272,12 @@ const TopNavbar = () => {
     { path: "/servicemanager/new-customer", label: "Customer" },
     {
       label: "Service Items",
-      dropdown: [
-        { path: "/servicemanager/new-service-item", label: "Items" },
-        { path: "/servicemanager/service-item-components", label: "Components" },
-      ],
+         path: "/servicemanager/new-service-item", label: "Items" ,
+        // { path: "/servicemanager/service-item-components", label: "Components" },
+
     },
     { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
+     { path: "/servicemanager/customer-feedback", label: "Customer Feedbacks" },
   ];
 
   if (loading) {

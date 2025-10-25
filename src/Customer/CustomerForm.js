@@ -1375,67 +1375,71 @@ const CustomerForm = ({ formData, handleChange, toggleForm, isEditing, handleSub
                             </div>
                         </div>
 
-                        {/* Security Questions (Optional) */}
-                        <div className="section-title">Security Questions (Optional)</div>
-                        <div className="row mb-3">
-                            <div className="col-md-6">
-                                <label className="form-label">Security Question 1</label>
-                                <select
-                                    className="form-select"
-                                    name="security_question1"
-                                    value={localFormData.security_question1}
-                                    onChange={handleLocalChange}
-                                >
-                                    <option value="">Select a security question</option>
-                                    {SECURITY_QUESTION_CHOICES.map((question, index) => (
-                                        <option key={index} value={question}>
-                                            {question}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="form-label">Answer 1</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="Enter answer"
-                                    name="answer1"
-                                    value={localFormData.answer1}
-                                    onChange={handleLocalChange}
-                                />
-                            </div>
-                        </div>
+                        {/* Security Questions - Only show in edit mode */}
+                        {isEditing && (
+                            <>
+                                <div className="section-title">Security Questions</div>
+                                <div className="row mb-3">
+                                    <div className="col-md-6">
+                                        <label className="form-label">Security Question 1</label>
+                                        <select
+                                            className="form-select"
+                                            name="security_question1"
+                                            value={localFormData.security_question1}
+                                            onChange={handleLocalChange}
+                                        >
+                                            <option value="">Select a security question</option>
+                                            {SECURITY_QUESTION_CHOICES.map((question, index) => (
+                                                <option key={index} value={question}>
+                                                    {question}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <label className="form-label">Answer 1</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Enter answer"
+                                            name="answer1"
+                                            value={localFormData.answer1}
+                                            onChange={handleLocalChange}
+                                        />
+                                    </div>
+                                </div>
 
-                        <div className="row mb-3">
-                            <div className="col-md-6">
-                                <label className="form-label">Security Question 2</label>
-                                <select
-                                    className="form-select"
-                                    name="security_question2"
-                                    value={localFormData.security_question2}
-                                    onChange={handleLocalChange}
-                                >
-                                    <option value="">Select a security question</option>
-                                    {SECURITY_QUESTION_CHOICES.map((question, index) => (
-                                        <option key={index} value={question}>
-                                            {question}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div className="col-md-6">
-                                <label className="form-label">Answer 2</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    placeholder="Enter answer"
-                                    name="answer2"
-                                    value={localFormData.answer2}
-                                    onChange={handleLocalChange}
-                                />
-                            </div>
-                        </div>
+                                <div className="row mb-3">
+                                    <div className="col-md-6">
+                                        <label className="form-label">Security Question 2</label>
+                                        <select
+                                            className="form-select"
+                                            name="security_question2"
+                                            value={localFormData.security_question2}
+                                            onChange={handleLocalChange}
+                                        >
+                                            <option value="">Select a security question</option>
+                                            {SECURITY_QUESTION_CHOICES.map((question, index) => (
+                                                <option key={index} value={question}>
+                                                    {question}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <label className="form-label">Answer 2</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            placeholder="Enter answer"
+                                            name="answer2"
+                                            value={localFormData.answer2}
+                                            onChange={handleLocalChange}
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
 
                         <div className="d-flex justify-content-center gap-2">
                             <button 
