@@ -278,6 +278,7 @@ const TopNavbar = () => {
       ],
     },
     { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
+     { path: "/servicemanager/customer-feedback", label: "Customer Feedbacks" },
   ];
 
   if (loading) {
