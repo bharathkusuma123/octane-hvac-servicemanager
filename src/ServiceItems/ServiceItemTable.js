@@ -758,7 +758,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const [companiesData, setCompaniesData] = useState([]);
   const [productsData, setProductsData] = useState([]);
   const [pmGroupsData, setPmGroupsData] = useState([]);
-  const [customersData, setCustomersData] = useState([]); // New state for customers
+  const [customersData, setCustomersData] = useState([]);
 
   // Fetch products data
   const fetchProducts = async () => {
@@ -869,7 +869,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       setContractData(contracts);
     } catch (error) {
       console.error("Failed to fetch contracts", error);
-      setContractData([]); // fallback to empty array
+      setContractData([]);
     }
   };
 
@@ -881,7 +881,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         await fetchCompanies();
         await fetchProducts();
         await fetchPmGroups();
-        await fetchCustomers(); // Fetch customers data
+        await fetchCustomers();
         await fetchContracts();
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -897,14 +897,12 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const getLatestContract = (serviceItemId) => {
     if (!Array.isArray(contractData)) return null;
     
-    // Filter contracts for this service item
     const serviceItemContracts = contractData.filter(
       contract => contract.service_item === serviceItemId
     );
     
     if (serviceItemContracts.length === 0) return null;
     
-    // Sort by creation date to get the latest contract
     const sortedContracts = serviceItemContracts.sort(
       (a, b) => new Date(b.created_at || b.contract_create_date) - new Date(a.created_at || a.contract_create_date)
     );
@@ -915,20 +913,16 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const isContractButtonDisabled = (serviceItemId) => {
     const latestContract = getLatestContract(serviceItemId);
     
-    // If no contract exists, button should be enabled
     if (!latestContract) return false;
     
-    // If latest contract has is_alert_sent: false, button should be disabled
     return latestContract.is_alert_sent === false;
   };
 
   const shouldShowRenewalButton = (serviceItemId) => {
     const latestContract = getLatestContract(serviceItemId);
     
-    // If no contract exists, don't show renewal button
     if (!latestContract) return false;
     
-    // Show renewal button only if is_alert_sent is true
     return latestContract.is_alert_sent === true;
   };
 
@@ -945,6 +939,29 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
     } catch (e) {
       return 'Invalid date';
     }
+  };
+
+  // Handle Add Component button click
+  const handleAddComponent = (serviceItem) => {
+    navigate('/servicemanager/service-item-components/add', {
+      state: {
+        service_item: serviceItem.service_item_id,
+        company: serviceItem.company,
+        customer: serviceItem.customer
+      }
+    });
+  };
+
+  // Handle View Component button click
+  const handleViewComponent = (serviceItem) => {
+    navigate('/servicemanager/service-item-components', {
+      state: {
+        service_item: serviceItem.service_item_id,
+        company: serviceItem.company,
+        customer: serviceItem.customer,
+        viewMode: true
+      }
+    });
   };
  
   useEffect(() => {
@@ -995,7 +1012,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const totalPages = Math.ceil(filteredItems.length / entriesPerPage);
 
   const handleRenewalClick = (item) => {
-    // Find the latest contract for this service item
     const latestContract = getLatestContract(item.service_item_id);
     
     navigate('/servicemanager/service-renewal', {
@@ -1003,7 +1019,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         service_item_id: item.service_item_id,
         customer: item.customer,
         company: item.company,
-        existing_contract: latestContract // Pass only serializable data
+        existing_contract: latestContract
       }
     });
   };
@@ -1075,8 +1091,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                 <th>PM Group</th>
                 <th>Product</th>
                 <th>Location</th>
-                {/* <th>Latitude</th>
-                <th>Longitude</th> */}
                 <th>Installation Date</th>
                 <th>Warranty End</th>
                 <th>Status</th>
@@ -1085,6 +1099,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                 <th>Description</th>
                 <th>Actions</th>
                 <th>Contract</th>
+                <th>Service Components</th>
               </tr>
             </thead>
             <tbody>
@@ -1106,8 +1121,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                       {getProductName(item.product)}
                     </td>
                     <td>{item.location}</td>
-                    {/* <td>{item.location_latitude}</td>
-                    <td>{item.location_longitude}</td> */}
                     <td>{formatDate(item.installation_date)}</td>
                     <td>{formatDate(item.warranty_end_date)}</td>
                     <td>
@@ -1158,11 +1171,29 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                         </button>
                       )}
                     </td>
+                    <td>
+                      <div className="d-flex gap-1 flex-row">
+                        <button
+                          className="btn btn-sm btn-info"
+                          onClick={() => handleAddComponent(item)}
+                          title="Add Component"
+                        >
+                          Add
+                        </button>
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => handleViewComponent(item)}
+                          title="View Components"
+                        >
+                          View
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="17" className="text-center">
+                  <td colSpan="16" className="text-center">
                     {selectedCompany 
                       ? `No service items found for ${getCompanyDisplayName(selectedCompany)}${searchTerm ? ' matching your search' : ''}`
                       : 'No service items found'}

@@ -249,7 +249,8 @@ import ServiceManagerLogin from "./Login/Login";
 import NewCustomer from "./Customer/NewCustomer";
 import PreventiveMaintainanceChart from "./PreventiveMaintainanceChart/PreventiveMaintainanceChart";
 import PreventiveMaintainance from "./PreventiveMaintainanceGroup/PreventiveMaintainance";
-import ServiceItemComponents from "./ServiceItemComponents/ServiceItemComponents";
+import ServiceItemComponents from "./ServiceItemComponents/ServiceItemComponentsTable";
+import ServiceItemComponentsForm from "./ServiceItemComponents/ServiceItemComponentForm";
 import NewServiceItem from "./ServiceItems/NewServiceItem";
 import ServicePool from "./ServicePool/ServicePool";
 import AuthProvider from "./AuthContext/AuthContext";
@@ -266,6 +267,7 @@ import ServiceRenewalForm from './ServiceItems/ServiceRenewalForm';
 import PreventiveMaintainanceSchedule from "./PreventiveMaintainanceSchedule/PreventiveMaintainanceSchedule";
 import ServiceTableHistory from "./ServicePool/ServiceHistoryTable"; // Add this import
 import ErrorLogs from "./ErrorLogs/ErrorLogs";
+import ServiceItemFormComponent from "./"
 
 function App() {
   return (
@@ -317,6 +319,22 @@ function App() {
               </PanelLayout>
             }
           />
+                      <Route
+              path="/servicemanager/service-item-components/add"
+              element={
+                <PanelLayout>
+                  <ServiceItemComponentsForm />
+                </PanelLayout>
+              }
+            />
+            <Route
+              path="/servicemanager/service-item-components/edit"
+              element={
+                <PanelLayout>
+                  <ServiceItemComponentsForm />
+                </PanelLayout>
+              }
+            />
           <Route
             path="/servicemanager/new-service-item"
             element={
