@@ -278,7 +278,8 @@ const TopNavbar = () => {
       ],
     },
     { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
-     { path: "/servicemanager/customer-feedback", label: "Customer Feedbacks" },
+    { path: "/servicemanager/customer-feedback", label: "Customer Feedbacks" },
+    { path: "/servicemanager/error-logs", label: "Error Logs" },
   ];
 
   if (loading) {

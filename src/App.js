@@ -265,6 +265,7 @@ import ServiceContractForm from './ServiceItems/ServiceContractForm';
 import ServiceRenewalForm from './ServiceItems/ServiceRenewalForm';
 import PreventiveMaintainanceSchedule from "./PreventiveMaintainanceSchedule/PreventiveMaintainanceSchedule";
 import ServiceTableHistory from "./ServicePool/ServiceHistoryTable"; // Add this import
+import ErrorLogs from "./ErrorLogs/ErrorLogs";
 
 function App() {
   return (
@@ -321,6 +322,14 @@ function App() {
             element={
               <PanelLayout>
                 <NewServiceItem />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/error-logs"
+            element={
+              <PanelLayout>
+                <ErrorLogs />
               </PanelLayout>
             }
           />
