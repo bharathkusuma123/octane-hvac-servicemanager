@@ -658,7 +658,8 @@ const AssignmentForm = ({
                       .filter(resource => !busyEngineers.includes(resource.user))
                       .map(resource => (
                         <option key={resource.user} value={resource.user}>
-                          {resource.full_name} ({resource.user}) - ₹{resource.hourly_rate}/hr
+                         {resource.full_name} ({resource.user}) - ﷼{resource.hourly_rate}/hr
+
                         </option>
                       ))}
                   </>
@@ -674,25 +675,28 @@ const AssignmentForm = ({
             </div>
 
             {/* Estimated Price */}
-            <div className="col-md-4 mt-3">
-              <label className="form-label">Estimated Price</label>
-              <input
-                type="number"
-                name="estimatedPrice"
-                value={formData.estimatedPrice}
-                onChange={handleChange}
-                required
-                className="form-control"
-                step="0.01"
-                min="0"
-                readOnly
-              />
-              {selectedEngineerHourlyRate > 0 && (
-                <div className="text-muted small mt-1">
-                  Calculated from ₹{selectedEngineerHourlyRate}/hr × {formData.completionTime || '0'} hours
-                </div>
-              )}
-            </div>
+         <div className="col-md-4 mt-3">
+  <label className="form-label">Estimated Price</label>
+  <input
+    type="text"
+    name="estimatedPrice"
+    value={
+      formData.estimatedPrice
+        ? new Intl.NumberFormat('en-SA', { style: 'currency', currency: 'SAR' }).format(formData.estimatedPrice)
+        : ''
+    }
+    onChange={handleChange}
+    required
+    className="form-control"
+    readOnly
+  />
+  {selectedEngineerHourlyRate > 0 && (
+    <div className="text-muted small mt-1">
+      Calculated from ﷼{selectedEngineerHourlyRate}/hr × {formData.completionTime || '0'} hours
+    </div>
+  )}
+</div>
+
 
             {/* Dynamic Service Order Id */}
             <div className="col-md-4 mt-3">
