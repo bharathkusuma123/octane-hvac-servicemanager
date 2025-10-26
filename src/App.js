@@ -268,6 +268,7 @@ import PreventiveMaintainanceSchedule from "./PreventiveMaintainanceSchedule/Pre
 import ServiceTableHistory from "./ServicePool/ServiceHistoryTable"; // Add this import
 import ErrorLogs from "./ErrorLogs/ErrorLogs";
 import ServiceItemFormComponent from "./"
+import ServiceRequestForm from './ErrorLogs/ServiceRequestForm';
 
 function App() {
   return (
@@ -348,6 +349,14 @@ function App() {
             element={
               <PanelLayout>
                 <ErrorLogs />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/error-logs/request-form"
+            element={
+              <PanelLayout>
+                <ServiceRequestForm />
               </PanelLayout>
             }
           />
