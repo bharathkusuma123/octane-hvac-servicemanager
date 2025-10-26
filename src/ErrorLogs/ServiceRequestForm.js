@@ -5,12 +5,11 @@ import baseURL from "../ApiUrl/Apiurl";
 import { useCompany } from '../AuthContext/CompanyContext';
 import { AuthContext } from '../AuthContext/AuthContext';
 
-
 const ServiceRequestForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-   const { userId } = useContext(AuthContext);
-    const { selectedCompany } = useCompany();
+  const { userId } = useContext(AuthContext);
+  const { selectedCompany } = useCompany();
   
   // Get the error data and PCB serial number from navigation state
   const errorData = location.state?.errorData;
@@ -26,6 +25,7 @@ const ServiceRequestForm = () => {
   const [serviceItems, setServiceItems] = useState([]);
   const [matchedServiceItem, setMatchedServiceItem] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [customer, setCustomer] = useState('');
 
   // Fetch service items and match with PCB serial number
   useEffect(() => {
@@ -49,6 +49,11 @@ const ServiceRequestForm = () => {
               ...prev,
               service_item: matchedItem.service_item_id
             }));
+
+            // Set customer directly from the matched item
+            if (matchedItem.customer) {
+              setCustomer(matchedItem.customer);
+            }
           }
         }
       } catch (error) {
@@ -64,7 +69,7 @@ const ServiceRequestForm = () => {
     } else {
       setIsLoading(false);
     }
-  }, [pcbSerialNumber]);
+  }, [pcbSerialNumber, userId, selectedCompany]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,65 +77,73 @@ const ServiceRequestForm = () => {
       ...prev,
       [name]: value
     }));
+
+    // If service item is manually selected, find and set customer
+    if (name === 'service_item' && value) {
+      const selectedItem = serviceItems.find(item => item.service_item_id === value);
+      if (selectedItem && selectedItem.customer) {
+        setCustomer(selectedItem.customer);
+      } else {
+        setCustomer(''); // Reset if no customer found
+      }
+    }
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  try {
-    // 🟢 Step 1: Prepare Payload
-    const payload = {
-      service_item: form.service_item,
-      source_type: 'Machine Alert',
-      preferred_date: form.preferred_date,
-      preferred_time: form.preferred_time,
-      request_details: form.request_details,
-      user_id: userId,
-      company_id: selectedCompany,
-      status: 'Open',
-      company: selectedCompany,
-      created_by: userId,
-      updated_by: userId,
-    };
+    try {
+      // 🟢 Prepare Payload with customer
+      const payload = {
+        service_item: form.service_item,
+        source_type: 'Machine Alert',
+        preferred_date: form.preferred_date,
+        preferred_time: form.preferred_time,
+        request_details: form.request_details,
+        user_id: userId,
+        company_id: selectedCompany,
+        status: 'Open',
+        company: selectedCompany,
+        created_by: userId,
+        updated_by: userId,
+        customer: customer // Simply pass the customer value
+      };
 
-    console.log("📦 Payload being sent to API:", payload);
+      console.log("📦 Payload being sent to API:", payload);
 
-    // 🟢 Step 2: Make API Call
-    console.log(`🌐 Sending POST request to: ${baseURL}/service-pools/`);
-    const response = await fetch(`${baseURL}/service-pools/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+      // 🟢 Make API Call
+      const response = await fetch(`${baseURL}/service-pools/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    // 🟢 Step 3: Parse Response
-    const result = await response.json();
-    console.log("📬 Raw API Response:", result);
+      // 🟢 Parse Response
+      const result = await response.json();
+      console.log("📬 Raw API Response:", result);
 
-    // 🟢 Step 4: Handle Response
-    if (response.ok) {
-      console.log("✅ Service request submitted successfully!");
-      console.table(result);  // Displays object neatly in console
-      alert('Service request submitted successfully!');
-      navigate('/servicemanager/error-logs');
-    } else {
-      console.error("❌ Failed to submit service request:", result);
-      throw new Error(result.message || 'Failed to submit service request');
+      // 🟢 Handle Response
+      if (response.ok) {
+        console.log("✅ Service request submitted successfully!");
+        alert('Service request submitted successfully!');
+        navigate('/servicemanager/error-logs');
+      } else {
+        console.error("❌ Failed to submit service request:", result);
+        throw new Error(result.message || 'Failed to submit service request');
+      }
+
+    } catch (error) {
+      // 🛑 Error Handling
+      console.error("🚨 Error submitting service request:", error);
+      alert(`Error submitting service request: ${error.message}`);
+    } finally {
+      // 🕓 Cleanup
+      setIsSubmitting(false);
     }
-
-  } catch (error) {
-    // 🛑 Step 5: Error Handling
-    console.error("🚨 Error submitting service request:", error);
-    alert(`Error submitting service request: ${error.message}`);
-  } finally {
-    // 🕓 Step 6: Cleanup
-    console.log("🔁 Submission process completed. Resetting submit state.");
-    setIsSubmitting(false);
-  }
-};
+  };
 
   const handleCancel = () => {
     navigate('/servicemanager/error-logs');
@@ -170,6 +183,11 @@ const ServiceRequestForm = () => {
               {matchedServiceItem && (
                 <small className="ms-3">
                   Matched Service: <strong>{matchedServiceItem.service_item_name}</strong>
+                </small>
+              )}
+              {customer && (
+                <small className="ms-3 d-block mt-1">
+                  Customer: <strong>{customer}</strong>
                 </small>
               )}
             </div>
@@ -212,6 +230,7 @@ const ServiceRequestForm = () => {
                     {serviceItems.map(item => (
                       <option key={item.service_item_id} value={item.service_item_id}>
                         {item.service_item_name} ({item.service_item_id})
+                        {item.customer && ` - Customer: ${item.customer}`}
                       </option>
                     ))}
                   </select>
@@ -219,6 +238,11 @@ const ServiceRequestForm = () => {
                 {!matchedServiceItem && pcbSerialNumber && (
                   <div className="form-text text-warning">
                     No service item found for PCB serial number: {pcbSerialNumber}. Please select manually.
+                  </div>
+                )}
+                {customer && (
+                  <div className="form-text text-info">
+                    Customer: <strong>{customer}</strong>
                   </div>
                 )}
               </div>
