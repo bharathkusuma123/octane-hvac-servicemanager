@@ -294,7 +294,7 @@ import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
 import { FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
 
-const ErrorLogs = () => {
+const ErrorLogs = () => { 
   const [errorData, setErrorData] = useState([]);
   const [filteredErrors, setFilteredErrors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -371,12 +371,15 @@ const ErrorLogs = () => {
     setCurrentPage(1);
   }, [searchTerm, errorData]);
 
-  // Handle Raise Request button click - navigate to service request form
-  const handleRaiseRequest = (error) => {
-    navigate('/servicemanager/error-logs/request-form', { 
-      state: { errorData: error } 
-    });
-  };
+ const handleRaiseRequest = (error) => {
+  navigate('/servicemanager/error-logs/request-form', { 
+    state: { 
+      errorData: error,
+      pcb_serial_number: error.pcb_serial_number  // ✅ added here
+    } 
+  });
+};
+
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
