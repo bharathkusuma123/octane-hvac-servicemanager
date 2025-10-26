@@ -165,7 +165,7 @@ const ServiceItemComponentsForm = () => {
   };
 
   const handleCancel = () => {
-    navigate('/servicemanager/service-item-components');
+    navigate('/servicemanager/new-service-item');
   };
 
   return (

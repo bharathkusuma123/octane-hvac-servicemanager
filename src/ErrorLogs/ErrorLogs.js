@@ -191,8 +191,8 @@ const ErrorLogs = () => {
               <th>Error Code</th>
               <th>Description</th>
               <th>Priority</th>
-              <th>Original Timestamp</th>
-              <th>Logged At</th>
+              <th>Timestamp</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -207,7 +207,22 @@ const ErrorLogs = () => {
                   <td>{error.description}</td>
                   <td>{getPriorityBadge(error.priority)}</td>
                   <td>{formatDate(error.original_timestamp)}</td>
-                  <td>{formatDate(error.timestamp)}</td>
+                   <td style={{ padding: '12px' }}>
+                        <button
+                          // onClick={() => handleRaiseRequest(schedule)}
+                          // disabled={disabled || isProcessing}
+                          style={{
+                            padding: '8px 12px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                         Raise Request
+                        </button>
+                      </td>
                 </tr>
               ))
             ) : (

@@ -529,7 +529,7 @@ const AssignmentForm = ({
                 <div className="card-body">
                   {serviceItemDetails ? (
                     <>
-                      <p><strong>Item Name:</strong> {serviceItemDetails.item_name || 'N/A'}</p>
+                      {/* <p><strong>Item Name:</strong> {serviceItemDetails.item_name || 'N/A'}</p> */}
                       <p><strong>Location:</strong> {serviceItemDetails.location || 'N/A'}</p>
                       <p><strong>Category:</strong> {serviceItemDetails.category || 'N/A'}</p>
                       <p><strong>Model:</strong> {serviceItemDetails.model || 'N/A'}</p>
