@@ -1,33 +1,110 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Button, Form, Row, Col, Card, Alert, Tabs, Tab } from "react-bootstrap";
 import axios from "axios";
 import baseURL from "../ApiUrl/Apiurl";
+import Swal from "sweetalert2";
 
 const ServiceRequestItemHistory = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { serviceRequest, serviceItemDetails, engineerStatus, customerName, userId } = location.state || {};
+  console.log("Service Request from state:", serviceRequest);
 
   const [serviceRequestHistory, setServiceRequestHistory] = useState([]);
-  const [historyFormData, setHistoryFormData] = useState({
-    sr_item_id: "",
-    company: "",
-    service_request: "",
-    component: "",
-    pm_schedule: "",
-    old_comp_serial_no: "",
-    new_comp_serial_no: "",
-    task_type: "",
-    warranty_start_date: "",
-    warranty_end_date: "",
-    action_taken: "",
-    remarks: "",
-    serviced_by: "",
-    created_by: userId || "",
-    updated_by: userId || ""
-  });
+  const [items, setItems] = useState([{
+    component: '',
+    pm_schedule: '',
+    old_comp_serial_no: '',
+    new_comp_serial_no: '',
+    task_type: '',
+    warranty_start_date: '',
+    warranty_end_date: '',
+    action_taken: '',
+    remarks: ''
+  }]);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [componentsList, setComponentsList] = useState([]);
+  const [pmSchedulesList, setPmSchedulesList] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState(serviceRequest?.company || "");
+  const [activeTab, setActiveTab] = useState('items');
+  const [updating, setUpdating] = useState(false);
+
+  // Completion data state
+  const [completionData, setCompletionData] = useState({
+    act_start_datetime: '',
+    act_end_datetime: '',
+    act_material_cost: '',
+    act_labour_hours: '',
+    act_labour_cost: '',
+    completion_notes: ''
+  });
+
+  // Task type options
+  const taskTypeOptions = [
+    'Replace',
+    'Clean',
+    'Top-up',
+    'Repair',
+    'Inspect',
+    'Other'
+  ];
+
+  // Fetch dropdown data
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        const [componentsRes, pmSchedulesRes] = await Promise.all([
+          axios.get(`${baseURL}/components/`),
+          axios.get(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`)
+        ]);
+        
+        setComponentsList(componentsRes.data.data || []);
+        setPmSchedulesList(pmSchedulesRes.data.data || []);
+      } catch (error) {
+        console.error('Error fetching dropdown data:', error);
+      }
+    };
+
+    if (userId && selectedCompany) {
+      fetchDropdownData();
+    }
+  }, [userId, selectedCompany]);
+
+  // Calculate labour hours and cost when dates change
+  useEffect(() => {
+    if (completionData.act_start_datetime && completionData.act_end_datetime) {
+      const start = new Date(completionData.act_start_datetime);
+      const end = new Date(completionData.act_end_datetime);
+      
+      if (end > start) {
+        const diffMs = end - start;
+        const diffHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
+        const hourlyRate = parseFloat(serviceRequest?.hourly_rate) || 0;
+        const labourCost = (parseFloat(diffHours) * hourlyRate).toFixed(2);
+        
+        setCompletionData(prev => ({
+          ...prev,
+          act_labour_hours: diffHours,
+          act_labour_cost: labourCost
+        }));
+      }
+    }
+  }, [completionData.act_start_datetime, completionData.act_end_datetime, serviceRequest?.hourly_rate]);
+
+  // Calculate labour cost when labour hours change manually
+  useEffect(() => {
+    if (completionData.act_labour_hours && !completionData.act_start_datetime && !completionData.act_end_datetime) {
+      const hourlyRate = parseFloat(serviceRequest?.hourly_rate) || 0;
+      const labourCost = (parseFloat(completionData.act_labour_hours) * hourlyRate).toFixed(2);
+      
+      setCompletionData(prev => ({
+        ...prev,
+        act_labour_cost: labourCost
+      }));
+    }
+  }, [completionData.act_labour_hours, serviceRequest?.hourly_rate]);
 
   // Fetch service request history
   const fetchServiceRequestHistory = async () => {
@@ -43,45 +120,9 @@ const ServiceRequestItemHistory = () => {
       
       if (response.data && response.data.length > 0) {
         setServiceRequestHistory(response.data);
-        // Pre-fill form with first history item if exists
-        const firstHistory = response.data[0];
-        setHistoryFormData({
-          sr_item_id: firstHistory.sr_item_id || "",
-          company: firstHistory.company || serviceRequest.company || "",
-          service_request: serviceRequest.request_id,
-          component: firstHistory.component || "",
-          pm_schedule: firstHistory.pm_schedule || "",
-          old_comp_serial_no: firstHistory.old_comp_serial_no || "",
-          new_comp_serial_no: firstHistory.new_comp_serial_no || "",
-          task_type: firstHistory.task_type || "",
-          warranty_start_date: firstHistory.warranty_start_date || "",
-          warranty_end_date: firstHistory.warranty_end_date || "",
-          action_taken: firstHistory.action_taken || "",
-          remarks: firstHistory.remarks || "",
-          serviced_by: firstHistory.serviced_by || "",
-          created_by: userId || "",
-          updated_by: userId || ""
-        });
-      } else {
-        // Initialize empty form for new history
-        setHistoryFormData(prev => ({
-          ...prev,
-          company: serviceRequest.company || "",
-          service_request: serviceRequest.request_id,
-          created_by: userId || "",
-          updated_by: userId || ""
-        }));
       }
     } catch (error) {
       console.error("Failed to fetch service request history", error);
-      // Initialize empty form on error
-      setHistoryFormData(prev => ({
-        ...prev,
-        company: serviceRequest?.company || "",
-        service_request: serviceRequest?.request_id || "",
-        created_by: userId || "",
-        updated_by: userId || ""
-      }));
     } finally {
       setLoading(false);
     }
@@ -93,59 +134,190 @@ const ServiceRequestItemHistory = () => {
     }
   }, [serviceRequest?.request_id]);
 
-  // Handle form input changes
-  const handleHistoryFormChange = (e) => {
-    const { name, value } = e.target;
-    setHistoryFormData(prev => ({
+  // Handle completion form field changes
+  const handleCompletionDataChange = (field, value) => {
+    setCompletionData(prev => ({
       ...prev,
-      [name]: value
+      [field]: value
     }));
   };
 
-  // Handle form submission
-  const handleHistoryFormSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
+  // Handle completion form submission
+  const handleCompletionSubmit = async () => {
+    // Validate completion form
+    if (!completionData.act_start_datetime || !completionData.act_end_datetime) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: 'Please fill in both Actual Start Date Time and Actual End Date Time.',
+      });
+      return;
+    }
+
+    const start = new Date(completionData.act_start_datetime);
+    const end = new Date(completionData.act_end_datetime);
+    
+    if (end <= start) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Error',
+        text: 'Actual End Date Time must be after Actual Start Date Time.',
+      });
+      return;
+    }
+
+    setUpdating(true);
+
     try {
-      let response;
-      
-      if (serviceRequestHistory.length > 0 && historyFormData.sr_item_id) {
-        // Update existing history
-        response = await axios.put(
-          `${baseURL}/service-req-items-history/${historyFormData.sr_item_id}/`,
-          historyFormData
-        );
-      } else {
-        // Create new history
-        response = await axios.post(
-          `${baseURL}/service-req-items-history/`,
-          historyFormData
-        );
-      }
-      
-      if (response.status === 200 || response.status === 201) {
-        alert("Service request item history saved successfully!");
-        // Refresh the history data
-        fetchServiceRequestHistory();
-      }
+      const updatePayload = {
+        ...serviceRequest,
+        ...completionData,
+        user_id: userId,
+        company_id: selectedCompany
+      };
+
+      console.log("Updating service with payload:", JSON.stringify(updatePayload, null, 2));
+
+      await axios.put(`${baseURL}/service-pools/${serviceRequest.request_id}/`, updatePayload);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Service completion details have been updated successfully.',
+      });
+
+      // Reset form or navigate back
+      navigate(-1);
+
     } catch (error) {
-      console.error("Failed to save service request history", error);
-      alert("Failed to save service request history. Please try again.");
+      console.error('Error updating service completion details:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Update Failed',
+        text: error.response?.data?.message || error.message || 'Failed to update service completion details',
+      });
     } finally {
-      setSaving(false);
+      setUpdating(false);
+    }
+  };
+
+  // Handle item form changes
+  const handleItemChange = (index, field, value) => {
+    const updatedItems = [...items];
+    updatedItems[index][field] = value;
+    setItems(updatedItems);
+  };
+
+  // Add new item form
+  const addNewItem = () => {
+    setItems([...items, {
+      component: '',
+      pm_schedule: '',
+      old_comp_serial_no: '',
+      new_comp_serial_no: '',
+      task_type: '',
+      warranty_start_date: '',
+      warranty_end_date: '',
+      action_taken: '',
+      remarks: ''
+    }]);
+  };
+
+  // Remove item form
+  const removeItem = (index) => {
+    if (items.length > 1) {
+      const updatedItems = items.filter((_, i) => i !== index);
+      setItems(updatedItems);
+    }
+  };
+
+  // Handle form submission for all items
+  const handleSubmitItems = async () => {
+    // Validation
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (!item.component || !item.task_type || !item.action_taken) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Validation Error',
+          text: `Please fill in all required fields for item ${i + 1} (Component, Task Type, and Action Taken are required)`,
+        });
+        return;
+      }
+    }
+
+    setSubmitting(true);
+
+    try {
+      const payload = {
+        user_id: userId,
+        company_id: selectedCompany,
+        items: items.map(item => ({
+          service_request: serviceRequest.request_id,
+          component: item.component,
+          pm_schedule: item.pm_schedule || null,
+          old_comp_serial_no: item.old_comp_serial_no || '',
+          new_comp_serial_no: item.new_comp_serial_no || '',
+          task_type: item.task_type,
+          warranty_start_date: item.warranty_start_date || null,
+          warranty_end_date: item.warranty_end_date || null,
+          action_taken: item.action_taken,
+          remarks: item.remarks || '',
+          serviced_by: serviceRequest.assigned_engineer,
+          created_by: userId,
+          updated_by: userId,
+          company: selectedCompany
+        }))
+      };
+      
+      console.log("Submitting service items history with payload:", JSON.stringify(payload, null, 2));
+
+      await axios.post(`${baseURL}/service-req-items-history/`, payload);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: `Service items history has been submitted successfully for ${items.length} item(s).`,
+      });
+
+      // Refresh history data
+      fetchServiceRequestHistory();
+      
+      // Reset form to one empty item
+      setItems([{
+        component: '',
+        pm_schedule: '',
+        old_comp_serial_no: '',
+        new_comp_serial_no: '',
+        task_type: '',
+        warranty_start_date: '',
+        warranty_end_date: '',
+        action_taken: '',
+        remarks: ''
+      }]);
+
+    } catch (error) {
+      console.error('Error submitting service items history:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Submission Failed',
+        text: error.response?.data?.message || error.message || 'Failed to submit service items history',
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   // Handle back button click
   const handleBack = () => {
-    navigate(-1); // Go back to previous page
+    navigate(-1);
   };
 
   if (!serviceRequest) {
     return (
       <div className="container-fluid">
-        <div className="alert alert-danger">No service request data found. Please go back and try again.</div>
-        <button onClick={handleBack} className="btn btn-secondary">Go Back</button>
+        <Alert variant="danger">No service request data found. Please go back and try again.</Alert>
+        <Button onClick={handleBack} variant="secondary">Go Back</Button>
       </div>
     );
   }
@@ -157,236 +329,337 @@ const ServiceRequestItemHistory = () => {
         <div>
           <h2 className="pm-title">Service Request Item History</h2>
           <p className="pm-subtitle">Request ID: {serviceRequest.request_id}</p>
+          <p className="pm-subtitle">Assigned Engineer: {serviceRequest.assigned_engineer}</p>
         </div>
-        <button onClick={handleBack} className="btn btn-outline-secondary">
+        <Button onClick={handleBack} variant="outline-secondary">
           ← Back to Service Pool
-        </button>
+        </Button>
       </div>
 
-      {/* Service Request Summary */}
-      {/* <div className="card mb-4">
-        <div className="card-header">
-          <h5 className="card-title mb-0">Service Request Summary</h5>
-        </div>
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-4">
-              <strong>Requested By:</strong> {customerName || "N/A"}
-            </div>
-            <div className="col-md-4">
-              <strong>Service Item:</strong> {serviceRequest.service_item || "N/A"}
-            </div>
-            <div className="col-md-4">
-              <strong>Location:</strong> {serviceItemDetails?.location || "N/A"}
-            </div>
-            <div className="col-md-4 mt-2">
-              <strong>Status:</strong> {serviceRequest.status || "N/A"}
-            </div>
-            <div className="col-md-4 mt-2">
-              <strong>Engineer Status:</strong> {engineerStatus || "N/A"}
-            </div>
-            <div className="col-md-4 mt-2">
-              <strong>Assigned Engineer:</strong> {serviceRequest.assigned_engineer || "N/A"}
-            </div>
-          </div>
-        </div>
-      </div> */}
+      <Tabs
+        activeKey={activeTab}
+        onSelect={(tab) => setActiveTab(tab)}
+        className="mb-4"
+      >
+        {/* Tab 1: Add Service Items */}
+        <Tab eventKey="items" title="Add Service Items">
+          <Card>
+            <Card.Header className="d-flex justify-content-between align-items-center">
+              <h5 className="card-title mb-0">Add Service Items</h5>
+              <Button
+                variant="success"
+                size="sm"
+                onClick={addNewItem}
+              >
+                + Add Another Item
+              </Button>
+            </Card.Header>
+            <Card.Body>
+              {loading ? (
+                <div className="text-center">
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              ) : (
+                <Form>
+                  {items.map((item, index) => (
+                    <div key={index} className="border-bottom pb-4 mb-4">
+                      {items.length > 1 && (
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                          <h6 className="text-primary mb-0">Item #{index + 1}</h6>
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => removeItem(index)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                      
+                      <Row>
+                        <Col xs={12} md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Service Request</Form.Label>
+                            <Form.Control
+                              type="text"
+                              value={serviceRequest.request_id}
+                              disabled
+                            />
+                          </Form.Group>
 
-      {/* History Form */}
-      <div className="card">
-        <div className="card-header">
-          <h5 className="card-title mb-0">
-            {serviceRequestHistory.length > 0 ? "Edit Service Request Item History" : "Add Service Request Item History"}
-          </h5>
-        </div>
-        <div className="card-body">
-          {loading ? (
-            <div className="text-center">
-              <div className="spinner-border" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleHistoryFormSubmit}>
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Service Request Item ID *</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="sr_item_id"
-                    value={historyFormData.sr_item_id}
-                    onChange={handleHistoryFormChange}
-                    required
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Company</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="company"
-                    value={historyFormData.company}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Service Request</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={historyFormData.service_request}
-                    disabled
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Component</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="component"
-                    value={historyFormData.component}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">PM Schedule</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="pm_schedule"
-                    value={historyFormData.pm_schedule}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Task Type</label>
-                  <select
-                    className="form-select"
-                    name="task_type"
-                    value={historyFormData.task_type}
-                    onChange={handleHistoryFormChange}
+                          <Form.Group className="mb-3">
+                            <Form.Label>Component *</Form.Label>
+                            <Form.Select 
+                              value={item.component}
+                              onChange={(e) => handleItemChange(index, 'component', e.target.value)}
+                              required
+                            >
+                              <option value="">Select Component</option>
+                              {Array.isArray(componentsList) && componentsList.map(comp => (
+                                <option key={comp.id || comp.component_id} value={comp.id || comp.component_id}>
+                                  {comp.component_id} - {comp.component_name}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>PM Schedule</Form.Label>
+                            <Form.Select 
+                              value={item.pm_schedule}
+                              onChange={(e) => handleItemChange(index, 'pm_schedule', e.target.value)}
+                            >
+                              <option value="">Select PM Schedule</option>
+                              {Array.isArray(pmSchedulesList) && pmSchedulesList.map(schedule => (
+                                <option key={schedule.id || schedule.pm_schedule_id} value={schedule.id || schedule.pm_schedule_id}>
+                                  {schedule.pm_schedule_id} - {schedule.schedule_name}
+                                </option>
+                              ))}
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>Old Component Serial No</Form.Label>
+                            <Form.Control
+                              type="text"
+                              value={item.old_comp_serial_no}
+                              onChange={(e) => handleItemChange(index, 'old_comp_serial_no', e.target.value)}
+                              placeholder="Enter old serial number"
+                            />
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>New Component Serial No</Form.Label>
+                            <Form.Control
+                              type="text"
+                              value={item.new_comp_serial_no}
+                              onChange={(e) => handleItemChange(index, 'new_comp_serial_no', e.target.value)}
+                              placeholder="Enter new serial number"
+                            />
+                          </Form.Group>
+                        </Col>
+
+                        <Col xs={12} md={6}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Task Type *</Form.Label>
+                            <Form.Select 
+                              value={item.task_type}
+                              onChange={(e) => handleItemChange(index, 'task_type', e.target.value)}
+                              required
+                            >
+                              <option value="">Select Task Type</option>
+                              {taskTypeOptions.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                              ))}
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>Warranty Start Date</Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={item.warranty_start_date}
+                              onChange={(e) => handleItemChange(index, 'warranty_start_date', e.target.value)}
+                            />
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>Warranty End Date</Form.Label>
+                            <Form.Control
+                              type="date"
+                              value={item.warranty_end_date}
+                              onChange={(e) => handleItemChange(index, 'warranty_end_date', e.target.value)}
+                            />
+                          </Form.Group>
+                        </Col>
+
+                        <Col xs={12}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Action Taken *</Form.Label>
+                            <Form.Control
+                              as="textarea"
+                              rows={3}
+                              value={item.action_taken}
+                              onChange={(e) => handleItemChange(index, 'action_taken', e.target.value)}
+                              placeholder="Describe the action taken"
+                              required
+                            />
+                          </Form.Group>
+
+                          <Form.Group className="mb-3">
+                            <Form.Label>Remarks</Form.Label>
+                            <Form.Control
+                              as="textarea"
+                              rows={2}
+                              value={item.remarks}
+                              onChange={(e) => handleItemChange(index, 'remarks', e.target.value)}
+                              placeholder="Enter any additional remarks"
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </div>
+                  ))}
+
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={handleBack}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleSubmitItems}
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Submitting {items.length} Item(s)...
+                        </>
+                      ) : (
+                        `Submit ${items.length} Item(s)`
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
+
+        {/* Tab 2: Update Completion Details */}
+        <Tab eventKey="completion" title="Update Completion Details">
+          <Card>
+            <Card.Header>
+              <h5 className="card-title mb-0">Service Completion Details</h5>
+            </Card.Header>
+            <Card.Body>
+              <Form>
+                <Row>
+                  <Col xs={12} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Actual Start Date Time *</Form.Label>
+                      <Form.Control
+                        type="datetime-local"
+                        value={completionData.act_start_datetime}
+                        onChange={(e) => handleCompletionDataChange('act_start_datetime', e.target.value)}
+                      />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Actual End Date Time *</Form.Label>
+                      <Form.Control
+                        type="datetime-local"
+                        value={completionData.act_end_datetime}
+                        onChange={(e) => handleCompletionDataChange('act_end_datetime', e.target.value)}
+                      />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Material Cost (₹)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        value={completionData.act_material_cost}
+                        onChange={(e) => handleCompletionDataChange('act_material_cost', e.target.value)}
+                        placeholder="Enter material cost"
+                      />
+                    </Form.Group>
+                  </Col>
+
+                  <Col xs={12} md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Labour Hours</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        value={completionData.act_labour_hours}
+                        onChange={(e) => handleCompletionDataChange('act_labour_hours', e.target.value)}
+                        placeholder="Auto-calculated"
+                        readOnly={!!completionData.act_start_datetime && !!completionData.act_end_datetime}
+                      />
+                      <Form.Text className="text-muted">
+                        {completionData.act_start_datetime && completionData.act_end_datetime 
+                          ? 'Auto-calculated from dates' 
+                          : 'Manual entry allowed if dates not set'}
+                      </Form.Text>
+                    </Form.Group>
+
+                    <Form.Group className="mb-3">
+                      <Form.Label>Labour Cost (₹)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        step="0.01"
+                        value={completionData.act_labour_cost}
+                        onChange={(e) => handleCompletionDataChange('act_labour_cost', e.target.value)}
+                        placeholder="Auto-calculated"
+                        readOnly
+                      />
+                      <Form.Text className="text-muted">
+                        Hourly Rate: ₹{serviceRequest?.hourly_rate || '0.00'} × {completionData.act_labour_hours || '0'} hours
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+
+                  <Col xs={12}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Completion Notes</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={completionData.completion_notes}
+                        onChange={(e) => handleCompletionDataChange('completion_notes', e.target.value)}
+                        placeholder="Enter completion notes and remarks"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+
+                <div className="d-flex gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={handleBack}
                   >
-                    <option value="">Select Task Type</option>
-                    <option value="Replace">Replace</option>
-                    <option value="Clean">Clean</option>
-                    <option value="Top-up">Top-up</option>
-                    <option value="Repair">Repair</option>
-                    <option value="Inspect">Inspect</option>
-                    <option value="Other">Other</option>
-                  </select>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleCompletionSubmit}
+                    disabled={updating}
+                  >
+                    {updating ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Completion Details'
+                    )}
+                  </Button>
                 </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Old Component Serial No</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="old_comp_serial_no"
-                    value={historyFormData.old_comp_serial_no}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">New Component Serial No</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="new_comp_serial_no"
-                    value={historyFormData.new_comp_serial_no}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Warranty Start Date</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="warranty_start_date"
-                    value={historyFormData.warranty_start_date}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Warranty End Date</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    name="warranty_end_date"
-                    value={historyFormData.warranty_end_date}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-                <div className="col-12 mb-3">
-                  <label className="form-label">Action Taken</label>
-                  <textarea
-                    className="form-control"
-                    name="action_taken"
-                    value={historyFormData.action_taken}
-                    onChange={handleHistoryFormChange}
-                    rows="3"
-                  />
-                </div>
-                <div className="col-12 mb-3">
-                  <label className="form-label">Remarks</label>
-                  <textarea
-                    className="form-control"
-                    name="remarks"
-                    value={historyFormData.remarks}
-                    onChange={handleHistoryFormChange}
-                    rows="3"
-                  />
-                </div>
-                <div className="col-md-6 mb-3">
-                  <label className="form-label">Serviced By</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    name="serviced_by"
-                    value={historyFormData.serviced_by}
-                    onChange={handleHistoryFormChange}
-                  />
-                </div>
-              </div>
-              <div className="d-flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleBack}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Saving...
-                    </>
-                  ) : (
-                    "Save History"
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
+              </Form>
+            </Card.Body>
+          </Card>
+        </Tab>
+      </Tabs>
 
       {/* Existing History Records */}
       {serviceRequestHistory.length > 0 && (
-        <div className="card mt-4">
-          <div className="card-header">
+        <Card>
+          <Card.Header>
             <h5 className="card-title mb-0">Existing History Records</h5>
-          </div>
-          <div className="card-body">
+          </Card.Header>
+          <Card.Body>
             <div className="table-responsive">
               <table className="table table-striped">
                 <thead>
                   <tr>
                     <th>SR Item ID</th>
+                    <th>Component</th>
                     <th>Task Type</th>
                     <th>Action Taken</th>
                     <th>Serviced By</th>
@@ -397,6 +670,7 @@ const ServiceRequestItemHistory = () => {
                   {serviceRequestHistory.map((history) => (
                     <tr key={history.sr_item_id}>
                       <td>{history.sr_item_id}</td>
+                      <td>{history.component}</td>
                       <td>{history.task_type}</td>
                       <td>{history.action_taken}</td>
                       <td>{history.serviced_by}</td>
@@ -406,8 +680,8 @@ const ServiceRequestItemHistory = () => {
                 </tbody>
               </table>
             </div>
-          </div>
-        </div>
+          </Card.Body>
+        </Card>
       )}
     </div>
   );

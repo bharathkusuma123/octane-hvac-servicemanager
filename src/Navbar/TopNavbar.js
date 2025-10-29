@@ -481,19 +481,24 @@ const TopNavbar = () => {
       ],
     },
     {
-      label: "Services",
+      label: "Service Pool",
       dropdown: [
         { path: "/servicemanager/service-pool", label: "Service Pool" },
         { path: "/servicemanager/service-table-history", label: "Service Table History" },
       ],
     },
-    { path: "/servicemanager/new-customer", label: "Customer" },
+    {
+      label: "Customers",
+      dropdown: [
+         { path: "/servicemanager/new-customer", label: "Customer Deatils" },
+           { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
+               { path: "/servicemanager/customer-feedback", label: "Customer Feedbacks" },
+      ],
+    },
     {
       label: "Service Items",
-      path: "/servicemanager/new-service-item", label: "Items" ,
+      path: "/servicemanager/new-service-item", label: "Service Items" ,
     },
-    { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
-    { path: "/servicemanager/customer-feedback", label: "Customer Feedbacks" },
     { path: "/servicemanager/error-logs", label: "Error Logs" },
   ];
 

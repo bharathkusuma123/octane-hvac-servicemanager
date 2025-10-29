@@ -75,94 +75,119 @@ const ServiceItemComponentsForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    const now = new Date().toISOString();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  const now = new Date().toISOString();
 
-    if (isEditMode) {
-      // ✏️ Update
-      const payload = {
-        component_serial_number: formData.component_serial_number,
-        warranty_start_date: formData.warranty_start_date,
-        warranty_end_date: formData.warranty_end_date,
-        vendor_id: formData.vendor_id || "N/A",
-        updated_at: now,
-        updated_by: "service manager",
-        service_item: formData.service_item_id,
-        component: formData.component_id,
-      };
-      
-      try {
-        const res = await fetch(`${baseURL}/service-item-components/${location.state.service_component_id}/`, {
+  if (isEditMode) {
+    // ✏️ Update
+    const payload = {
+      component_serial_number: formData.component_serial_number,
+      warranty_start_date: formData.warranty_start_date,
+      warranty_end_date: formData.warranty_end_date,
+      vendor_id: formData.vendor_id || "N/A",
+      updated_at: now,
+      updated_by: "service manager",
+      service_item: formData.service_item_id,
+      component: formData.component_id,
+      user_id: userId,
+      company_id: selectedCompany,
+    };
+
+    try {
+      const res = await fetch(
+        `${baseURL}/service-item-components/${location.state.service_component_id}/`,
+        {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        });
-        
-        if (!res.ok) throw new Error(await res.text());
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: 'Component updated successfully!',
-          confirmButtonColor: '#3085d6',
-        }).then(() => navigate('/servicemanager/service-item-components'));
-      } catch (err) {
-        console.error(err);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Update failed',
-          confirmButtonColor: '#d33',
-        });
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.text();
+        console.error("❌ Update failed:", errorData);
+        throw new Error(`HTTP ${res.status}: ${errorData}`);
       }
-    } else {
-      // ➕ Add
-      const postpayload = {
-        service_component_id: `SC-${Date.now()}`,
-        component_serial_number: formData.component_serial_number,
-        warranty_start_date: formData.warranty_start_date,
-        warranty_end_date: formData.warranty_end_date,
-        vendor_id: formData.vendor_id || "N/A",
-        created_at: now,
-        updated_at: now,
-        created_by: "service manager",
-        updated_by: "service manager",
-        service_item: formData.service_item_id,
-        component: formData.component_id,
-        company: selectedCompany,
-        user_id: userId,
-        company_id: selectedCompany,
-      };
-      
-      try {
-        const res = await fetch(`${baseURL}/service-item-components/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(postpayload),
-        });
-        
-        if (!res.ok) throw new Error(await res.json().then((d) => JSON.stringify(d)));
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: 'Component added successfully!',
-          confirmButtonColor: '#3085d6',
-        }).then(() => navigate('/servicemanager/service-item-components'));
-      } catch (err) {
-        console.error(err);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: err.message,
-          confirmButtonColor: '#d33',
-        });
-      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Component updated successfully!",
+        confirmButtonColor: "#3085d6",
+      }).then(() => navigate("/servicemanager/new-service-item"));
+    } catch (err) {
+      console.error("🚨 Update Error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to update component. Check console for details.",
+        confirmButtonColor: "#d33",
+      });
     }
-    setIsSubmitting(false);
-  };
+  } else {
+    // ➕ Add (POST)
+    const postpayload = {
+      service_component_id: `SC-${Date.now()}`,
+      component_serial_number: formData.component_serial_number,
+      warranty_start_date: formData.warranty_start_date,
+      warranty_end_date: formData.warranty_end_date,
+      vendor_id: formData.vendor_id || "N/A",
+      created_at: now,
+      updated_at: now,
+      created_by: "service manager",
+      updated_by: "service manager",
+      service_item: formData.service_item_id,
+      component: formData.component_id,
+      company: selectedCompany,
+      user_id: userId,
+      company_id: selectedCompany,
+    };
+
+    try {
+  const res = await fetch(`${baseURL}/service-item-components/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(postpayload),
+  });
+
+  if (!res.ok) {
+    // Try to read error response safely ONCE
+    let errorDetails;
+    const contentType = res.headers.get("content-type");
+
+    if (contentType && contentType.includes("application/json")) {
+      errorDetails = await res.json();
+    } else {
+      errorDetails = await res.text();
+    }
+
+    console.error("❌ API Error Response:", errorDetails);
+    throw new Error(`HTTP ${res.status}: ${JSON.stringify(errorDetails)}`);
+  }
+
+  Swal.fire({
+    icon: "success",
+    title: "Success!",
+    text: "Component added successfully!",
+    confirmButtonColor: "#3085d6",
+  }).then(() => navigate("/servicemanager/new-service-item"));
+} catch (err) {
+  console.error("🚨 POST Error:", err);
+  Swal.fire({
+    icon: "error",
+    title: "Error",
+    text: err.message || "Failed to add component. Check console for details.",
+    confirmButtonColor: "#d33",
+  });
+}
+
+  }
+
+  setIsSubmitting(false);
+};
+
 
   const handleCancel = () => {
     navigate('/servicemanager/new-service-item');

@@ -1172,14 +1172,14 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                       )}
                     </td>
                     <td>
-                      <div className="d-flex gap-1 flex-row">
-                        <button
+                      <div className="d-flex justify-content-center gap-2">
+                        {/* <button
                           className="btn btn-sm btn-info"
                           onClick={() => handleAddComponent(item)}
                           title="Add Component"
                         >
                           Add
-                        </button>
+                        </button> */}
                         <button
                           className="btn btn-sm btn-secondary"
                           onClick={() => handleViewComponent(item)}

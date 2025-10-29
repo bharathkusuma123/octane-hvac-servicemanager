@@ -1,260 +1,236 @@
-// Create a new file: src/ServiceTableHistory/ServiceTableHistory.js
-import React, { useState, useEffect, useContext } from "react";
-import "./ServiceHistoryTable.css";
-import axios from "axios";
-import baseURL from "../ApiUrl/Apiurl";
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useContext } from 'react';
+import axios from 'axios';
+import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
+import { FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
 
-const ServiceTableHistory = () => {
-  const { userId } = useContext(AuthContext);
-  const { selectedCompany } = useCompany();
-  const navigate = useNavigate();
-  
-  const [serviceHistory, setServiceHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
+const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
+  const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [entriesPerPage, setEntriesPerPage] = useState(5);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredData, setFilteredData] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [serviceItems, setServiceItems] = useState([]);
-  const [engineers, setEngineers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { selectedCompany } = useCompany();
+  const { userId } = useContext(AuthContext);
 
-  // Fetch customers
-  const fetchCustomers = async () => {
-    try {
-      const response = await axios.get(`${baseURL}/customers/`, {
-        params: {
-          user_id: userId,
-          company_id: selectedCompany
-        }
-      });
-      
-      if (response.data.status === "success" && Array.isArray(response.data.data)) {
-        setCustomers(response.data.data);
-      } else {
-        setCustomers([]);
-      }
-    } catch (error) {
-      console.error("Error fetching customers:", error);
-      setCustomers([]);
-    }
-  };
-
-  // Fetch service items
-  const fetchServiceItems = async () => {
-    try {
-      const response = await axios.get(`${baseURL}/service-items/`, {
-        params: {
-          user_id: userId,
-          company_id: selectedCompany
-        }
-      });
-
-      if (response.data && response.data.data) {
-        setServiceItems(response.data.data);
-      } else {
-        setServiceItems([]);
-      }
-    } catch (error) {
-      console.error("Error fetching service items:", error);
-      setServiceItems([]);
-    }
-  };
-
-  // Fetch engineers
-  const fetchEngineers = async () => {
-    try {
-      const usersResponse = await axios.get(`${baseURL}/users/`);
-      const serviceEngineers = usersResponse.data.filter(
-        user => user.role === "Service Engineer"
-      );
-      setEngineers(serviceEngineers);
-    } catch (error) {
-      console.error("Error fetching engineers:", error);
-      setEngineers([]);
-    }
-  };
-
-  // Fetch service history data
-  const fetchServiceHistory = async () => {
+  const fetchServiceRequestItems = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get(`${baseURL}/service-pools/`, {
-        params: {
-          user_id: userId,
-          company_id: selectedCompany,
-          include_history: true // You might need to modify your API to support this
-        }
-      });
+      if (!userId || !selectedCompany) {
+        setError('Missing user ID or company ID');
+        return;
+      }
       
-      let dataArray = response.data.data || response.data;
-      dataArray = Array.isArray(dataArray) ? dataArray : [dataArray];
+      const response = await axios.get(
+        `${baseURL}/service-req-items-history/?user_id=${userId}&company_id=${selectedCompany}`
+      );
       
-      // Filter completed/closed services and sort by date
-      const completedServices = dataArray.filter(service => 
-        ['Completed', 'Closed', 'Reopened'].includes(service.status)
-      ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      
-      setServiceHistory(completedServices);
-      setFilteredData(completedServices);
-    } catch (err) {
-      setError(err.message);
-      setServiceHistory([]);
-      setFilteredData([]);
+      if (response.data.status === "success") {
+        const sortedItems = response.data.data.sort((a, b) => 
+          new Date(b.created_at) - new Date(a.created_at)
+        );
+        setItems(sortedItems);
+      } else {
+        setError('Failed to load service request items');
+      }
+    } catch (error) {
+      console.error('Error fetching service request items:', error);
+      setError('Failed to load service request items');
     } finally {
-      setLoading(false);
+      setLoading(false); 
     }
   };
 
   useEffect(() => {
-    if (userId && selectedCompany) {
-      fetchServiceHistory();
-      fetchCustomers();
-      fetchServiceItems();
-      fetchEngineers();
-    }
-  }, [userId, selectedCompany]);
+    fetchServiceRequestItems();
+  }, [selectedCompany, userId]);
 
-  // Apply search filter
   useEffect(() => {
-    let results = serviceHistory;
+    let results = items;
+    
+    if (selectedCompany) {
+      results = results.filter(item => 
+        item.company === selectedCompany
+      );
+    }
     
     if (searchTerm) {
       results = results.filter(item =>
-        Object.values(item).join(' ').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.request_id && item.request_id.toString().includes(searchTerm))
+        Object.values(item)
+          .join(" ")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
       );
     }
     
-    setFilteredData(results);
+    setFilteredItems(results);
     setCurrentPage(1);
-  }, [searchTerm, serviceHistory]);
+  }, [selectedCompany, searchTerm, items]);
 
-  // Get customer name by ID
-  const getCustomerName = (customerId) => {
-    if (!customerId) return "N/A";
-    const customer = customers.find(cust => cust.customer_id === customerId);
-    return customer ? customer.full_name || customer.username || "N/A" : customerId;
+  const indexOfLastEntry = currentPage * entriesPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+  const currentEntries = filteredItems.slice(indexOfFirstEntry, indexOfLastEntry);
+  const totalPages = Math.ceil(filteredItems.length / entriesPerPage);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
-  // Get service item name by ID
-  const getServiceItemName = (serviceItemId) => {
-    if (!serviceItemId) return "N/A";
-    const serviceItem = serviceItems.find(item => item.service_item_id === serviceItemId);
-    return serviceItem ? serviceItem.item_name || "N/A" : serviceItemId;
+  const formatDateTime = (dateTimeString) => {
+    if (!dateTimeString) return '-';
+    const date = new Date(dateTimeString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
-  // Get engineer name by ID
-  const getEngineerName = (engineerId) => {
-    if (!engineerId) return "Not Assigned";
-    const engineer = engineers.find(eng => eng.user_id === engineerId);
-    return engineer ? engineer.full_name || engineer.username || "N/A" : engineerId;
+  const handleDeleteItem = (srItemId) => {
+    if (window.confirm('Are you sure you want to delete this service request item? This action cannot be undone.')) {
+      axios
+        .delete(`${baseURL}/service-req-items-history/${srItemId}/?user_id=${userId}&company_id=${selectedCompany}`)
+        .then(response => {
+          console.log("Service request item deleted successfully", response);
+          alert('Service request item deleted successfully');
+          fetchServiceRequestItems();
+        })
+        .catch(error => {
+          console.error("Error deleting service request item:", error);
+          alert("Failed to delete service request item. Please try again.");
+        });
+    }
   };
 
-  // Handle navigation to service request detail
-  const handleRequestClick = (requestId) => {
-    navigate(`/servicemanager/service-requests/${requestId}`);
-  };
-
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredData.length / entriesPerPage);
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const currentData = filteredData.slice(startIndex, endIndex);
-
-  if (loading) return <div className="service-history-container">Loading service history...</div>;
-  if (error) return <div className="service-history-container">Error: {error}</div>;
+  if (loading) return <div className="text-center my-4">Loading service request items...</div>;
+  if (error) return <div className="alert alert-danger my-4">{error}</div>;
 
   return (
-    <div className="service-history-container pm-container">
-      <div className="service-history-header">
-        <h2>Service Table History</h2>
-        <p>View previous service records, descriptions, and assigned engineers</p>
-      </div>
-
-      {/* Search and Filter Section */}
-      <div className="search-filter-section">
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Search service history..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="form-control"
-          />
+    <>
+      <div className="d-flex justify-content-between align-items-center mt-5 flex-wrap">
+        <div>
+          <h2 className="customer-title mb-0">Service Request Items History</h2>
+          <p className="customer-subtitle mb-0 text-muted">
+            {selectedCompany ? `Showing service request items for ${selectedCompany}` : 'Showing all service request items'}
+          </p>
         </div>
-        
-        <div className="entries-selector">
-          <label>Show </label>
+        {/* <button onClick={toggleForm} className="btn btn-primary">
+          Add New Item
+        </button> */}
+      </div>
+      
+      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div className="d-flex align-items-center gap-2">
+          Show
           <select
             value={entriesPerPage}
             onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-            className="form-select"
+            className="form-select form-select-sm w-auto"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={25}>25</option>
-            <option value={50}>50</option>
           </select>
-          <label> entries</label>
+          entries
         </div>
+
+        <input
+          type="text"
+          placeholder="Search service request items..."
+          className="form-control w-auto"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
-      {/* Service History Table */}
-      <div className="table-responsive">
-        <table className="table table-striped table-hover">
-          <thead className="">
+      <div className="table-responsive mb-4">
+        <table className="table">
+          <thead className="new-customer-table-header">
             <tr>
-              <th>Request ID</th>
-              <th>Customer</th>
-              <th>Service Item</th>
-              <th>Description</th>
-              <th>Reported Problems</th>
-              <th>Assigned Engineer</th>
-              <th>Status</th>
-              <th>Completed Date</th>
+              <th>S.No</th>
+              <th>SR Item ID</th>
+              <th>Service Request</th>
+              <th>Component Type</th>
+              <th>Component</th>
+              <th>Task Type</th>
+              <th>Old Serial No</th>
+              <th>New Serial No</th>
+              <th>Warranty Start</th>
+              <th>Warranty End</th>
+              <th>Action Taken</th>
+              <th>Serviced By</th>
+              {/* <th>Serviced At</th> */}
+              <th>Created At</th>
+              {/* <th>Actions</th> */}
             </tr>
           </thead>
           <tbody>
-            {currentData.length > 0 ? (
-              currentData.map((service) => (
-                <tr key={service.request_id} className="service-history-row">
-                  <td>
-                    <button
-                      className="request-id-btn"
-                      onClick={() => handleRequestClick(service.request_id)}
-                      title="View Service Details"
-                    >
-                      {service.request_id}
-                    </button>
-                  </td>
-                  <td>{getCustomerName(service.customer)}</td>
-                  <td>{getServiceItemName(service.service_item)}</td>
-                  <td className="description-cell">
-                    {service.request_details || "No description provided"}
-                  </td>
-                  <td className="problems-cell">
-                    {service.alert_details || "No problems reported"}
-                  </td>
-                  <td>{getEngineerName(service.assigned_engineer)}</td>
-                  <td>
-                    <span className={`status-badge status-${service.status?.toLowerCase()}`}>
-                      {service.status}
-                    </span>
-                  </td>
-                  <td>
-                    {service.updated_at ? new Date(service.updated_at).toLocaleDateString() : "N/A"}
-                  </td>
+            {currentEntries.length > 0 ? (
+              currentEntries.map((item, index) => (
+                <tr key={index}>
+                  <td>{indexOfFirstEntry + index + 1}</td>
+                  <td>{item.sr_item_id}</td>
+                  <td>{item.service_request}</td>
+                  <td>{item.component_type}</td>
+                  <td>{item.component}</td>
+                  <td>{item.task_type}</td>
+                  <td>{item.old_comp_serial_no || '-'}</td>
+                  <td>{item.new_comp_serial_no || '-'}</td>
+                  <td>{formatDate(item.warranty_start_date)}</td>
+                  <td>{formatDate(item.warranty_end_date)}</td>
+                  <td>{item.action_taken || '-'}</td>
+                  <td>{item.serviced_by}</td>
+                  {/* <td>{formatDateTime(item.serviced_at)}</td> */}
+                  <td>{formatDateTime(item.created_at)}</td>
+                  {/* <td>
+                    <div className="d-flex gap-2">
+                      <FaEye 
+                        style={{ 
+                          color: "#0d6efd", 
+                          cursor: "pointer",
+                          fontSize: "18px"
+                        }}
+                        onClick={() => onViewItem(item)}
+                        title="View Item"
+                      />
+                      <FaEdit 
+                        style={{ 
+                          color: "#ffc107", 
+                          cursor: "pointer",
+                          fontSize: "18px"
+                        }}
+                        onClick={() => onEditItem(item)}
+                        title="Edit Item"
+                      />
+                      <FaTrashAlt 
+                        style={{ 
+                          color: "#dc3545", 
+                          cursor: "pointer",
+                          fontSize: "18px"
+                        }}
+                        onClick={() => handleDeleteItem(item.sr_item_id)}
+                        title="Delete Item"
+                      />
+                    </div>
+                  </td> */}
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="text-center py-4">
-                  No service history found
+                <td colSpan="15" className="text-center">
+                  {selectedCompany 
+                    ? `No service request items found for ${selectedCompany}${searchTerm ? ' matching your search' : ''}`
+                    : 'No service request items found'}
                 </td>
               </tr>
             )}
@@ -262,50 +238,44 @@ const ServiceTableHistory = () => {
         </table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="pagination-section">
-          <div className="pagination-info">
-            Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} entries
-          </div>
-          <nav>
-            <ul className="pagination">
-              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  Previous
+        <nav aria-label="Page navigation">
+          <ul className="pagination justify-content-center">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+            </li>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <li
+                key={page}
+                className={`page-item ${currentPage === page ? "active" : ""}`}
+              >
+                <button className="page-link" onClick={() => setCurrentPage(page)}>
+                  {page}
                 </button>
               </li>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </button>
-                </li>
-              ))}
-              
-              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                <button
-                  className="page-link"
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
+            ))}
+
+            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </li>
+          </ul>
+        </nav>
       )}
-    </div>
+    </>
   );
 };
 
-export default ServiceTableHistory;
+export default ServiceRequestItemsTable;

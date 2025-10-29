@@ -1382,7 +1382,7 @@ const ServiceTableContent = ({
                         className="btn btn-sm btn-info"
                         onClick={() => handleServiceRequestHistory(item)}
                       >
-                        Service Request Item History
+                        Add Service Request Item History
                       </button>
                     </td>
                     <td>
