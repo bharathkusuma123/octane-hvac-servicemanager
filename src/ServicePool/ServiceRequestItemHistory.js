@@ -30,6 +30,8 @@ const ServiceRequestItemHistory = () => {
   const [selectedCompany, setSelectedCompany] = useState(serviceRequest?.company || "");
   const [activeTab, setActiveTab] = useState('items');
   const [updating, setUpdating] = useState(false);
+  const [assignedEngineerData, setAssignedEngineerData] = useState(null);
+  const [loadingEngineer, setLoadingEngineer] = useState(false);
 
   // Completion data state
   const [completionData, setCompletionData] = useState({
@@ -51,6 +53,40 @@ const ServiceRequestItemHistory = () => {
     'Other'
   ];
 
+  // Fetch assigned engineer data with hourly rate
+  const fetchAssignedEngineerData = async () => {
+    if (!serviceRequest?.assigned_engineer || !userId || !selectedCompany) {
+      return;
+    }
+
+    setLoadingEngineer(true);
+    try {
+      const response = await axios.get(`${baseURL}/resources/`, {
+        params: {
+          user_id: userId,
+          company_id: selectedCompany
+        }
+      });
+
+      if (response.data.status === "success" && response.data.data) {
+        const engineer = response.data.data.find(
+          resource => resource.resource_id === serviceRequest.assigned_engineer
+        );
+        
+        if (engineer) {
+          setAssignedEngineerData(engineer);
+          console.log("Found assigned engineer:", engineer);
+        } else {
+          console.warn("Assigned engineer not found in resources:", serviceRequest.assigned_engineer);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching assigned engineer data:", error);
+    } finally {
+      setLoadingEngineer(false);
+    }
+  };
+
   // Fetch dropdown data
   useEffect(() => {
     const fetchDropdownData = async () => {
@@ -69,8 +105,9 @@ const ServiceRequestItemHistory = () => {
 
     if (userId && selectedCompany) {
       fetchDropdownData();
+      fetchAssignedEngineerData();
     }
-  }, [userId, selectedCompany]);
+  }, [userId, selectedCompany, serviceRequest?.assigned_engineer]);
 
   // Calculate labour hours and cost when dates change
   useEffect(() => {
@@ -81,7 +118,7 @@ const ServiceRequestItemHistory = () => {
       if (end > start) {
         const diffMs = end - start;
         const diffHours = (diffMs / (1000 * 60 * 60)).toFixed(2);
-        const hourlyRate = parseFloat(serviceRequest?.hourly_rate) || 0;
+        const hourlyRate = parseFloat(assignedEngineerData?.hourly_rate) || 0;
         const labourCost = (parseFloat(diffHours) * hourlyRate).toFixed(2);
         
         setCompletionData(prev => ({
@@ -91,12 +128,12 @@ const ServiceRequestItemHistory = () => {
         }));
       }
     }
-  }, [completionData.act_start_datetime, completionData.act_end_datetime, serviceRequest?.hourly_rate]);
+  }, [completionData.act_start_datetime, completionData.act_end_datetime, assignedEngineerData]);
 
   // Calculate labour cost when labour hours change manually
   useEffect(() => {
     if (completionData.act_labour_hours && !completionData.act_start_datetime && !completionData.act_end_datetime) {
-      const hourlyRate = parseFloat(serviceRequest?.hourly_rate) || 0;
+      const hourlyRate = parseFloat(assignedEngineerData?.hourly_rate) || 0;
       const labourCost = (parseFloat(completionData.act_labour_hours) * hourlyRate).toFixed(2);
       
       setCompletionData(prev => ({
@@ -104,7 +141,7 @@ const ServiceRequestItemHistory = () => {
         act_labour_cost: labourCost
       }));
     }
-  }, [completionData.act_labour_hours, serviceRequest?.hourly_rate]);
+  }, [completionData.act_labour_hours, assignedEngineerData]);
 
   // Fetch service request history
   const fetchServiceRequestHistory = async () => {
@@ -329,7 +366,17 @@ const ServiceRequestItemHistory = () => {
         <div>
           <h2 className="pm-title">Service Request Item History</h2>
           <p className="pm-subtitle">Request ID: {serviceRequest.request_id}</p>
-          <p className="pm-subtitle">Assigned Engineer: {serviceRequest.assigned_engineer}</p>
+          <p className="pm-subtitle">
+            Assigned Engineer: {serviceRequest.assigned_engineer}
+            {assignedEngineerData && (
+              <span className="text-muted ms-2">
+                ({assignedEngineerData.full_name}) - Hourly Rate: ₹{assignedEngineerData.hourly_rate}
+              </span>
+            )}
+            {loadingEngineer && (
+              <span className="text-muted ms-2">Loading engineer data...</span>
+            )}
+          </p>
         </div>
         <Button onClick={handleBack} variant="outline-secondary">
           ← Back to Service Pool
@@ -538,110 +585,132 @@ const ServiceRequestItemHistory = () => {
               <h5 className="card-title mb-0">Service Completion Details</h5>
             </Card.Header>
             <Card.Body>
-              <Form>
-                <Row>
-                  <Col xs={12} md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Actual Start Date Time *</Form.Label>
-                      <Form.Control
-                        type="datetime-local"
-                        value={completionData.act_start_datetime}
-                        onChange={(e) => handleCompletionDataChange('act_start_datetime', e.target.value)}
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Actual End Date Time *</Form.Label>
-                      <Form.Control
-                        type="datetime-local"
-                        value={completionData.act_end_datetime}
-                        onChange={(e) => handleCompletionDataChange('act_end_datetime', e.target.value)}
-                      />
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Material Cost (₹)</Form.Label>
-                      <Form.Control
-                        type="number"
-                        step="0.01"
-                        value={completionData.act_material_cost}
-                        onChange={(e) => handleCompletionDataChange('act_material_cost', e.target.value)}
-                        placeholder="Enter material cost"
-                      />
-                    </Form.Group>
-                  </Col>
-
-                  <Col xs={12} md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Labour Hours</Form.Label>
-                      <Form.Control
-                        type="number"
-                        step="0.01"
-                        value={completionData.act_labour_hours}
-                        onChange={(e) => handleCompletionDataChange('act_labour_hours', e.target.value)}
-                        placeholder="Auto-calculated"
-                        readOnly={!!completionData.act_start_datetime && !!completionData.act_end_datetime}
-                      />
-                      <Form.Text className="text-muted">
-                        {completionData.act_start_datetime && completionData.act_end_datetime 
-                          ? 'Auto-calculated from dates' 
-                          : 'Manual entry allowed if dates not set'}
-                      </Form.Text>
-                    </Form.Group>
-
-                    <Form.Group className="mb-3">
-                      <Form.Label>Labour Cost (₹)</Form.Label>
-                      <Form.Control
-                        type="number"
-                        step="0.01"
-                        value={completionData.act_labour_cost}
-                        onChange={(e) => handleCompletionDataChange('act_labour_cost', e.target.value)}
-                        placeholder="Auto-calculated"
-                        readOnly
-                      />
-                      <Form.Text className="text-muted">
-                        Hourly Rate: ₹{serviceRequest?.hourly_rate || '0.00'} × {completionData.act_labour_hours || '0'} hours
-                      </Form.Text>
-                    </Form.Group>
-                  </Col>
-
-                  <Col xs={12}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Completion Notes</Form.Label>
-                      <Form.Control
-                        as="textarea"
-                        rows={3}
-                        value={completionData.completion_notes}
-                        onChange={(e) => handleCompletionDataChange('completion_notes', e.target.value)}
-                        placeholder="Enter completion notes and remarks"
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-
-                <div className="d-flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={handleBack}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="primary"
-                    onClick={handleCompletionSubmit}
-                    disabled={updating}
-                  >
-                    {updating ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Updating...
-                      </>
-                    ) : (
-                      'Update Completion Details'
-                    )}
-                  </Button>
+              {loadingEngineer ? (
+                <div className="text-center">
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Loading engineer data...</span>
+                  </div>
+                  <p className="mt-2">Loading engineer hourly rate...</p>
                 </div>
-              </Form>
+              ) : (
+                <Form>
+                  <Row>
+                    <Col xs={12} md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Actual Start Date Time *</Form.Label>
+                        <Form.Control
+                          type="datetime-local"
+                          value={completionData.act_start_datetime}
+                          onChange={(e) => handleCompletionDataChange('act_start_datetime', e.target.value)}
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Actual End Date Time *</Form.Label>
+                        <Form.Control
+                          type="datetime-local"
+                          value={completionData.act_end_datetime}
+                          onChange={(e) => handleCompletionDataChange('act_end_datetime', e.target.value)}
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Material Cost (₹)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          value={completionData.act_material_cost}
+                          onChange={(e) => handleCompletionDataChange('act_material_cost', e.target.value)}
+                          placeholder="Enter material cost"
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col xs={12} md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Labour Hours</Form.Label>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          value={completionData.act_labour_hours}
+                          onChange={(e) => handleCompletionDataChange('act_labour_hours', e.target.value)}
+                          placeholder="Auto-calculated"
+                          readOnly={!!completionData.act_start_datetime && !!completionData.act_end_datetime}
+                        />
+                        <Form.Text className="text-muted">
+                          {completionData.act_start_datetime && completionData.act_end_datetime 
+                            ? 'Auto-calculated from dates' 
+                            : 'Manual entry allowed if dates not set'}
+                        </Form.Text>
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Labour Cost (₹)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          value={completionData.act_labour_cost}
+                          onChange={(e) => handleCompletionDataChange('act_labour_cost', e.target.value)}
+                          placeholder="Auto-calculated"
+                          readOnly
+                        />
+                        <Form.Text className="text-muted">
+                          {assignedEngineerData ? (
+                            `Hourly Rate: ₹${assignedEngineerData.hourly_rate} × ${completionData.act_labour_hours || '0'} hours`
+                          ) : (
+                            'Engineer hourly rate not available'
+                          )}
+                        </Form.Text>
+                      </Form.Group>
+
+                      {assignedEngineerData && (
+                        <Alert variant="info" className="mt-3">
+                          <strong>Engineer Information:</strong><br />
+                          Name: {assignedEngineerData.full_name}<br />
+                          Hourly Rate: ₹{assignedEngineerData.hourly_rate}<br />
+                          Mobile: {assignedEngineerData.mobile_no}
+                        </Alert>
+                      )}
+                    </Col>
+
+                    <Col xs={12}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Completion Notes</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows={3}
+                          value={completionData.completion_notes}
+                          onChange={(e) => handleCompletionDataChange('completion_notes', e.target.value)}
+                          placeholder="Enter completion notes and remarks"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={handleBack}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleCompletionSubmit}
+                      disabled={updating || !assignedEngineerData}
+                    >
+                      {updating ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Updating...
+                        </>
+                      ) : (
+                        'Update Completion Details'
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              )}
             </Card.Body>
           </Card>
         </Tab>
