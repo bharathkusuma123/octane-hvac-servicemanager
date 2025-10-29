@@ -265,7 +265,8 @@ import CustomerSatisfactionSurvey from "./CustomerSurvey/CustomerSatisfactionSur
 import ServiceContractForm from './ServiceItems/ServiceContractForm';
 import ServiceRenewalForm from './ServiceItems/ServiceRenewalForm';
 import PreventiveMaintainanceSchedule from "./PreventiveMaintainanceSchedule/PreventiveMaintainanceSchedule";
-import ServiceTableHistory from "./ServicePool/ServiceHistoryTable"; // Add this import
+import ServiceTableHistory from "./ServicePool/ServiceHistoryTable";
+import ServiceRequestItemHistory from "./ServicePool/ServiceRequestItemHistory"; // Add this import
 import ErrorLogs from "./ErrorLogs/ErrorLogs";
 import ServiceItemFormComponent from "./"
 import ServiceRequestForm from './ErrorLogs/ServiceRequestForm';
@@ -394,6 +395,14 @@ function App() {
             element={
               <PanelLayout>
                 <ServiceTableHistory />
+              </PanelLayout>
+            }
+          />
+           <Route
+path="/servicemanager/service-request-item-history/:requestId" 
+            element={
+              <PanelLayout>
+                <ServiceRequestItemHistory />
               </PanelLayout>
             }
           />
