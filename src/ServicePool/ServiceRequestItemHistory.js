@@ -461,7 +461,7 @@ const ServiceRequestItemHistory = () => {
                               <option value="">Select PM Schedule</option>
                               {Array.isArray(pmSchedulesList) && pmSchedulesList.map(schedule => (
                                 <option key={schedule.id || schedule.pm_schedule_id} value={schedule.id || schedule.pm_schedule_id}>
-                                  {schedule.pm_schedule_id} - {schedule.schedule_name}
+                                  {schedule.pm_schedule_id} - {schedule.description}
                                 </option>
                               ))}
                             </Form.Select>
