@@ -1001,7 +1001,7 @@ import Swal from 'sweetalert2';
 import { AuthContext } from '../AuthContext/AuthContext';
 
 const SECURITY_QUESTION_CHOICES = [
-    "What is your mother's maiden name?",
+    "What is your mother’s maiden name?",
     "What was the name of your first pet?",
     "What was your first car?",
     "What is the name of the town where you were born?",
@@ -1032,23 +1032,19 @@ const CustomerForm = ({ formData, handleChange, toggleForm, isEditing, handleSub
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { userId } = useContext(AuthContext);
 
-    // Update local form data when formData prop changes (for editing)
-    useEffect(() => {
-        if (isEditing && formData) {
-            setLocalFormData(formData);
-        } else {
-            setLocalFormData(initialFormData);
-        }
-    }, [formData, isEditing]);
+   // Remove handleChange from this line:
+useEffect(() => {
+    if (isEditing && formData) {
+        setLocalFormData(formData);
+    } else {
+        setLocalFormData(initialFormData);
+    }
+}, [formData, isEditing]); // Remove handleChange from dependencies if it's there
 
-    const handleLocalChange = (e) => {
-        const { name, value } = e.target;
-        setLocalFormData(prev => ({ ...prev, [name]: value }));
-        // Also call parent's handleChange if provided
-        if (handleChange) {
-            handleChange(e);
-        }
-    };
+   const handleLocalChange = (e) => {
+    const { name, value } = e.target;
+    setLocalFormData(prev => ({ ...prev, [name]: value }));
+};
 
     const handleFormSubmit = async (e) => {
         e.preventDefault();

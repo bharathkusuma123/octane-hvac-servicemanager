@@ -75,7 +75,7 @@ const ServiceItemComponentsForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   setIsSubmitting(true);
   const now = new Date().toISOString();
@@ -94,6 +94,9 @@ const ServiceItemComponentsForm = () => {
       user_id: userId,
       company_id: selectedCompany,
     };
+
+    console.log("🟢 Add Payload:\n", JSON.stringify(payload, null, 2));
+
 
     try {
       const res = await fetch(
@@ -145,48 +148,48 @@ const ServiceItemComponentsForm = () => {
       company_id: selectedCompany,
     };
 
+    console.log("🟢 Add Payload:\n", JSON.stringify(postpayload, null, 2));
+
     try {
-  const res = await fetch(`${baseURL}/service-item-components/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(postpayload),
-  });
+      const res = await fetch(`${baseURL}/service-item-components/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postpayload),
+      });
 
-  if (!res.ok) {
-    // Try to read error response safely ONCE
-    let errorDetails;
-    const contentType = res.headers.get("content-type");
+      if (!res.ok) {
+        let errorDetails;
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          errorDetails = await res.json();
+        } else {
+          errorDetails = await res.text();
+        }
 
-    if (contentType && contentType.includes("application/json")) {
-      errorDetails = await res.json();
-    } else {
-      errorDetails = await res.text();
+        console.error("❌ API Error Response:", errorDetails);
+        throw new Error(`HTTP ${res.status}: ${JSON.stringify(errorDetails)}`);
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Success!",
+        text: "Component added successfully!",
+        confirmButtonColor: "#3085d6",
+      }).then(() => navigate("/servicemanager/new-service-item"));
+    } catch (err) {
+      console.error("🚨 POST Error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: err.message || "Failed to add component. Check console for details.",
+        confirmButtonColor: "#d33",
+      });
     }
-
-    console.error("❌ API Error Response:", errorDetails);
-    throw new Error(`HTTP ${res.status}: ${JSON.stringify(errorDetails)}`);
-  }
-
-  Swal.fire({
-    icon: "success",
-    title: "Success!",
-    text: "Component added successfully!",
-    confirmButtonColor: "#3085d6",
-  }).then(() => navigate("/servicemanager/new-service-item"));
-} catch (err) {
-  console.error("🚨 POST Error:", err);
-  Swal.fire({
-    icon: "error",
-    title: "Error",
-    text: err.message || "Failed to add component. Check console for details.",
-    confirmButtonColor: "#d33",
-  });
-}
-
   }
 
   setIsSubmitting(false);
 };
+
 
 
   const handleCancel = () => {

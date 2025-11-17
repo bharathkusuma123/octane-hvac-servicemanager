@@ -716,3 +716,93 @@ h2 {
 .tab-content {
   min-height: 400px;
 }
+/* Problem Type Edit Styles */
+.problem-type-edit-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.problem-type-select {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.problem-type-select:focus {
+  outline: none;
+  border-color: #0096d6;
+  box-shadow: 0 0 0 2px rgba(0, 150, 214, 0.2);
+}
+
+.problem-type-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.problem-type-save-btn,
+.problem-type-cancel-btn,
+.problem-type-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.problem-type-edit-btn {
+  opacity: 0.7;
+}
+
+.problem-type-edit-btn:hover {
+  opacity: 1;
+  background-color: #f0f0f0;
+}
+
+.problem-type-save-btn:hover {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+}
+
+.problem-type-cancel-btn:hover {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.problem-type-save-btn:disabled,
+.problem-type-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.problem-type-display-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .problem-type-edit-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .problem-type-actions {
+    justify-content: flex-end;
+  }
+  
+  .problem-type-select {
+    min-width: unset;
+  }
+}

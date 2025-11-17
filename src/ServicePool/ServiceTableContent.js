@@ -950,6 +950,8 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import baseURL from "../ApiUrl/Apiurl";
 
+import { useLocation, useNavigate } from 'react-router-dom'; // Add this import
+
 const ServiceTableContent = ({
   selectedCompany,
   searchTerm,
@@ -960,7 +962,7 @@ const ServiceTableContent = ({
   setCurrentPage,
   filteredData,
   historyResponse,
-  navigate,
+  navigate, // You're already getting navigate as prop
   handleAssignClick,
   handleReopenService,
   getCustomerName,
@@ -974,6 +976,21 @@ const ServiceTableContent = ({
   const [displayDateFilter, setDisplayDateFilter] = useState("");
   const [companiesData, setCompaniesData] = useState([]);
   const dateInputRef = useRef(null);
+  const [serviceItemFilter, setServiceItemFilter] = useState("");
+
+  // Use useLocation hook to get navigation state
+  const location = useLocation();
+
+  // Get navigation state when component mounts
+  useEffect(() => {
+    // Check if there's filter state from navigation
+    if (location.state && location.state.filterByServiceItem) {
+      setServiceItemFilter(location.state.filterByServiceItem);
+      
+      // Clear the navigation state to avoid reapplying filter on refresh
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]); // Add navigate to dependencies
 
   // Fetch companies data
   const fetchCompanies = async () => {
@@ -1153,6 +1170,10 @@ const ServiceTableContent = ({
       results = results.filter(item => item.status === statusFilter);
     }
 
+    if (serviceItemFilter) {
+      results = results.filter(item => item.service_item === serviceItemFilter);
+    }
+
     if (createdDateFilter) {
       results = results.filter(item => {
         const itemDate = new Date(item.created_at).toISOString().split('T')[0];
@@ -1175,6 +1196,7 @@ const ServiceTableContent = ({
     setStatusFilter("");
     setCreatedDateFilter("");
     setDisplayDateFilter("");
+    setServiceItemFilter("");
   };
 
   return (
@@ -1191,6 +1213,21 @@ const ServiceTableContent = ({
           <p className="pm-subtitle">Manage service requests and assignments</p>
         </div>
       </div>
+
+      {/* Add filter indicator for service item */}
+      {serviceItemFilter && (
+        <div className="alert alert-info d-flex justify-content-between align-items-center mb-3">
+          <span>
+            Showing service requests for Service Item: <strong>{serviceItemFilter}</strong>
+          </span>
+          <button 
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => setServiceItemFilter("")}
+          >
+            Clear Filter
+          </button>
+        </div>
+      )}
 
       {/* Search and Entries Per Page */}
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -1306,6 +1343,7 @@ const ServiceTableContent = ({
               <th>S.No</th>
               <th>Request ID</th>
               <th>Requested By</th>
+              <th>Customer ID</th>
               <th>Request Details</th>
               <th>Service Item</th>
               <th>Location</th>
@@ -1347,6 +1385,26 @@ const ServiceTableContent = ({
                       </button>
                     </td>
                     <td>{getCustomerName(item.requested_by)}</td>
+<td>
+  <button 
+    className="btn btn-link p-0 text-primary text-decoration-underline"
+    onClick={() => navigate('/servicemanager/new-customer', { 
+      state: { 
+        viewCustomerId: item.requested_by // This is the customer ID
+      }
+    })}
+    style={{
+      color: '#0d6efd',
+      textDecoration: 'underline',
+      border: 'none',
+      background: 'none',
+      cursor: 'pointer',
+      fontSize: 'inherit'
+    }}
+  >
+    {item.requested_by}
+  </button>
+</td>
                     <td>{item.request_details || "N/A"}</td>
                     <td>{item.service_item}</td>
                     <td>
@@ -1411,7 +1469,7 @@ const ServiceTableContent = ({
               })
             ) : (
               <tr>
-                <td colSpan="13" className="text-center">No service requests found.</td>
+                <td colSpan="14" className="text-center">No service requests found.</td>
               </tr>
             )}
           </tbody>

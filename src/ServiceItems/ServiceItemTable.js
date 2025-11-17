@@ -1081,127 +1081,139 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         </div>
       ) : (
         <div className="table-responsive mb-4">
-          <table className="table">
-            <thead className="service-item-table-header">
-              <tr>
-                <th>S.No</th>
-                <th>Service Item ID</th>
-                <th>Company</th>
-                <th>Customer</th>
-                <th>PM Group</th>
-                <th>Product</th>
-                <th>Location</th>
-                <th>Installation Date</th>
-                <th>Warranty End</th>
-                <th>Status</th>
-                <th>IoT Status</th>
-                <th>Last Service</th>
-                <th>Description</th>
-                <th>Actions</th>
-                <th>Contract</th>
-                <th>Service Components</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.length > 0 ? (
-                currentItems.map((item, index) => (
-                  <tr key={item.service_item_id}>
-                    <td>{indexOfFirstEntry + index + 1}</td>
-                    <td>{item.service_item_id}</td>
-                    <td title={getCompanyDisplayName(item.company)}>
-                      {getCompanyDisplayName(item.company)}
-                    </td>
-                    <td title={`ID: ${item.customer}`}>
-                      {getCustomerUsername(item.customer)}
-                    </td>
-                    <td title={`ID: ${item.pm_group}`}>
-                      {getPmGroupName(item.pm_group)}
-                    </td>
-                    <td title={`ID: ${item.product}`}>
-                      {getProductName(item.product)}
-                    </td>
-                    <td>{item.location}</td>
-                    <td>{formatDate(item.installation_date)}</td>
-                    <td>{formatDate(item.warranty_end_date)}</td>
-                    <td>
-                      <span className={`badge ${
-                        item.status === 'Active' ? 'bg-success' :
-                        item.status === 'Service Due' ? 'bg-warning text-dark' :
-                        'bg-secondary'
-                      }`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge ${
-                        item.iot_status === 'Online' ? 'bg-success' : 'bg-danger'
-                      }`}>
-                        {item.iot_status}
-                      </span>
-                    </td>
-                    <td>{formatDate(item.last_service)}</td>
-                    <td>{item.product_description || 'N/A'}</td>
-                    <td>
-                      <div className="d-flex gap-2">
-                        <FaEdit
-                          style={{ cursor: 'pointer', color: 'blue' }}
-                          onClick={() => onEdit(item)}
-                        />
-                        <FaTrash
-                          style={{ cursor: 'pointer', color: 'red' }}
-                          onClick={() => onDelete(item.service_item_id)}
-                        />
-                      </div>
-                    </td>
-                    <td>
-                      {shouldShowRenewalButton(item.service_item_id) ? (
-                        <button
-                          className="btn btn-sm btn-warning"
-                          onClick={() => handleRenewalClick(item)}
-                        >
-                          Renewal
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-sm btn-primary"
-                          disabled={isContractButtonDisabled(item.service_item_id)}
-                          onClick={() => handleContractClick(item)}
-                        >
-                          Contract
-                        </button>
-                      )}
-                    </td>
-                    <td>
-                      <div className="d-flex justify-content-center gap-2">
-                        {/* <button
-                          className="btn btn-sm btn-info"
-                          onClick={() => handleAddComponent(item)}
-                          title="Add Component"
-                        >
-                          Add
-                        </button> */}
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => handleViewComponent(item)}
-                          title="View Components"
-                        >
-                          View
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="16" className="text-center">
-                    {selectedCompany 
-                      ? `No service items found for ${getCompanyDisplayName(selectedCompany)}${searchTerm ? ' matching your search' : ''}`
-                      : 'No service items found'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+         <table className="table">
+  <thead className="service-item-table-header">
+    <tr>
+      <th>S.No</th>
+      <th>Service Item ID</th>
+      <th>Company</th>
+      <th>Customer</th>
+      <th>PM Group</th>
+      <th>Product</th>
+      <th>Location</th>
+      <th>Installation Date</th>
+      <th>Warranty End</th>
+      <th>Status</th>
+      <th>IoT Status</th>
+      <th>Last Service</th>
+      <th>Description</th>
+      <th>Actions</th>
+      <th>Contract</th>
+      <th>Service Components</th>
+    </tr>
+  </thead>
+  <tbody>
+    {currentItems.length > 0 ? (
+      currentItems.map((item, index) => (
+        <tr key={item.service_item_id}>
+          <td>{indexOfFirstEntry + index + 1}</td>
+          <td>
+            <button 
+              className="btn btn-link p-0 text-primary text-decoration-underline"
+              onClick={() => navigate('/servicemanager/service-pool', { 
+                state: { 
+                  filterByServiceItem: item.service_item_id 
+                }
+              })}
+              style={{
+                color: '#0d6efd',
+                textDecoration: 'underline',
+                border: 'none',
+                background: 'none',
+                cursor: 'pointer',
+                fontSize: 'inherit'
+              }}
+            >
+              {item.service_item_id}
+            </button>
+          </td>
+          <td title={getCompanyDisplayName(item.company)}>
+            {getCompanyDisplayName(item.company)}
+          </td>
+          <td title={`ID: ${item.customer}`}>
+            {getCustomerUsername(item.customer)}
+          </td>
+          <td title={`ID: ${item.pm_group}`}>
+            {getPmGroupName(item.pm_group)}
+          </td>
+          <td title={`ID: ${item.product}`}>
+            {getProductName(item.product)}
+          </td>
+          <td>{item.location}</td>
+          <td>{formatDate(item.installation_date)}</td>
+          <td>{formatDate(item.warranty_end_date)}</td>
+          <td>
+            <span className={`badge ${
+              item.status === 'Active' ? 'bg-success' :
+              item.status === 'Service Due' ? 'bg-warning text-dark' :
+              'bg-secondary'
+            }`}>
+              {item.status}
+            </span>
+          </td>
+          <td>
+            <span className={`badge ${
+              item.iot_status === 'Online' ? 'bg-success' : 'bg-danger'
+            }`}>
+              {item.iot_status}
+            </span>
+          </td>
+          <td>{formatDate(item.last_service)}</td>
+          <td>{item.product_description || 'N/A'}</td>
+          <td>
+            <div className="d-flex gap-2">
+              <FaEdit
+                style={{ cursor: 'pointer', color: 'blue' }}
+                onClick={() => onEdit(item)}
+              />
+              <FaTrash
+                style={{ cursor: 'pointer', color: 'red' }}
+                onClick={() => onDelete(item.service_item_id)}
+              />
+            </div>
+          </td>
+          <td>
+            {shouldShowRenewalButton(item.service_item_id) ? (
+              <button
+                className="btn btn-sm btn-warning"
+                onClick={() => handleRenewalClick(item)}
+              >
+                Renewal
+              </button>
+            ) : (
+              <button
+                className="btn btn-sm btn-primary"
+                disabled={isContractButtonDisabled(item.service_item_id)}
+                onClick={() => handleContractClick(item)}
+              >
+                Contract
+              </button>
+            )}
+          </td>
+          <td>
+            <div className="d-flex justify-content-center gap-2">
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => handleViewComponent(item)}
+                title="View Components"
+              >
+                View
+              </button>
+            </div>
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan="16" className="text-center">
+          {selectedCompany 
+            ? `No service items found for ${getCompanyDisplayName(selectedCompany)}${searchTerm ? ' matching your search' : ''}`
+            : 'No service items found'}
+        </td>
+      </tr>
+    )}
+  </tbody>
+</table>
         </div>
       )}
 

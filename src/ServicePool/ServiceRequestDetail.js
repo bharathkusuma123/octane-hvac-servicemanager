@@ -438,6 +438,7 @@ import './ServicePool.css';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
 import baseURL from '../ApiUrl/Apiurl';
+import { Edit, Save, X } from 'lucide-react';
 
 const ServiceRequestDetail = () => { 
   const { requestId } = useParams();
@@ -455,9 +456,15 @@ const ServiceRequestDetail = () => {
   } = location.state || {};
 
   const [assignmentHistory, setAssignmentHistory] = useState([]);
+  const [problemTypes, setProblemTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('requestDetails');
+  
+  // Problem type editing state
+  const [isEditingProblemType, setIsEditingProblemType] = useState(false);
+  const [selectedProblemType, setSelectedProblemType] = useState('');
+  const [problemTypeLoading, setProblemTypeLoading] = useState(false);
 
   // Format date and time functions
   const formatDate = (dateString) => {
@@ -498,6 +505,28 @@ const ServiceRequestDetail = () => {
     }
   };
 
+  // Fetch problem types
+  useEffect(() => {
+    const fetchProblemTypes = async () => {
+      try {
+        const response = await axios.get(`${baseURL}/problem-types/`, {
+          params: {
+            user_id: userId,
+            company_id: selectedCompany
+          }
+        });
+        
+        if (response.data.status === 'success') {
+          setProblemTypes(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching problem types:', error);
+      }
+    };
+
+    fetchProblemTypes();
+  }, [userId, selectedCompany]);
+
   // Fetch only assignment history
   useEffect(() => {
     const fetchAssignmentHistory = async () => {
@@ -534,6 +563,65 @@ const ServiceRequestDetail = () => {
     fetchAssignmentHistory();
   }, [requestId, userId, selectedCompany]);
 
+  // Get problem type name from ID
+  const getProblemTypeName = () => {
+    if (!serviceRequest?.problem_type) return 'Unknown';
+    const problemType = problemTypes.find(pt => pt.problem_type_id === serviceRequest.problem_type);
+    return problemType ? problemType.name : serviceRequest.problem_type;
+  };
+
+  // Handle problem type edit
+  const handleProblemTypeEdit = () => {
+    setIsEditingProblemType(true);
+    setSelectedProblemType(serviceRequest?.problem_type || '');
+  };
+
+  // Handle problem type save
+ const handleProblemTypeSave = async () => {
+  if (!selectedProblemType) return;
+
+  setProblemTypeLoading(true);
+  try {
+    const updateResponse = await axios.put(
+      `${baseURL}/service-pools/${requestId}/`,
+      {
+        problem_type: selectedProblemType,
+        user_id: userId,
+        company_id: selectedCompany
+      }
+    );
+
+    console.log("Update response:", updateResponse.data);
+
+    if (updateResponse.data.status === "success") {
+      // Update UI state
+      if (location.state) {
+        location.state.serviceRequest.problem_type = selectedProblemType;
+      }
+
+      setIsEditingProblemType(false);
+
+      // Show success alert
+      alert("Problem Type updated successfully!");
+
+      // Navigate back to service pool page
+      navigate("/servicemanager/service-pool");
+    }
+  } catch (error) {
+    console.error("Error updating problem type:", error);
+    alert("Failed to update problem type. Please try again.");
+  } finally {
+    setProblemTypeLoading(false);
+  }
+};
+
+
+  // Handle problem type cancel
+  const handleProblemTypeCancel = () => {
+    setIsEditingProblemType(false);
+    setSelectedProblemType(serviceRequest?.problem_type || '');
+  };
+
   // Handle back button click
   const handleBackClick = () => {
     navigate(-1); // Go back to previous page
@@ -562,25 +650,25 @@ const ServiceRequestDetail = () => {
           <h1 className="page-title">Service Request Details</h1>
           <p className="page-subtitle">Request ID: {requestId}</p>
         </div>
-   <button 
-  onClick={handleBackClick}
-  className="btn btn-outline-primary"
-  style={{
-    borderColor: '#0096d6',
-    color: '#0096d6',
-    transition: 'all 0.3s ease'
-  }}
-  onMouseOver={(e) => {
-    e.target.style.backgroundColor = '#0096d6';
-    e.target.style.color = 'white';
-  }}
-  onMouseOut={(e) => {
-    e.target.style.backgroundColor = 'transparent';
-    e.target.style.color = '#0096d6';
-  }}
->
-  ← Back
-</button>
+        <button 
+          onClick={handleBackClick}
+          className="btn btn-outline-primary"
+          style={{
+            borderColor: '#0096d6',
+            color: '#0096d6',
+            transition: 'all 0.3s ease'
+          }}
+          onMouseOver={(e) => {
+            e.target.style.backgroundColor = '#0096d6';
+            e.target.style.color = 'white';
+          }}
+          onMouseOut={(e) => {
+            e.target.style.backgroundColor = 'transparent';
+            e.target.style.color = '#0096d6';
+          }}
+        >
+          ← Back
+        </button>
       </div>
 
       {/* Tab Navigation */}
@@ -621,6 +709,60 @@ const ServiceRequestDetail = () => {
                 <div className="history-cell">Request ID</div>
                 <div className="history-cell">{serviceRequest.request_id}</div>
               </div>
+              
+              {/* Problem Type Row with Edit Functionality */}
+              <div className="history-row">
+                <div className="history-cell">Request/Problem Type</div>
+                <div className="history-cell">
+                  {isEditingProblemType ? (
+                    <div className="problem-type-edit-container">
+                      <select
+                        value={selectedProblemType}
+                        onChange={(e) => setSelectedProblemType(e.target.value)}
+                        className="problem-type-select"
+                        disabled={problemTypeLoading}
+                      >
+                        <option value="">Select Problem Type</option>
+                        {problemTypes.map((type) => (
+                          <option key={type.problem_type_id} value={type.problem_type_id}>
+                            {type.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="problem-type-actions">
+                        <button
+                          onClick={handleProblemTypeSave}
+                          disabled={problemTypeLoading || !selectedProblemType}
+                          className="problem-type-save-btn"
+                          title="Save"
+                        >
+                          <Save size={16} />
+                        </button>
+                        <button
+                          onClick={handleProblemTypeCancel}
+                          disabled={problemTypeLoading}
+                          className="problem-type-cancel-btn"
+                          title="Cancel"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="problem-type-display-container">
+                      <span>{getProblemTypeName()}</span>
+                      <button 
+                        onClick={handleProblemTypeEdit}
+                        className="problem-type-edit-btn"
+                        title="Edit Problem Type"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div className="history-row">
                 <div className="history-cell">Requested By</div>
                 <div className="history-cell">{customerName || serviceRequest.requested_by}</div>
