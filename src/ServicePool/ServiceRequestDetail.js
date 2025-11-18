@@ -457,7 +457,9 @@ const ServiceRequestDetail = () => {
 
   const [assignmentHistory, setAssignmentHistory] = useState([]);
   const [problemTypes, setProblemTypes] = useState([]);
+  const [serviceReport, setServiceReport] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('requestDetails');
   
@@ -563,6 +565,49 @@ const ServiceRequestDetail = () => {
     fetchAssignmentHistory();
   }, [requestId, userId, selectedCompany]);
 
+  // Fetch service report data
+  useEffect(() => {
+    const fetchServiceReport = async () => {
+      try {
+        setReportLoading(true);
+        
+        const response = await axios.get(`${baseURL}/service-req-items-history/`, {
+          params: {
+            user_id: userId,
+            company_id: selectedCompany
+          }
+        });
+
+        let reportData = response.data;
+        console.log("Raw service report data:", reportData);
+        
+        // Handle different response formats
+        if (reportData && reportData.data && Array.isArray(reportData.data)) {
+          reportData = reportData.data;
+        } else if (Array.isArray(reportData)) {
+          reportData = reportData;
+        } else {
+          reportData = [];
+        }
+
+        // Filter by current service request
+        const filteredReport = reportData.filter(item => 
+          item.service_request === requestId
+        );
+        console.log("Filtered service report data:", filteredReport);
+
+        setServiceReport(filteredReport);
+      } catch (err) {
+        console.error('Error fetching service report:', err);
+        // Don't set error state for service report to avoid breaking the UI
+      } finally {
+        setReportLoading(false);
+      }
+    };
+
+    fetchServiceReport();
+  }, [requestId, userId, selectedCompany]);
+
   // Get problem type name from ID
   const getProblemTypeName = () => {
     if (!serviceRequest?.problem_type) return 'Unknown';
@@ -577,44 +622,43 @@ const ServiceRequestDetail = () => {
   };
 
   // Handle problem type save
- const handleProblemTypeSave = async () => {
-  if (!selectedProblemType) return;
+  const handleProblemTypeSave = async () => {
+    if (!selectedProblemType) return;
 
-  setProblemTypeLoading(true);
-  try {
-    const updateResponse = await axios.put(
-      `${baseURL}/service-pools/${requestId}/`,
-      {
-        problem_type: selectedProblemType,
-        user_id: userId,
-        company_id: selectedCompany
+    setProblemTypeLoading(true);
+    try {
+      const updateResponse = await axios.put(
+        `${baseURL}/service-pools/${requestId}/`,
+        {
+          problem_type: selectedProblemType,
+          user_id: userId,
+          company_id: selectedCompany
+        }
+      );
+
+      console.log("Update response:", updateResponse.data);
+
+      if (updateResponse.data.status === "success") {
+        // Update UI state
+        if (location.state) {
+          location.state.serviceRequest.problem_type = selectedProblemType;
+        }
+
+        setIsEditingProblemType(false);
+
+        // Show success alert
+        alert("Problem Type updated successfully!");
+
+        // Navigate back to service pool page
+        navigate("/servicemanager/service-pool");
       }
-    );
-
-    console.log("Update response:", updateResponse.data);
-
-    if (updateResponse.data.status === "success") {
-      // Update UI state
-      if (location.state) {
-        location.state.serviceRequest.problem_type = selectedProblemType;
-      }
-
-      setIsEditingProblemType(false);
-
-      // Show success alert
-      alert("Problem Type updated successfully!");
-
-      // Navigate back to service pool page
-      navigate("/servicemanager/service-pool");
+    } catch (error) {
+      console.error("Error updating problem type:", error);
+      alert("Failed to update problem type. Please try again.");
+    } finally {
+      setProblemTypeLoading(false);
     }
-  } catch (error) {
-    console.error("Error updating problem type:", error);
-    alert("Failed to update problem type. Please try again.");
-  } finally {
-    setProblemTypeLoading(false);
-  }
-};
-
+  };
 
   // Handle problem type cancel
   const handleProblemTypeCancel = () => {
@@ -685,11 +729,17 @@ const ServiceRequestDetail = () => {
         >
           Assignment History
         </button>
-        <button 
+        {/* <button 
           className={`tab-button ${activeTab === 'serviceItem' ? 'active' : ''}`}
           onClick={() => setActiveTab('serviceItem')}
         >
           Service Item Details
+        </button> */}
+        <button 
+          className={`tab-button ${activeTab === 'serviceReport' ? 'active' : ''}`}
+          onClick={() => setActiveTab('serviceReport')}
+        >
+          Service Report
         </button>
       </div>
 
@@ -912,6 +962,51 @@ const ServiceRequestDetail = () => {
               <div className="no-service-item">
                 No service item details available
               </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'serviceReport' && (
+          <div className="service-report-section">
+            <h3 className="section-title">Service Report</h3>
+            
+            {reportLoading ? (
+              <div className="loading">Loading service report...</div>
+            ) : serviceReport.length > 0 ? (
+              <div className="table history-table">
+                <div className="history-header">
+                  <div className="history-header-cell">SR Item ID</div>
+                  <div className="history-header-cell">Component Type</div>
+                    <div className="history-header-cell">Component</div>
+                  <div className="history-header-cell">Old Serial No</div>
+                  <div className="history-header-cell">New Serial No</div>
+                  <div className="history-header-cell">Task Type</div>
+                  <div className="history-header-cell">Warranty Start</div>
+                  <div className="history-header-cell">Warranty End</div>
+                  <div className="history-header-cell">Action Taken</div>
+                  <div className="history-header-cell">Remarks</div>
+                  <div className="history-header-cell">Serviced At</div>
+                  <div className="history-header-cell">Serviced By</div>
+                </div>
+                {serviceReport.map((report) => (
+                  <div key={report.sr_item_id} className="history-row">
+                    <div className="history-cell">{report.sr_item_id}</div>
+                    <div className="history-cell">{report.component_type || 'N/A'}</div>
+                    <div className="history-cell">{report.component || 'N/A'}</div>
+                    <div className="history-cell">{report.old_comp_serial_no || 'N/A'}</div>
+                    <div className="history-cell">{report.new_comp_serial_no || 'N/A'}</div>
+                    <div className="history-cell">{report.task_type || 'N/A'}</div>
+                    <div className="history-cell">{formatDate(report.warranty_start_date)}</div>
+                    <div className="history-cell">{formatDate(report.warranty_end_date)}</div>
+                    <div className="history-cell">{report.action_taken || 'N/A'}</div>
+                    <div className="history-cell">{report.remarks || 'N/A'}</div>
+                    <div className="history-cell">{formatDateTime(report.serviced_at)}</div>
+                    <div className="history-cell">{report.serviced_by || 'N/A'}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-report">No service report found for this request</div>
             )}
           </div>
         )}

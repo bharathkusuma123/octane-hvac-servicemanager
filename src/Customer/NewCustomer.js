@@ -115,17 +115,16 @@
 
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './NewCustomer.css';
 import CustomerTable from './CustomerTable';
 import CustomerForm from './CustomerForm';
-import CustomerView from './CustomerView';
 
 const NewCustomer = () => {
   const [showForm, setShowForm] = useState(false);
-  const [showView, setShowView] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
-  const [viewingCustomer, setViewingCustomer] = useState(null);
   const [customers, setCustomers] = useState([]);
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     customer_id: '',
@@ -192,19 +191,16 @@ const NewCustomer = () => {
     setFormData(customer);
     setEditingCustomer(customer);
     setShowForm(true);
-    setShowView(false);
   };
 
   const handleViewCustomer = (customer) => {
-    setViewingCustomer(customer);
-    setShowView(true);
-    setShowForm(false);
+    // Navigate to customer view page with customer ID
+    navigate(`/servicemanager/customers/${customer.customer_id}`);
   };
 
   const toggleForm = () => {
     setShowForm(!showForm);
     setEditingCustomer(null);
-    setShowView(false);
     // Reset form when toggling to add new customer
     if (!showForm) {
       setFormData({
@@ -228,33 +224,22 @@ const NewCustomer = () => {
     }
   };
 
-  const closeView = () => {
-    setShowView(false);
-    setViewingCustomer(null);
-  };
-
   return (
     <div className="customer-form-container">
-      {!showForm && !showView ? (
+      {!showForm ? (
         <CustomerTable 
           customers={customers} 
           toggleForm={toggleForm}
           onEditCustomer={handleEditCustomer}
           onViewCustomer={handleViewCustomer}
         />
-      ) : showForm ? (
+      ) : (
         <CustomerForm 
           formData={formData} 
           handleChange={handleChange} 
           handleSubmit={handleSubmit} 
           toggleForm={toggleForm}
           isEditing={!!editingCustomer}
-        />
-      ) : (
-        <CustomerView 
-          customer={viewingCustomer}
-          onClose={closeView}
-          onEdit={() => handleEditCustomer(viewingCustomer)}
         />
       )}
     </div>

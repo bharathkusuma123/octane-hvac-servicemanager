@@ -980,6 +980,29 @@ const ServiceTableContent = ({
 
   // Use useLocation hook to get navigation state
   const location = useLocation();
+  const [problemTypesMap, setProblemTypesMap] = useState({});
+
+
+  useEffect(() => {
+  const loadProblemTypes = async () => {
+    try {
+      const res = await fetch(`${baseURL}/problem-types/`);
+      const json = await res.json();
+
+      // Convert list → map  { "SRPT001": "Water Leakage" }
+      const lookup = {};
+      json.data.forEach(pt => {
+        lookup[pt.problem_type_id] = pt.name;
+      });
+
+      setProblemTypesMap(lookup);
+    } catch (err) {
+      console.error("Failed to load problem types", err);
+    }
+  };
+
+  loadProblemTypes();
+}, []);
 
   // Get navigation state when component mounts
   useEffect(() => {
@@ -1344,7 +1367,7 @@ const ServiceTableContent = ({
               <th>Request ID</th>
               <th>Requested By</th>
               <th>Customer ID</th>
-              <th>Request Details</th>
+              <th>Request/Problem Type</th>
               <th>Service Item</th>
               <th>Location</th>
               <th>Preferred Date/Time</th>
@@ -1388,9 +1411,10 @@ const ServiceTableContent = ({
 <td>
   <button 
     className="btn btn-link p-0 text-primary text-decoration-underline"
-    onClick={() => navigate('/servicemanager/new-customer', { 
-      state: { 
-        viewCustomerId: item.requested_by // This is the customer ID
+     onClick={() => navigate(`/servicemanager/customers/${item.requested_by}`, {
+      state: {
+        selectedCompany: selectedCompany, // or whatever page you're coming from
+        userId:  userId// pass the entire item if needed
       }
     })}
     style={{
@@ -1405,7 +1429,8 @@ const ServiceTableContent = ({
     {item.requested_by}
   </button>
 </td>
-                    <td>{item.request_details || "N/A"}</td>
+                   <td>{problemTypesMap[item.problem_type] || "N/A"}</td>
+
                     <td>{item.service_item}</td>
                     <td>
                       {serviceItemDetails.location || "Location not found"}

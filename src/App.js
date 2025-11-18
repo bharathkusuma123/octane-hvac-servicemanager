@@ -270,6 +270,9 @@ import ServiceRequestItemHistory from "./ServicePool/ServiceRequestItemHistory";
 import ErrorLogs from "./ErrorLogs/ErrorLogs";
 import ServiceItemFormComponent from "./"
 import ServiceRequestForm from './ErrorLogs/ServiceRequestForm';
+import CustomerView from "./Customer/CustomerView";
+import ServiceItemDetails from "./ServiceItems/ServiceItemDetails";
+import ServiceItemMachineDetails from "./ServiceItems/ServiceItemMachineDetails";
 
 function App() {
   return (
@@ -289,6 +292,13 @@ function App() {
               </PanelLayout>
             }
           />
+           <Route path="/servicemanager/customers/:customerId" element={
+              <PanelLayout>
+                 <CustomerView />
+              </PanelLayout>
+           
+          } 
+            />
           <Route
             path="/servicemanager/preventive-maintainance-chart"
             element={
@@ -337,11 +347,27 @@ function App() {
                 </PanelLayout>
               }
             />
+             <Route
+              path="/servicemanager/service-item-machine-details/:pcbSerialNumber"
+              element={
+                <PanelLayout>
+                  <ServiceItemMachineDetails />
+                </PanelLayout>
+              }
+            />
           <Route
             path="/servicemanager/new-service-item"
             element={
               <PanelLayout>
                 <NewServiceItem />
+              </PanelLayout>
+            }
+          />
+          <Route
+            path="/servicemanager/service-item-details/:serviceItemId"
+            element={
+              <PanelLayout>
+                <ServiceItemDetails />
               </PanelLayout>
             }
           />

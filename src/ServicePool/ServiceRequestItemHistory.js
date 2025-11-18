@@ -663,14 +663,14 @@ const ServiceRequestItemHistory = () => {
                         </Form.Text>
                       </Form.Group>
 
-                      {assignedEngineerData && (
+                      {/* {assignedEngineerData && (
                         <Alert variant="info" className="mt-3">
                           <strong>Engineer Information:</strong><br />
                           Name: {assignedEngineerData.full_name}<br />
                           Hourly Rate: ₹{assignedEngineerData.hourly_rate}<br />
                           Mobile: {assignedEngineerData.mobile_no}
                         </Alert>
-                      )}
+                      )} */}
                     </Col>
 
                     <Col xs={12}>

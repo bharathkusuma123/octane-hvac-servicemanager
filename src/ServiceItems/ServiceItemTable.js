@@ -1088,6 +1088,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       <th>Service Item ID</th>
       <th>Company</th>
       <th>Customer</th>
+      <th>PCB Serial Number</th>
       <th>PM Group</th>
       <th>Product</th>
       <th>Location</th>
@@ -1107,7 +1108,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       currentItems.map((item, index) => (
         <tr key={item.service_item_id}>
           <td>{indexOfFirstEntry + index + 1}</td>
-          <td>
+           {/* <td>
             <button 
               className="btn btn-link p-0 text-primary text-decoration-underline"
               onClick={() => navigate('/servicemanager/service-pool', { 
@@ -1126,13 +1127,45 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
             >
               {item.service_item_id}
             </button>
-          </td>
+          </td> */}
+         <td>
+  <button 
+    className="btn btn-link p-0 text-primary text-decoration-underline"
+    onClick={() => navigate(`/servicemanager/service-item-details/${item.service_item_id}`)}
+    style={{
+      color: '#0d6efd',
+      textDecoration: 'underline',
+      border: 'none',
+      background: 'none',
+      cursor: 'pointer',
+      fontSize: 'inherit'
+    }}
+  >
+    {item.service_item_id}
+  </button>
+</td>
           <td title={getCompanyDisplayName(item.company)}>
             {getCompanyDisplayName(item.company)}
           </td>
           <td title={`ID: ${item.customer}`}>
             {getCustomerUsername(item.customer)}
           </td>
+                   <td>
+  <button 
+    className="btn btn-link p-0 text-primary text-decoration-underline"
+    onClick={() => navigate(`/servicemanager/service-item-machine-details/${item.pcb_serial_number}`)}
+    style={{
+      color: '#0d6efd',
+      textDecoration: 'underline',
+      border: 'none',
+      background: 'none',
+      cursor: 'pointer',
+      fontSize: 'inherit'
+    }}
+  >
+    {item.pcb_serial_number}
+  </button>
+</td>
           <td title={`ID: ${item.pm_group}`}>
             {getPmGroupName(item.pm_group)}
           </td>

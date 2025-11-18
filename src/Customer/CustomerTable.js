@@ -620,11 +620,11 @@
 
 
 import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
-import { useNavigate } from "react-router-dom";
 import { FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
 
 const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
@@ -652,16 +652,16 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     }
   };
 
-  // Function to get company display name in compact format: "COMP1 (TCS)"
-const getCompanyDisplayName = (companyId) => {
-  if (!companiesData || companiesData.length === 0) return companyId;
-  
-  const company = companiesData.find(comp => comp.company_id === companyId);
-  if (company) {
-    return `${company.company_name} (${company.company_id})`;
-  }
-  return companyId;
-};
+  const getCompanyDisplayName = (companyId) => {
+    if (!companiesData || companiesData.length === 0) return companyId;
+    
+    const company = companiesData.find(comp => comp.company_id === companyId);
+    if (company) {
+      return `${company.company_name} (${company.company_id})`;
+    }
+    return companyId;
+  };
+
   const fetchCustomers = async () => {
     setLoading(true);
     setError(null);
@@ -687,7 +687,6 @@ const getCompanyDisplayName = (companyId) => {
   };
 
   useEffect(() => {
-    // Fetch companies first, then customers
     fetchCompanies().then(() => {
       fetchCustomers();
     });
@@ -744,6 +743,15 @@ const getCompanyDisplayName = (companyId) => {
         });
     }
   };
+
+  const handleViewCustomer = (customer) => {
+  navigate(`/servicemanager/customers/${customer.customer_id}`, { 
+    state: { 
+      selectedCompany: selectedCompany, 
+      userId: userId 
+    } 
+  });
+};
 
   if (loading) return <div className="text-center my-4">Loading customers...</div>;
   if (error) return <div className="alert alert-danger my-4">{error}</div>;
@@ -837,7 +845,7 @@ const getCompanyDisplayName = (companyId) => {
                           cursor: "pointer",
                           fontSize: "18px"
                         }}
-                        onClick={() => onViewCustomer(customer)}
+                        onClick={() => handleViewCustomer(customer)}
                         title="View Customer"
                       />
                       <FaEdit 
