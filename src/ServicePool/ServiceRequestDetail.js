@@ -966,50 +966,69 @@ const ServiceRequestDetail = () => {
           </div>
         )}
 
-        {activeTab === 'serviceReport' && (
-          <div className="service-report-section">
-            <h3 className="section-title">Service Report</h3>
-            
-            {reportLoading ? (
-              <div className="loading">Loading service report...</div>
-            ) : serviceReport.length > 0 ? (
-              <div className="table history-table">
-                <div className="history-header">
-                  <div className="history-header-cell">SR Item ID</div>
-                  <div className="history-header-cell">Component Type</div>
-                    <div className="history-header-cell">Component</div>
-                  <div className="history-header-cell">Old Serial No</div>
-                  <div className="history-header-cell">New Serial No</div>
-                  <div className="history-header-cell">Task Type</div>
-                  <div className="history-header-cell">Warranty Start</div>
-                  <div className="history-header-cell">Warranty End</div>
-                  <div className="history-header-cell">Action Taken</div>
-                  <div className="history-header-cell">Remarks</div>
-                  <div className="history-header-cell">Serviced At</div>
-                  <div className="history-header-cell">Serviced By</div>
-                </div>
-                {serviceReport.map((report) => (
-                  <div key={report.sr_item_id} className="history-row">
-                    <div className="history-cell">{report.sr_item_id}</div>
-                    <div className="history-cell">{report.component_type || 'N/A'}</div>
-                    <div className="history-cell">{report.component || 'N/A'}</div>
-                    <div className="history-cell">{report.old_comp_serial_no || 'N/A'}</div>
-                    <div className="history-cell">{report.new_comp_serial_no || 'N/A'}</div>
-                    <div className="history-cell">{report.task_type || 'N/A'}</div>
-                    <div className="history-cell">{formatDate(report.warranty_start_date)}</div>
-                    <div className="history-cell">{formatDate(report.warranty_end_date)}</div>
-                    <div className="history-cell">{report.action_taken || 'N/A'}</div>
-                    <div className="history-cell">{report.remarks || 'N/A'}</div>
-                    <div className="history-cell">{formatDateTime(report.serviced_at)}</div>
-                    <div className="history-cell">{report.serviced_by || 'N/A'}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="no-report">No service report found for this request</div>
-            )}
+{activeTab === 'serviceReport' && (
+  <div className="service-report-section">
+    <h3 className="section-title">Service Report</h3>
+    
+    {reportLoading ? (
+      <div className="loading">Loading service report...</div>
+    ) : serviceReport.length > 0 ? (
+      <div className="table history-table">
+        <div className="history-header">
+          <div className="history-header-cell">SR Item ID</div>
+          <div className="history-header-cell">Component Type</div>
+          <div className="history-header-cell">Component</div>
+          <div className="history-header-cell">Old Serial No</div>
+          <div className="history-header-cell">New Serial No</div>
+          <div className="history-header-cell">Task Type</div>
+          <div className="history-header-cell">Warranty Start</div>
+          <div className="history-header-cell">Warranty End</div>
+          <div className="history-header-cell">Action Taken</div>
+          <div className="history-header-cell">Remarks</div>
+          <div className="history-header-cell">Serviced At</div>
+          <div className="history-header-cell">Serviced By</div>
+          <div className="history-header-cell">Actions</div> {/* New Column */}
+        </div>
+        {serviceReport.map((report) => (
+          <div key={report.sr_item_id} className="history-row">
+            <div className="history-cell">{report.sr_item_id}</div>
+            <div className="history-cell">{report.component_type || 'N/A'}</div>
+            <div className="history-cell">{report.component || 'N/A'}</div>
+            <div className="history-cell">{report.old_comp_serial_no || 'N/A'}</div>
+            <div className="history-cell">{report.new_comp_serial_no || 'N/A'}</div>
+            <div className="history-cell">{report.task_type || 'N/A'}</div>
+            <div className="history-cell">{formatDate(report.warranty_start_date)}</div>
+            <div className="history-cell">{formatDate(report.warranty_end_date)}</div>
+            <div className="history-cell">{report.action_taken || 'N/A'}</div>
+            <div className="history-cell">{report.remarks || 'N/A'}</div>
+            <div className="history-cell">{formatDateTime(report.serviced_at)}</div>
+            <div className="history-cell">{report.serviced_by || 'N/A'}</div>
+            <div className="history-cell">
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => navigate(`/servicemanager/service-request-item-history/${serviceRequest.request_id}`, {
+                  state: {
+                    serviceRequest: serviceRequest,
+                    serviceItemDetails: serviceItemDetails,
+                    engineerStatus: engineerStatus,
+                    customerName: customerName,
+                    userId: userId,
+                    editItemId: report.sr_item_id
+                  }
+                })}
+                title="Edit this service item"
+              >
+                <Edit />
+              </button>
+            </div>
           </div>
-        )}
+        ))}
+      </div>
+    ) : (
+      <div className="no-report">No service report found for this request</div>
+    )}
+  </div>
+)}
       </div>
     </div>
   );

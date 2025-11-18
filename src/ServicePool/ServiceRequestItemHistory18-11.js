@@ -4,13 +4,11 @@ import { Button, Form, Row, Col, Card, Alert, Tabs, Tab } from "react-bootstrap"
 import axios from "axios";
 import baseURL from "../ApiUrl/Apiurl";
 import Swal from "sweetalert2";
-import { FaEdit } from "react-icons/fa";
-
 
 const ServiceRequestItemHistory = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { serviceRequest, serviceItemDetails, engineerStatus, customerName, userId, editItemId } = location.state || {};
+  const { serviceRequest, serviceItemDetails, engineerStatus, customerName, userId } = location.state || {};
   console.log("Service Request from state:", serviceRequest);
 
   const [serviceRequestHistory, setServiceRequestHistory] = useState([]);
@@ -34,8 +32,6 @@ const ServiceRequestItemHistory = () => {
   const [updating, setUpdating] = useState(false);
   const [assignedEngineerData, setAssignedEngineerData] = useState(null);
   const [loadingEngineer, setLoadingEngineer] = useState(false);
-  const [editingItemId, setEditingItemId] = useState(editItemId || null);
-  const [isEditMode, setIsEditMode] = useState(!!editItemId);
 
   // Completion data state
   const [completionData, setCompletionData] = useState({
@@ -169,61 +165,11 @@ const ServiceRequestItemHistory = () => {
     }
   };
 
-  // Fetch single item for editing
-  const fetchItemForEditing = async (itemId) => {
-    if (!itemId) return;
-    
-    setLoading(true);
-    try {
-      const response = await axios.get(`${baseURL}/service-req-items-history/${itemId}/`, {
-        params: {
-          user_id: userId,
-          company_id: selectedCompany
-        }
-      });
-      
-      if (response.data && response.data.data) {
-        const itemData = response.data.data;
-        
-        // Pre-fill the form with the item data
-        setItems([{
-          component: itemData.component || '',
-          pm_schedule: itemData.pm_schedule || '',
-          old_comp_serial_no: itemData.old_comp_serial_no || '',
-          new_comp_serial_no: itemData.new_comp_serial_no || '',
-          task_type: itemData.task_type || '',
-          warranty_start_date: itemData.warranty_start_date ? itemData.warranty_start_date.split('T')[0] : '',
-          warranty_end_date: itemData.warranty_end_date ? itemData.warranty_end_date.split('T')[0] : '',
-          action_taken: itemData.action_taken || '',
-          remarks: itemData.remarks || ''
-        }]);
-        
-        setEditingItemId(itemId);
-        setIsEditMode(true);
-        setActiveTab('items');
-      }
-    } catch (error) {
-      console.error("Failed to fetch item for editing", error);
-      Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: 'Failed to load item data for editing',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (serviceRequest?.request_id) {
       fetchServiceRequestHistory();
-      
-      // If editItemId is passed in state, fetch that item for editing
-      if (editItemId) {
-        fetchItemForEditing(editItemId);
-      }
     }
-  }, [serviceRequest?.request_id, editItemId]);
+  }, [serviceRequest?.request_id]);
 
   // Handle completion form field changes
   const handleCompletionDataChange = (field, value) => {
@@ -339,69 +285,42 @@ const ServiceRequestItemHistory = () => {
 
     setSubmitting(true);
 
-
     try {
-      if (isEditMode && editingItemId) {
-        // Update existing item
-        const updatePayload = {
-          ...items[0],
-          user_id: userId,
-          company_id: selectedCompany,
-          updated_by: userId
-        };
+      const payload = {
+        user_id: userId,
+        company_id: selectedCompany,
+        items: items.map(item => ({
+          service_request: serviceRequest.request_id,
+          component: item.component,
+          pm_schedule: item.pm_schedule || null,
+          old_comp_serial_no: item.old_comp_serial_no || '',
+          new_comp_serial_no: item.new_comp_serial_no || '',
+          task_type: item.task_type,
+          warranty_start_date: item.warranty_start_date || null,
+          warranty_end_date: item.warranty_end_date || null,
+          action_taken: item.action_taken,
+          remarks: item.remarks || '',
+          serviced_by: serviceRequest.assigned_engineer,
+          created_by: userId,
+          updated_by: userId,
+          company: selectedCompany
+        }))
+      };
+      
+      console.log("Submitting service items history with payload:", JSON.stringify(payload, null, 2));
 
-        console.log("Updating service item with payload:", JSON.stringify(updatePayload, null, 2));
+      await axios.post(`${baseURL}/service-req-items-history/`, payload);
 
-        await axios.put(`${baseURL}/service-req-items-history/${editingItemId}/`, updatePayload);
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: 'Service item has been updated successfully.',
-        });
-
-         // Navigate after successful PUT operation
-      navigate(-1);
-
-
-      } else {
-        // Create new items
-        const payload = {
-          user_id: userId,
-          company_id: selectedCompany,
-          items: items.map(item => ({
-            service_request: serviceRequest.request_id,
-            component: item.component,
-            pm_schedule: item.pm_schedule || null,
-            old_comp_serial_no: item.old_comp_serial_no || '',
-            new_comp_serial_no: item.new_comp_serial_no || '',
-            task_type: item.task_type,
-            warranty_start_date: item.warranty_start_date || null,
-            warranty_end_date: item.warranty_end_date || null,
-            action_taken: item.action_taken,
-            remarks: item.remarks || '',
-            serviced_by: serviceRequest.assigned_engineer,
-            created_by: userId,
-            updated_by: userId,
-            company: selectedCompany
-          }))
-        };
-        
-        console.log("Submitting service items history with payload:", JSON.stringify(payload, null, 2));
-
-        await axios.post(`${baseURL}/service-req-items-history/`, payload);
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: `Service items history has been submitted successfully for ${items.length} item(s).`,
-        });
-      }
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: `Service items history has been submitted successfully for ${items.length} item(s).`,
+      });
 
       // Refresh history data
       fetchServiceRequestHistory();
       
-      // Reset form to one empty item and exit edit mode
+      // Reset form to one empty item
       setItems([{
         component: '',
         pm_schedule: '',
@@ -413,8 +332,6 @@ const ServiceRequestItemHistory = () => {
         action_taken: '',
         remarks: ''
       }]);
-      setIsEditMode(false);
-      setEditingItemId(null);
 
     } catch (error) {
       console.error('Error submitting service items history:', error);
@@ -426,38 +343,6 @@ const ServiceRequestItemHistory = () => {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  // Handle edit button click
-  const handleEditItem = (itemId) => {
-    navigate(`/servicemanager/service-request-item-history/${serviceRequest.request_id}`, {
-      state: {
-        serviceRequest: serviceRequest,
-        serviceItemDetails: serviceItemDetails,
-        engineerStatus: engineerStatus,
-        customerName: customerName,
-        userId: userId,
-        editItemId: itemId
-      },
-      replace: true
-    });
-  };
-
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setIsEditMode(false);
-    setEditingItemId(null);
-    setItems([{
-      component: '',
-      pm_schedule: '',
-      old_comp_serial_no: '',
-      new_comp_serial_no: '',
-      task_type: '',
-      warranty_start_date: '',
-      warranty_end_date: '',
-      action_taken: '',
-      remarks: ''
-    }]);
   };
 
   // Handle back button click
@@ -479,9 +364,7 @@ const ServiceRequestItemHistory = () => {
       {/* Header */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h2 className="pm-title">
-            {isEditMode ? 'Edit Service Request Item' : 'Service Request Item History'}
-          </h2>
+          <h2 className="pm-title">Service Request Item History</h2>
           <p className="pm-subtitle">Request ID: {serviceRequest.request_id}</p>
           <p className="pm-subtitle">
             Assigned Engineer: {serviceRequest.assigned_engineer}
@@ -494,11 +377,6 @@ const ServiceRequestItemHistory = () => {
               <span className="text-muted ms-2">Loading engineer data...</span>
             )}
           </p>
-          {isEditMode && (
-            <Alert variant="info" className="mt-2">
-              <strong>Editing Mode:</strong> You are currently editing an existing service item.
-            </Alert>
-          )}
         </div>
         <Button onClick={handleBack} variant="outline-secondary">
           ← Back to Service Pool
@@ -510,25 +388,18 @@ const ServiceRequestItemHistory = () => {
         onSelect={(tab) => setActiveTab(tab)}
         className="mb-4"
       >
-        {/* Tab 1: Add/Edit Service Items */}
-        <Tab eventKey="items" title={isEditMode ? "Edit Service Item" : "Request Service Items"}>
+        {/* Tab 1: Add Service Items */}
+        <Tab eventKey="items" title="Add Service Items">
           <Card>
             <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5 className="card-title mb-0">
-                {isEditMode ? 'Edit Service Item' : 'Add Service Items'}
-                {isEditMode && (
-                  <span className="text-primary ms-2">(Editing: {editingItemId})</span>
-                )}
-              </h5>
-              {!isEditMode && (
-                <Button
-                  variant="success"
-                  size="sm"
-                  onClick={addNewItem}
-                >
-                  + Add Another Item
-                </Button>
-              )}
+              <h5 className="card-title mb-0">Add Service Items</h5>
+              <Button
+                variant="success"
+                size="sm"
+                onClick={addNewItem}
+              >
+                + Add Another Item
+              </Button>
             </Card.Header>
             <Card.Body>
               {loading ? (
@@ -680,53 +551,26 @@ const ServiceRequestItemHistory = () => {
                   ))}
 
                   <div className="d-flex gap-2">
-                    {isEditMode ? (
-                      <>
-                        <Button
-                          variant="secondary"
-                          onClick={handleCancelEdit}
-                        >
-                          Cancel Edit
-                        </Button>
-                        <Button
-                          variant="warning"
-                          onClick={handleSubmitItems}
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                              Updating Item...
-                            </>
-                          ) : (
-                            'Update Item'
-                          )}
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          variant="secondary"
-                          onClick={handleBack}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          variant="primary"
-                          onClick={handleSubmitItems}
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                              Submitting {items.length} Item(s)...
-                            </>
-                          ) : (
-                            `Submit ${items.length} Item(s)`
-                          )}
-                        </Button>
-                      </>
-                    )}
+                    <Button
+                      variant="secondary"
+                      onClick={handleBack}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleSubmitItems}
+                      disabled={submitting}
+                    >
+                      {submitting ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Submitting {items.length} Item(s)...
+                        </>
+                      ) : (
+                        `Submit ${items.length} Item(s)`
+                      )}
+                    </Button>
                   </div>
                 </Form>
               )}
@@ -734,151 +578,151 @@ const ServiceRequestItemHistory = () => {
           </Card>
         </Tab>
 
-        
-        {/* <Tab eventKey="completion" title="Update Completion Details">
-                  <Card>
-                    <Card.Header>
-                      <h5 className="card-title mb-0">Service Completion Details</h5>
-                    </Card.Header>
-                    <Card.Body>
-                      {loadingEngineer ? (
-                        <div className="text-center">
-                          <div className="spinner-border" role="status">
-                            <span className="visually-hidden">Loading engineer data...</span>
-                          </div>
-                          <p className="mt-2">Loading engineer hourly rate...</p>
-                        </div>
+        {/* Tab 2: Update Completion Details */}
+
+          <Tab eventKey="completion" title="Update Completion Details">
+          <Card>
+            <Card.Header>
+              <h5 className="card-title mb-0">Service Completion Details</h5>
+            </Card.Header>
+            <Card.Body>
+              {loadingEngineer ? (
+                <div className="text-center">
+                  <div className="spinner-border" role="status">
+                    <span className="visually-hidden">Loading engineer data...</span>
+                  </div>
+                  <p className="mt-2">Loading engineer hourly rate...</p>
+                </div>
+              ) : (
+                <Form>
+                  <Row>
+                    <Col xs={12} md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Actual Start Date Time *</Form.Label>
+                        <Form.Control
+                          type="datetime-local"
+                          value={completionData.act_start_datetime}
+                          onChange={(e) => handleCompletionDataChange('act_start_datetime', e.target.value)}
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Actual End Date Time *</Form.Label>
+                        <Form.Control
+                          type="datetime-local"
+                          value={completionData.act_end_datetime}
+                          onChange={(e) => handleCompletionDataChange('act_end_datetime', e.target.value)}
+                        />
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Material Cost (₹)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          value={completionData.act_material_cost}
+                          onChange={(e) => handleCompletionDataChange('act_material_cost', e.target.value)}
+                          placeholder="Enter material cost"
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col xs={12} md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Labour Hours</Form.Label>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          value={completionData.act_labour_hours}
+                          onChange={(e) => handleCompletionDataChange('act_labour_hours', e.target.value)}
+                          placeholder="Auto-calculated"
+                          readOnly={!!completionData.act_start_datetime && !!completionData.act_end_datetime}
+                        />
+                        <Form.Text className="text-muted">
+                          {completionData.act_start_datetime && completionData.act_end_datetime 
+                            ? 'Auto-calculated from dates' 
+                            : 'Manual entry allowed if dates not set'}
+                        </Form.Text>
+                      </Form.Group>
+
+                      <Form.Group className="mb-3">
+                        <Form.Label>Labour Cost (₹)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          value={completionData.act_labour_cost}
+                          onChange={(e) => handleCompletionDataChange('act_labour_cost', e.target.value)}
+                          placeholder="Auto-calculated"
+                          readOnly
+                        />
+                        <Form.Text className="text-muted">
+                          {assignedEngineerData ? (
+                            `Hourly Rate: ₹${assignedEngineerData.hourly_rate} × ${completionData.act_labour_hours || '0'} hours`
+                          ) : (
+                            'Engineer hourly rate not available'
+                          )}
+                        </Form.Text>
+                      </Form.Group>
+
+                      {/* {assignedEngineerData && (
+                        <Alert variant="info" className="mt-3">
+                          <strong>Engineer Information:</strong><br />
+                          Name: {assignedEngineerData.full_name}<br />
+                          Hourly Rate: ₹{assignedEngineerData.hourly_rate}<br />
+                          Mobile: {assignedEngineerData.mobile_no}
+                        </Alert>
+                      )} */}
+                    </Col>
+
+                    <Col xs={12}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Completion Notes</Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          rows={3}
+                          value={completionData.completion_notes}
+                          onChange={(e) => handleCompletionDataChange('completion_notes', e.target.value)}
+                          placeholder="Enter completion notes and remarks"
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={handleBack}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={handleCompletionSubmit}
+                      disabled={updating || !assignedEngineerData}
+                    >
+                      {updating ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Updating...
+                        </>
                       ) : (
-                        <Form>
-                          <Row>
-                            <Col xs={12} md={6}>
-                              <Form.Group className="mb-3">
-                                <Form.Label>Actual Start Date Time *</Form.Label>
-                                <Form.Control
-                                  type="datetime-local"
-                                  value={completionData.act_start_datetime}
-                                  onChange={(e) => handleCompletionDataChange('act_start_datetime', e.target.value)}
-                                />
-                              </Form.Group>
-        
-                              <Form.Group className="mb-3">
-                                <Form.Label>Actual End Date Time *</Form.Label>
-                                <Form.Control
-                                  type="datetime-local"
-                                  value={completionData.act_end_datetime}
-                                  onChange={(e) => handleCompletionDataChange('act_end_datetime', e.target.value)}
-                                />
-                              </Form.Group>
-        
-                              <Form.Group className="mb-3">
-                                <Form.Label>Material Cost (₹)</Form.Label>
-                                <Form.Control
-                                  type="number"
-                                  step="0.01"
-                                  value={completionData.act_material_cost}
-                                  onChange={(e) => handleCompletionDataChange('act_material_cost', e.target.value)}
-                                  placeholder="Enter material cost"
-                                />
-                              </Form.Group>
-                            </Col>
-        
-                            <Col xs={12} md={6}>
-                              <Form.Group className="mb-3">
-                                <Form.Label>Labour Hours</Form.Label>
-                                <Form.Control
-                                  type="number"
-                                  step="0.01"
-                                  value={completionData.act_labour_hours}
-                                  onChange={(e) => handleCompletionDataChange('act_labour_hours', e.target.value)}
-                                  placeholder="Auto-calculated"
-                                  readOnly={!!completionData.act_start_datetime && !!completionData.act_end_datetime}
-                                />
-                                <Form.Text className="text-muted">
-                                  {completionData.act_start_datetime && completionData.act_end_datetime 
-                                    ? 'Auto-calculated from dates' 
-                                    : 'Manual entry allowed if dates not set'}
-                                </Form.Text>
-                              </Form.Group>
-        
-                              <Form.Group className="mb-3">
-                                <Form.Label>Labour Cost (₹)</Form.Label>
-                                <Form.Control
-                                  type="number"
-                                  step="0.01"
-                                  value={completionData.act_labour_cost}
-                                  onChange={(e) => handleCompletionDataChange('act_labour_cost', e.target.value)}
-                                  placeholder="Auto-calculated"
-                                  readOnly
-                                />
-                                <Form.Text className="text-muted">
-                                  {assignedEngineerData ? (
-                                    `Hourly Rate: ₹${assignedEngineerData.hourly_rate} × ${completionData.act_labour_hours || '0'} hours`
-                                  ) : (
-                                    'Engineer hourly rate not available'
-                                  )}
-                                </Form.Text>
-                              </Form.Group>
-        
-                              {assignedEngineerData && (
-                                <Alert variant="info" className="mt-3">
-                                  <strong>Engineer Information:</strong><br />
-                                  Name: {assignedEngineerData.full_name}<br />
-                                  Hourly Rate: ₹{assignedEngineerData.hourly_rate}<br />
-                                  Mobile: {assignedEngineerData.mobile_no}
-                                </Alert>
-                              )}
-                            </Col>
-        
-                            <Col xs={12}>
-                              <Form.Group className="mb-3">
-                                <Form.Label>Completion Notes</Form.Label>
-                                <Form.Control
-                                  as="textarea"
-                                  rows={3}
-                                  value={completionData.completion_notes}
-                                  onChange={(e) => handleCompletionDataChange('completion_notes', e.target.value)}
-                                  placeholder="Enter completion notes and remarks"
-                                />
-                              </Form.Group>
-                            </Col>
-                          </Row>
-        
-                          <div className="d-flex gap-2">
-                            <Button
-                              variant="secondary"
-                              onClick={handleBack}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="primary"
-                              onClick={handleCompletionSubmit}
-                              disabled={updating || !assignedEngineerData}
-                            >
-                              {updating ? (
-                                <>
-                                  <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                                  Updating...
-                                </>
-                              ) : (
-                                'Update Completion Details'
-                              )}
-                            </Button>
-                          </div>
-                        </Form>
+                        'Update Completion Details'
                       )}
-                    </Card.Body>
-                  </Card>
-          </Tab> */}
-                
+                    </Button>
+                  </div>
+                </Form>
+              )}
+            </Card.Body>
+          </Card>
+        </Tab>
+      
       </Tabs>
 
       {/* Existing History Records */}
       {serviceRequestHistory.length > 0 && (
         <Card>
-          <Card.Header className="d-flex justify-content-between align-items-center">
+          <Card.Header>
             <h5 className="card-title mb-0">Existing History Records</h5>
-            <span className="text-muted">Total: {serviceRequestHistory.length} records</span>
           </Card.Header>
           <Card.Body>
             <div className="table-responsive">
@@ -891,7 +735,6 @@ const ServiceRequestItemHistory = () => {
                     <th>Action Taken</th>
                     <th>Serviced By</th>
                     <th>Serviced At</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -903,16 +746,6 @@ const ServiceRequestItemHistory = () => {
                       <td>{history.action_taken}</td>
                       <td>{history.serviced_by}</td>
                       <td>{new Date(history.serviced_at).toLocaleString()}</td>
-                      <td>
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          onClick={() => handleEditItem(history.sr_item_id)}
-                          title="Edit this item"
-                        >
-                          <FaEdit />
-                        </Button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
