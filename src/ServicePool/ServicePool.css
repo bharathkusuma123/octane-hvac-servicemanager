@@ -196,7 +196,7 @@ h2 {
 /* Base styles */
 .service-container {
   padding: 20px;
-  font-family: 'Arial', sans-serif;
+  /* font-family: 'Arial', sans-serif; */
   margin-top: 1%;
 }
 
@@ -624,7 +624,7 @@ h2 {
   padding: 2rem;
   width: 95%;
   margin: 0 auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
 }
 
 

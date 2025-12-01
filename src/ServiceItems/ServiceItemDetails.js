@@ -4,7 +4,7 @@ import axios from "axios";
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
-
+import './Newstyles.css';
 const ServiceItemDetails = () => {
   const { serviceItemId } = useParams();
   const navigate = useNavigate();
@@ -116,10 +116,10 @@ const ServiceItemDetails = () => {
           <div className="mb-4">
             <h6 className="border-bottom pb-2 mb-3">Basic Information</h6>
             <div className="table-responsive">
-              <table className="table table-bordered">
+              <table className="table table-bordered ">
                 <tbody>
                   <tr>
-                    <th>Service Item ID</th>
+                    <th className="headerblack">Service Item ID</th>
                     <td>{serviceItem.service_item_id}</td>
                   </tr>
                   <tr>
