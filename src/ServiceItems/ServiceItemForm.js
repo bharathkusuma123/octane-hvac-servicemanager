@@ -539,23 +539,23 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
       }
     };
 
-    const fetchVendors = async () => {
-      try {
-        const response = await fetch(`${baseURL}/vendors/`);
-        const result = await response.json();
-        if (result.status === 'success' && Array.isArray(result.data)) {
-          setVendors(result.data);
-        } else {
-          console.error('Unexpected API response format for vendors:', result);
-        }
-      } catch (error) {
-        console.error('Error fetching vendors:', error);
-      }
-    };
+    // const fetchVendors = async () => {
+    //   try {
+    //     const response = await fetch(`${baseURL}/vendors/`);
+    //     const result = await response.json();
+    //     if (result.status === 'success' && Array.isArray(result.data)) {
+    //       setVendors(result.data);
+    //     } else {
+    //       console.error('Unexpected API response format for vendors:', result);
+    //     }
+    //   } catch (error) {
+    //     console.error('Error fetching vendors:', error);
+    //   }
+    // };
 
     if (addComponents) {
       fetchAvailableComponents();
-      fetchVendors();
+      // fetchVendors();
     }
   }, [addComponents]);
 
@@ -644,12 +644,13 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
     if (addComponents && components.length > 0) {
       serviceItemData.components = components.map(component => ({
         ...component,
+        service_item: serviceItemData.service_item_id,
         warranty_start_date: component.warranty_start_date || formData.warranty_start_date,
         warranty_end_date: component.warranty_end_date || formData.warranty_end_date
       }));
     }
 
-    console.log('Submitting:', serviceItemData);
+    console.log('Submitting:', JSON.stringify(serviceItemData, null, 2));
 
     const token = localStorage.getItem("authToken");
     const url = isEditMode 

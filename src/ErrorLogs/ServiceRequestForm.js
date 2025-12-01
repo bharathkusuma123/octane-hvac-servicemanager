@@ -104,6 +104,8 @@ const ServiceRequestForm = () => {
         user_id: userId,
         company_id: selectedCompany,
         status: 'Open',
+        // requested_by: userId,
+        requested_by: `${userId}-Service Manager`,
         company: selectedCompany,
         created_by: userId,
         updated_by: userId,
