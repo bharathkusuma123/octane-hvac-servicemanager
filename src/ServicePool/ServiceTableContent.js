@@ -30,7 +30,7 @@ const ServiceTableContent = ({
   const dateInputRef = useRef(null);
   const [serviceItemFilter, setServiceItemFilter] = useState("");
   const [problemTypesMap, setProblemTypesMap] = useState({});
-
+console.log("Service Items:", serviceItems);
   // Use useLocation hook to get navigation state
   const location = useLocation();
 
@@ -85,6 +85,17 @@ const ServiceTableContent = ({
     const company = companiesData.find(comp => comp.company_id === companyId);
     return company ? company.company_name : companyId;
   };
+
+  const getCustomerFromServiceItem = (serviceItemId) => {
+  if (!serviceItems || serviceItems.length === 0) return null;
+
+  const matched = serviceItems.find(
+    (item) => item.service_item_id === serviceItemId
+  );
+
+  return matched ? matched.customer : null;
+};
+
 
   useEffect(() => {
     fetchCompanies();
@@ -498,27 +509,34 @@ const ServiceTableContent = ({
                       </button>
                     </td>
                     <td>{getCustomerName(item.requested_by)}</td>
-                    <td>
-                      <button 
-                        className="btn btn-link p-0 text-primary text-decoration-underline"
-                        onClick={() => navigate(`/servicemanager/customers/${item.requested_by}`, {
-                          state: {
-                            selectedCompany: selectedCompany,
-                            userId: userId
-                          }
-                        })}
-                        style={{
-                          color: '#0d6efd',
-                          textDecoration: 'underline',
-                          border: 'none',
-                          background: 'none',
-                          cursor: 'pointer',
-                          fontSize: 'inherit'
-                        }}
-                      >
-                       {getCustomerName(item.requested_by)}
-                      </button>
-                    </td>
+                   <td>
+  {(() => {
+    const customerId = getCustomerFromServiceItem(item.service_item);
+    const customerName = customerId ? getCustomerName(customerId) : "N/A";
+
+    return (
+      <button
+        className="btn btn-link p-0 text-primary text-decoration-underline"
+        onClick={() =>
+          navigate(`/servicemanager/customers/${customerId}`, {
+            state: { selectedCompany, userId },
+          })
+        }
+        style={{
+          color: "#0d6efd",
+          textDecoration: "underline",
+          border: "none",
+          background: "none",
+          cursor: "pointer",
+          fontSize: "inherit",
+        }}
+      >
+        {customerName}
+      </button>
+    );
+  })()}
+</td>
+
                     <td>{problemTypesMap[item.problem_type] || "N/A"}</td>
                     <td>
                       <button 
