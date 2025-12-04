@@ -7,27 +7,104 @@ import { AuthContext } from '../AuthContext/AuthContext';
 
 const ServiceRequestForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { userId } = useContext(AuthContext);
+
+  const location = useLocation();
+const autoDescription = location.state?.autoDescription || "";
+const autoErrorCode = location.state?.autoErrorCode || "";
+
   const { selectedCompany } = useCompany();
   
-  // Get the error data and PCB serial number from navigation state
   const errorData = location.state?.errorData;
   const pcbSerialNumber = location.state?.pcb_serial_number;
+
+  const errorCodeToProblemType = {
+  1: "Water Leakage",
+  2: "Power Fault",
+  3: "Fan Not Working / Malfunctioning",
+  4: "Fan Not Working / Malfunctioning",
+  5: "Pump Not Working / Faulty",
+  6: "Others",
+  7: "Pump Not Working / Faulty",
+  8: "Pump Not Working / Faulty",
+  9: "Sensor Fault / Error Indication",
+  10: "Sensor Fault / Error Indication",
+  11: "Sensor Fault / Error Indication",
+  12: "Sensor Fault / Error Indication",
+  13: "Sensor Fault / Error Indication",
+  14: "Sensor Fault / Error Indication",
+  15: "Sensor Fault / Error Indication",
+  16: "Sensor Fault / Error Indication / Water Leakage",
+  17: "HVAC malfunction",
+  18: "HVAC malfunction",
+  19: "Water Leakage",
+  20: "Power Fault"
+};
+
+
   
   const [form, setForm] = useState({
     service_item: '',
-    preferred_date: '',
-    preferred_time: '',
-    request_details: ''
+    request_details: '',
+    problem_type: ''
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serviceItems, setServiceItems] = useState([]);
   const [matchedServiceItem, setMatchedServiceItem] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [customer, setCustomer] = useState('');
+  const [problemTypes, setProblemTypes] = useState([]);
+// Fetch problem types
+useEffect(() => {
+  const fetchProblemTypes = async () => {
+    try {
+      const res = await fetch(`${baseURL}/problem-types/`);
+      const result = await res.json();
 
-  // Fetch service items and match with PCB serial number
+      console.log("Fetched Problem Types Data:", result);
+
+      if (result.status === "success" && Array.isArray(result.data)) {
+        setProblemTypes(result.data);   // ← USE result.data
+        console.log("Problem Types Array:", result.data);
+      }
+    } catch (err) {
+      console.error("Error loading problem types:", err);
+    }
+  };
+
+  fetchProblemTypes();
+}, []);
+
+useEffect(() => {
+  if (autoErrorCode && problemTypes.length > 0) {
+
+    const mappedTypeName = errorCodeToProblemType[autoErrorCode];
+
+    // Find matching problem type object (matching by name)
+    const matchedType = problemTypes.find(
+      pt => pt.name.toLowerCase() === mappedTypeName.toLowerCase()
+    );
+
+    if (matchedType) {
+      setForm(prev => ({
+        ...prev,
+        problem_type: matchedType.problem_type_id
+      }));
+    }
+
+    // Auto-fill description
+    if (autoDescription) {
+      setForm(prev => ({
+        ...prev,
+        request_details: autoDescription
+      }));
+    }
+  }
+}, [problemTypes, autoErrorCode, autoDescription]);
+
+
+  // Fetch service items & PCB match
   useEffect(() => {
     const fetchServiceItems = async () => {
       try {
@@ -38,7 +115,6 @@ const ServiceRequestForm = () => {
         if (data.status === 'success') {
           setServiceItems(data.data);
           
-          // Find the service item that matches the PCB serial number
           const matchedItem = data.data.find(item => 
             item.pcb_serial_number === pcbSerialNumber
           );
@@ -50,14 +126,13 @@ const ServiceRequestForm = () => {
               service_item: matchedItem.service_item_id
             }));
 
-            // Set customer directly from the matched item
             if (matchedItem.customer) {
               setCustomer(matchedItem.customer);
             }
           }
         }
       } catch (error) {
-        console.error('Error fetching service items:', error);
+        console.error('Service item fetch error:', error);
         alert('Error loading service items');
       } finally {
         setIsLoading(false);
@@ -71,6 +146,7 @@ const ServiceRequestForm = () => {
     }
   }, [pcbSerialNumber, userId, selectedCompany]);
 
+  // Handle change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({
@@ -78,92 +154,70 @@ const ServiceRequestForm = () => {
       [name]: value
     }));
 
-    // If service item is manually selected, find and set customer
     if (name === 'service_item' && value) {
       const selectedItem = serviceItems.find(item => item.service_item_id === value);
-      if (selectedItem && selectedItem.customer) {
-        setCustomer(selectedItem.customer);
-      } else {
-        setCustomer(''); // Reset if no customer found
-      }
+      setCustomer(selectedItem?.customer || '');
     }
   };
 
+  // Auto Date/Time
+  const getTodayDate = () => new Date().toISOString().split('T')[0];
+  const getCurrentTime = () => new Date().toISOString().slice(11, 16);
+
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      // 🟢 Prepare Payload with customer
       const payload = {
         service_item: form.service_item,
         source_type: 'Machine Alert',
-        preferred_date: form.preferred_date,
-        preferred_time: form.preferred_time,
+        preferred_date: getTodayDate(),     // AUTO
+        preferred_time: getCurrentTime(),   // AUTO
         request_details: form.request_details,
+        problem_type: form.problem_type,
         user_id: userId,
         company_id: selectedCompany,
         status: 'Open',
-        // requested_by: userId,
         requested_by: `${userId}-Service Manager`,
-        company: selectedCompany,
-        created_by: userId,
+        created_by: userId, 
         updated_by: userId,
-        customer: customer // Simply pass the customer value
+        customer: customer
       };
 
-      console.log("📦 Payload being sent to API:", payload);
+      console.log("Payload:", payload);
 
-      // 🟢 Make API Call
       const response = await fetch(`${baseURL}/service-pools/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      // 🟢 Parse Response
       const result = await response.json();
-      console.log("📬 Raw API Response:", result);
 
-      // 🟢 Handle Response
       if (response.ok) {
-        console.log("✅ Service request submitted successfully!");
         alert('Service request submitted successfully!');
         navigate('/servicemanager/error-logs');
       } else {
-        console.error("❌ Failed to submit service request:", result);
         throw new Error(result.message || 'Failed to submit service request');
       }
 
     } catch (error) {
-      // 🛑 Error Handling
-      console.error("🚨 Error submitting service request:", error);
-      alert(`Error submitting service request: ${error.message}`);
+      alert(`Error submitting: ${error.message}`);
     } finally {
-      // 🕓 Cleanup
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    navigate('/servicemanager/error-logs');
-  };
-
-  // Get today's date in YYYY-MM-DD format for min date
-  const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0];
-  };
+  const handleCancel = () => navigate('/servicemanager/error-logs');
 
   if (isLoading) {
     return (
       <div className="container service-request-form mt-4">
         <div className="card">
           <div className="card-body text-center">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
+            <div className="spinner-border text-primary"></div>
             <p className="mt-2">Loading service items...</p>
           </div>
         </div>
@@ -176,7 +230,7 @@ const ServiceRequestForm = () => {
       <div className="card">
         <div className="card-header bg-primary text-white">
           <h5 className="mb-1">Service Request Form</h5>
-          <h6 className="text mb-0" style={{ color: 'white', opacity: 0.9 }}>
+          <h6 className="text mb-0" style={{ opacity: 0.9 }}>
             Please fill in the service request details
           </h6>
           {pcbSerialNumber && (
@@ -195,10 +249,12 @@ const ServiceRequestForm = () => {
             </div>
           )}
         </div>
+
         <div className="card-body">
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
-              {/* Service Item Field - Auto-populated and read-only if matched */}
+
+              {/* Service Item Field */}
               <div className="col-12">
                 <label className="form-label fw-bold">Service Item *</label>
                 {matchedServiceItem ? (
@@ -210,13 +266,9 @@ const ServiceRequestForm = () => {
                       readOnly
                       disabled
                     />
-                    <input
-                      type="hidden"
-                      name="service_item"
-                      value={matchedServiceItem.service_item_id}
-                    />
+                    <input type="hidden" name="service_item" value={matchedServiceItem.service_item_id} />
                     <div className="form-text text-success">
-                      Service item automatically selected based on PCB serial number
+                      Auto-selected from PCB serial number
                     </div>
                   </div>
                 ) : (
@@ -232,74 +284,49 @@ const ServiceRequestForm = () => {
                     {serviceItems.map(item => (
                       <option key={item.service_item_id} value={item.service_item_id}>
                         {item.service_item_name} ({item.service_item_id})
-                        {item.customer && ` - Customer: ${item.customer}`}
                       </option>
                     ))}
                   </select>
                 )}
-                {!matchedServiceItem && pcbSerialNumber && (
-                  <div className="form-text text-warning">
-                    No service item found for PCB serial number: {pcbSerialNumber}. Please select manually.
-                  </div>
-                )}
-                {customer && (
-                  <div className="form-text text-info">
-                    Customer: <strong>{customer}</strong>
-                  </div>
-                )}
               </div>
 
+              {/* ⭐ REPLACED ROW: Problem Type instead of Date/Time */}
               <div className="col-md-6">
-                <label className="form-label fw-bold">Preferred Service Date *</label>
-                <input
-                  type="date"
-                  name="preferred_date"
-                  value={form.preferred_date}
+                <label className="form-label fw-bold">Problem Type *</label>
+                <select
+                  name="problem_type"
+                  value={form.problem_type}
                   onChange={handleChange}
                   className="form-control"
                   required
                   disabled={isSubmitting}
-                  min={getTodayDate()}
-                />
-                <div className="form-text">
-                  Select your preferred date for service
-                </div>
+                >
+                  <option value="">Select Problem Type</option>
+                  {problemTypes.map(pt => (
+                    <option key={pt.problem_type_id} value={pt.problem_type_id}>
+                      {pt.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="form-text">Choose the type of problem</div>
               </div>
 
+              {/* Description */}
               <div className="col-md-6">
-                <label className="form-label fw-bold">Preferred Service Time *</label>
-                <input
-                  type="time"
-                  name="preferred_time"
-                  value={form.preferred_time}
-                  onChange={handleChange}
-                  className="form-control"
-                  required
-                  disabled={isSubmitting}
-                />
-                <div className="form-text">
-                  Select your preferred time for service
-                </div>
-              </div>
-
-              <div className="col-12">
-                <label className="form-label fw-bold">Request Details *</label>
+                <label className="form-label fw-bold">Problem Description *</label>
                 <textarea
                   name="request_details"
                   value={form.request_details}
                   onChange={handleChange}
                   className="form-control"
-                  rows="6"
+                  rows="4"
                   required
                   disabled={isSubmitting}
-                  placeholder="Describe the issue or service required in detail..."
+                  placeholder="Describe the problem..."
                 />
-                <div className="form-text">
-                  Please provide detailed information about the issue or service you require. 
-                  Include any error messages, symptoms, or specific requirements.
-                </div>
               </div>
 
+              {/* Buttons */}
               <div className="d-flex justify-content-center mt-4 gap-3">
                 <button 
                   type="button" 
@@ -309,6 +336,7 @@ const ServiceRequestForm = () => {
                 >
                   Cancel
                 </button>
+
                 <button 
                   type="submit" 
                   className="btn btn-primary btn-lg" 
@@ -316,7 +344,7 @@ const ServiceRequestForm = () => {
                 >
                   {isSubmitting ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
                       Submitting...
                     </>
                   ) : (
@@ -324,6 +352,7 @@ const ServiceRequestForm = () => {
                   )}
                 </button>
               </div>
+
             </div>
           </form>
         </div>

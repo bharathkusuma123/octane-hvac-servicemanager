@@ -706,7 +706,7 @@ const AssignmentForm = ({
                 name="dynamics_service_order_no"
                 value={formData.dynamics_service_order_no}
                 onChange={handleChange}
-                required
+              
                 className="form-control"
                 placeholder="Enter service order number"
               />

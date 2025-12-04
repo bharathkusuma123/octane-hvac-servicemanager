@@ -783,20 +783,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                 </select>
               </div>
 
-              {/* Product Description */}
-              <div className="col-12">
-                <label className="form-label">Product Description</label>
-                <textarea 
-                  className="form-control" 
-                  name="product_description"
-                  value={formData.product_description || ''}
-                  onChange={onChange}
-                  placeholder="Add any notes or description..."
-                  rows={3}
-                ></textarea>
-              </div>
-
-              {/* Customer */}
+                {/* Customer */}
               <div className="col-md-4">
                 <label className="form-label">Customer</label>
                 <select
@@ -814,6 +801,21 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                   ))}
                 </select>
               </div>
+
+              {/* Product Description */}
+              <div className="col-12">
+                <label className="form-label">Product Description</label>
+                <textarea 
+                  className="form-control" 
+                  name="product_description"
+                  value={formData.product_description || ''}
+                  onChange={onChange}
+                  placeholder="Add any notes or description..."
+                  rows={3}
+                ></textarea>
+              </div>
+
+            
 
               {/* Location */}
               <div className="col-md-4">
@@ -933,20 +935,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                 </select>
               </div>
 
-              <div className="col-md-4">
-                <label className="form-label">IoT Status</label>
-                <select 
-                  className="form-control"
-                  name="iot_status"
-                  value={formData.iot_status || ''}
-                  onChange={onChange}
-                  required
-                >
-                  <option value="">Select Status</option>
-                  <option value="Online">Online</option>
-                  <option value="Offline">Offline</option>
-                </select>
-              </div>
+            
 
               {/* Add Components Section with Two Checkboxes */}
               <div className="col-4">
