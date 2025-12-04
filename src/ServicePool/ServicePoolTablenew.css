@@ -1,3 +1,5 @@
+
+
 .service-pool-div{
         margin-top: -34px;
 }
@@ -45,6 +47,19 @@
   white-space: nowrap;
 }
 
+/* Center specific header columns */
+.new-customer-table-header th:nth-child(1), /* S.No */
+.new-customer-table-header th:nth-child(10), /* Status */
+.new-customer-table-header th:nth-child(12), /* Engineer Status */
+.new-customer-table-header th:nth-child(13), /* Service Request Item History */
+.new-customer-table-header th:nth-child(14) { /* Assign */
+  text-align: center !important;
+}
+
+.new-customer-table-header th:nth-child(4) { /* Assign */
+  text-align: center !important;
+}
+
 /* Header shadow */
 .new-customer-table-header th {
   box-shadow: inset 0 -1px 0 rgba(255,255,255,0.15);
@@ -56,6 +71,15 @@
   vertical-align: middle !important;
   border-bottom: 1px solid #edf0f2;
   background-color: #ffffff;
+}
+
+/* Center specific data columns */
+.table td:nth-child(1), /* S.No */
+.table td:nth-child(10), /* Status */
+.table td:nth-child(12), /* Engineer Status */
+.table td:nth-child(13), /* Service Request Item History */
+.table td:nth-child(14) { /* Assign */
+  text-align: center !important;
 }
 
 /* Alternate row color */
@@ -85,6 +109,13 @@
   font-weight: 500 !important;
 }
 
+/* Center action buttons in centered columns */
+.table td:nth-child(13) .btn-sm,
+.table td:nth-child(14) .btn-sm {
+  display: inline-block;
+  margin: 0 auto;
+}
+
 /* Primary buttons */
 .table .btn-primary {
   background: #006ad1 !important;
@@ -108,9 +139,14 @@
   padding: 6px 10px !important;
   font-size: 11px !important;
   border-radius: 6px;
+  display: inline-block;
 }
 
-
+/* Center badges in centered columns */
+.table td:nth-child(10) .badge,
+.table td:nth-child(12) .badge {
+  margin: 0 auto;
+}
 
 /* Custom badge colors */
 .badge.bg-orange {

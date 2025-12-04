@@ -1653,6 +1653,23 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const [productsData, setProductsData] = useState([]);
   const [pmGroupsData, setPmGroupsData] = useState([]);
   const [customersData, setCustomersData] = useState([]);
+  const [machineData, setMachineData] = useState([]); // State for machine data
+
+  // Fetch machine data for all service items
+  const fetchMachineData = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/get-latest-data/?user_id=${userId}&company_id=${selectedCompany}`);
+      if (response.data && Array.isArray(response.data)) {
+        setMachineData(response.data);
+      } else {
+        console.error("Invalid machine data format:", response.data);
+        setMachineData([]);
+      }
+    } catch (error) {
+      console.error("Failed to load machine data", error);
+      setMachineData([]);
+    }
+  };
 
   // Fetch products data
   const fetchProducts = async () => {
@@ -1705,6 +1722,23 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
     } catch (error) {
       console.error("Failed to load companies data", error);
     }
+  };
+
+  // Function to get IoT status based on PCB serial number
+  const getIoTStatus = (pcbSerialNumber) => {
+    if (!machineData || machineData.length === 0) {
+      return "Offline"; // Default if no data
+    }
+    
+    const machine = machineData.find(item => item.pcb_serial_number === pcbSerialNumber);
+    
+    if (!machine || !machine.hvac_on) {
+      return "Offline";
+    }
+    
+    // Check if hvac_on value is "1" or 1
+    const hvacValue = machine.hvac_on.value;
+    return (hvacValue === "1" || hvacValue === 1) ? "Online" : "Offline";
   };
 
   // Function to get product name by product ID
@@ -1785,6 +1819,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         await fetchPmGroups();
         await fetchCustomers();
         await fetchContracts();
+        await fetchMachineData(); // Fetch machine data
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -2020,6 +2055,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
               {currentItems.length > 0 ? (
                 currentItems.map((item, index) => {
                   const customerDetails = getCustomerDetails(item.customer);
+                  const iotStatus = getIoTStatus(item.pcb_serial_number);
                   
                   return (
                     <tr key={item.service_item_id}>
@@ -2099,9 +2135,9 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                       </td>
                       <td>
                         <span className={`badge ${
-                          item.iot_status === 'Online' ? 'bg-success' : 'bg-danger'
+                          iotStatus === 'Online' ? 'bg-success' : 'bg-danger'
                         }`}>
-                          {item.iot_status}
+                          {iotStatus}
                         </span>
                       </td>
                       <td>{formatDate(item.last_service)}</td>

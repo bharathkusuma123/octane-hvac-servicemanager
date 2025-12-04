@@ -196,7 +196,6 @@ h2 {
 /* Base styles */
 .service-container {
   padding: 20px;
-  /* font-family: 'Arial', sans-serif; */
   margin-top: 1%;
 }
 
@@ -297,7 +296,6 @@ h2 {
   pointer-events: none;
 }
 
-
 /* Table footer */
 .table-footer {
   display: flex;
@@ -331,8 +329,6 @@ h2 {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-
 
 .modal-content {
   background: white;
@@ -386,7 +382,7 @@ h2 {
 
 .history-header {
   display: flex;
-  background-color: #0096D6;;
+  background-color: #0096D6;
   padding: 0.75rem;
   font-weight: bold;
   border-radius: 8px;
@@ -422,7 +418,6 @@ h2 {
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  /* gap: 20px; */
   margin-bottom: 20px;
 }
 
@@ -503,15 +498,6 @@ h2 {
   }
 }
 
-
-
-
-
-
-
-
-
-
 /* Modal styles */
 .modal-overlay {
   position: fixed;
@@ -519,12 +505,12 @@ h2 {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.6); /* Darker overlay for better contrast */
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(2px); /* Optional: adds slight blur to background */
+  backdrop-filter: blur(2px);
 }
 
 .modal-content {
@@ -607,26 +593,12 @@ h2 {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Service Detail Container */
 .service-detail-container {
   padding: 2rem;
   width: 95%;
   margin: 0 auto;
-  /* font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; */
 }
-
 
 .back-button {
   margin-bottom: 1rem;
@@ -672,13 +644,14 @@ h2 {
   color: #d32f2f;
 }
 
-.table
-.service-pool-table-header th {
+.table .service-pool-table-header th {
   color: white;
   background-color: #0096D6;
   font-weight: bold;
   text-align: left;
 }
+
+/* Tab Navigation */
 .tab-navigation {
   display: flex;
   border-bottom: 1px solid #ddd;
@@ -716,93 +689,317 @@ h2 {
 .tab-content {
   min-height: 400px;
 }
-/* Problem Type Edit Styles */
-.problem-type-edit-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+
+/* Service Request Details Table */
+.details-table {
   width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.problem-type-select {
+.details-table .history-header {
+  display: flex;
+  background-color: #0096D6;
+  padding: 0.75rem;
+  font-weight: bold;
+  border-radius: 8px 8px 0 0;
+  color: white;
+}
+
+.details-table .history-row {
+  display: flex;
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid #eaeaea;
+  align-items: center;
+  min-height: 60px;
+}
+
+.details-table .history-row:last-child {
+  border-bottom: none;
+}
+
+.details-table .history-header-cell {
   flex: 1;
-  padding: 6px 12px;
+  padding: 0 0.5rem;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.details-table .history-cell {
+  flex: 2;
+  padding: 0 0.5rem;
+  font-size: 15px;
+  color: #333;
+}
+
+/* Consistent Edit Styles for Both Problem Type and Dynamics Service Order */
+.problem-type-edit-container,
+.dynamics-order-edit-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 500px;
+}
+
+.problem-type-select,
+.dynamics-order-input {
+  flex: 1;
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 14px;
   min-width: 200px;
+  background-color: white;
 }
 
-.problem-type-select:focus {
+.problem-type-select:focus,
+.dynamics-order-input:focus {
   outline: none;
-  border-color: #0096d6;
-  box-shadow: 0 0 0 2px rgba(0, 150, 214, 0.2);
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
-.problem-type-actions {
+.problem-type-actions,
+.dynamics-order-actions {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .problem-type-save-btn,
 .problem-type-cancel-btn,
-.problem-type-edit-btn {
+.problem-type-edit-btn,
+.dynamics-order-save-btn,
+.dynamics-order-cancel-btn,
+.dynamics-order-edit-btn {
   background: none;
-  border: none;
+  border: 1px solid #ddd;
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  color: #666;
 }
 
-.problem-type-edit-btn {
-  opacity: 0.7;
+.problem-type-edit-btn,
+.dynamics-order-edit-btn {
+  border-color: #e0e0e0;
+  background-color: #f8f9fa;
 }
 
-.problem-type-edit-btn:hover {
-  opacity: 1;
-  background-color: #f0f0f0;
+.problem-type-edit-btn:hover,
+.dynamics-order-edit-btn:hover {
+  background-color: #e9ecef;
+  color: #333;
+  border-color: #ccc;
 }
 
-.problem-type-save-btn:hover {
-  background-color: #e8f5e8;
-  color: #2e7d32;
+.problem-type-save-btn,
+.dynamics-order-save-btn {
+  color: #28a745;
+  border-color: #28a745;
+  background-color: rgba(40, 167, 69, 0.1);
 }
 
-.problem-type-cancel-btn:hover {
-  background-color: #ffebee;
-  color: #c62828;
+.problem-type-save-btn:hover:not(:disabled),
+.dynamics-order-save-btn:hover:not(:disabled) {
+  background-color: #28a745;
+  color: white;
+}
+
+.problem-type-cancel-btn,
+.dynamics-order-cancel-btn {
+  color: #dc3545;
+  border-color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.problem-type-cancel-btn:hover:not(:disabled),
+.dynamics-order-cancel-btn:hover:not(:disabled) {
+  background-color: #dc3545;
+  color: white;
 }
 
 .problem-type-save-btn:disabled,
-.problem-type-cancel-btn:disabled {
+.problem-type-cancel-btn:disabled,
+.dynamics-order-save-btn:disabled,
+.dynamics-order-cancel-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.problem-type-display-container {
+.problem-type-display-container,
+.dynamics-order-display-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  max-width: 500px;
 }
 
-/* Responsive adjustments */
+/* Media Files Styles */
+.media-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media-file-link {
+  color: #1976d2;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.media-file-link:hover {
+  background-color: #e9ecef;
+  text-decoration: underline;
+}
+
+/* Section Titles */
+.section-title {
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #0096D6;
+  font-weight: 600;
+}
+
+/* Page Header */
+.page-header {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: #666;
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge.bg-warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.badge.bg-success {
+  background-color: #28a745;
+  color: white;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+/* Button Styles */
+.btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-outline-primary {
+  background-color: transparent;
+  border-color: #0096d6;
+  color: #0096d6;
+}
+
+.btn-outline-primary:hover {
+  background-color: #0096d6;
+  color: white;
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* Responsive adjustments for edit containers */
 @media (max-width: 768px) {
-  .problem-type-edit-container {
+  .problem-type-edit-container,
+  .dynamics-order-edit-container {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 10px;
   }
   
-  .problem-type-actions {
+  .problem-type-actions,
+  .dynamics-order-actions {
     justify-content: flex-end;
   }
   
-  .problem-type-select {
+  .problem-type-select,
+  .dynamics-order-input {
     min-width: unset;
+    width: 100%;
+  }
+  
+  .details-table .history-header {
+    flex-direction: column;
+  }
+  
+  .details-table .history-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 1rem;
+  }
+  
+  .details-table .history-header-cell,
+  .details-table .history-cell {
+    width: 100%;
+    flex: none;
+  }
+  
+  .tab-navigation {
+    flex-direction: column;
+  }
+  
+  .tab-button {
+    border-bottom: none;
+    border-left: 3px solid transparent;
+    text-align: left;
+  }
+  
+  .tab-button.active {
+    border-left-color: #1976d2;
+    border-bottom-color: transparent;
   }
 }
