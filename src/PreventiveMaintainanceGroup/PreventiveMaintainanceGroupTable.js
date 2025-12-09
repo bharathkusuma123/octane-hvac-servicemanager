@@ -10,7 +10,9 @@ const PMGroupTable = ({
   currentPage,
   setCurrentPage,
   onDelete,
-    onEdit // added
+  onEdit,
+  users,
+  getUsernameById
 }) => {
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
@@ -42,14 +44,32 @@ const PMGroupTable = ({
           </select>
           entries
         </div>
-        <input
-          type="text"
-          className="form-control w-auto"
-          placeholder="Search PM groups..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="d-flex align-items-center gap-2">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search in all columns..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ minWidth: '250px' }}
+          />
+          {searchTerm && (
+            <button 
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => setSearchTerm('')}
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Search Results Info */}
+      {searchTerm && (
+        <div className="alert alert-info mb-3">
+          <strong>Search Results:</strong> Found {filteredGroups.length} PM group(s) matching "{searchTerm}"
+        </div>
+      )}
 
       <div className="table-responsive mb-4">
         <table className="table">
@@ -76,25 +96,31 @@ const PMGroupTable = ({
                   <td>{group.series}</td>
                   <td>{formatDate(group.created_at)}</td>
                   <td>{formatDate(group.updated_at)}</td>
-                  <td>{group.created_by}</td>
-                  <td>{group.updated_by}</td>
+                  <td>{getUsernameById ? getUsernameById(group.created_by) : group.created_by}</td>
+                  <td>{getUsernameById ? getUsernameById(group.updated_by) : group.updated_by}</td>
                   <td>
-                       <FaEdit 
-                        className="text-primary me-2" 
+                    <div className="d-flex gap-2">
+                      <FaEdit 
+                        className="text-primary" 
                         role="button" 
-                        onClick={() => onEdit(group)} // trigger edit
+                        onClick={() => onEdit(group)}
+                        title="Edit PM Group"
                       />
-                    <FaTrash 
-                      className="text-danger" 
-                      role="button" 
-                      onClick={() => onDelete(group.pm_group_id)} 
-                    />
+                      <FaTrash 
+                        className="text-danger" 
+                        role="button" 
+                        onClick={() => onDelete(group.pm_group_id)}
+                        title="Delete PM Group"
+                      />
+                    </div>
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="9" className="text-center">No PM groups found.</td>
+                <td colSpan="9" className="text-center">
+                  {searchTerm ? `No PM groups found matching "${searchTerm}"` : 'No PM groups found.'}
+                </td>
               </tr>
             )}
           </tbody>
@@ -113,16 +139,38 @@ const PMGroupTable = ({
               </button>
             </li>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <li
-                key={page}
-                className={`page-item ${currentPage === page ? "active" : ""}`}
-              >
-                <button className="page-link" onClick={() => setCurrentPage(page)}>
-                  {page}
-                </button>
-              </li>
-            ))}
+            {(() => {
+              const maxVisiblePages = 5;
+              let pageNumbers = [];
+              
+              if (totalPages <= maxVisiblePages) {
+                for (let i = 1; i <= totalPages; i++) {
+                  pageNumbers.push(i);
+                }
+              } else {
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                
+                if (endPage - startPage + 1 < maxVisiblePages) {
+                  startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                  pageNumbers.push(i);
+                }
+              }
+              
+              return pageNumbers.map((page) => (
+                <li
+                  key={page}
+                  className={`page-item ${currentPage === page ? "active" : ""}`}
+                >
+                  <button className="page-link" onClick={() => setCurrentPage(page)}>
+                    {page}
+                  </button>
+                </li>
+              ));
+            })()}
 
             <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
               <button

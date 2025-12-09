@@ -105,6 +105,7 @@ import {
   Card,
   Alert,
   InputGroup,
+  Spinner,
 } from "react-bootstrap";
 import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
@@ -116,6 +117,7 @@ const LoginCard = ({
   username,
   password,
   showPassword,
+  loading, // Added loading prop
   setUsername,
   setPassword,
   setShowPassword,
@@ -128,77 +130,93 @@ const LoginCard = ({
     <div className="d-flex align-items-center justify-content-center min-vh-100">
       <Container className="mt-3">
         <Row className="justify-content-center">
-<Col md={6} lg={5} xl={4}>
-  <div className="login-card-container">
-
-            <Card className="shadow">
-              <Card.Body>
-                <div className="text-center mb-4">
-                  <img
-                    src={logo}
-                    alt="Company Logo"
-                  className="security-logo"
-                  />
-                  <h3 className="mt-3">{title}</h3>
-                </div>
-
-                {error && <Alert variant="danger">{error}</Alert>}
-
-                <Form onSubmit={handleSubmit}>
-                  <Form.Group className="mb-1">
-                    <Form.Label>Username</Form.Label>
-                    <Form.Control
-                      type="text"
-                      placeholder="Enter username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      required
+          <Col md={6} lg={5} xl={4}>
+            <div className="login-card-container">
+              <Card className="shadow">
+                <Card.Body>
+                  <div className="text-center mb-4">
+                    <img
+                      src={logo}
+                      alt="Company Logo"
+                      className="security-logo"
                     />
-                  </Form.Group>
+                    <h3 className="mt-3">{title}</h3>
+                  </div>
 
-                  <Form.Group className="mb-1">
-                    <Form.Label>Password</Form.Label>
-                    <InputGroup>
+                  {error && <Alert variant="danger">{error}</Alert>}
+
+                  <Form onSubmit={handleSubmit}>
+                    <Form.Group className="mb-1">
+                      <Form.Label>Username</Form.Label>
                       <Form.Control
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        type="text"
+                        placeholder="Enter username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
                         required
+                        disabled={loading} // Disable during loading
                       />
-                      <Button
-                        variant="outline-secondary"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        {showPassword ? <EyeSlashFill /> : <EyeFill />}
-                      </Button>
-                    </InputGroup>
-                  </Form.Group>
+                    </Form.Group>
 
-                  <Button
-                    style={{backgroundColor:'#0096D6'}}
-                    type="submit"
-                    className="loginButton shadow"
-                  >
-                    Login
-                  </Button>
+                    <Form.Group className="mb-1">
+                      <Form.Label>Password</Form.Label>
+                      <InputGroup>
+                        <Form.Control
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          disabled={loading} // Disable during loading
+                        />
+                        <Button
+                          variant="outline-secondary"
+                          onClick={() => setShowPassword(!showPassword)}
+                          disabled={loading} // Disable during loading
+                        >
+                          {showPassword ? <EyeSlashFill /> : <EyeFill />}
+                        </Button>
+                      </InputGroup>
+                    </Form.Group>
 
-                  {/* <p className="orText text-center mt-3 mb-1">Or</p> */}
-                  {/* <p className="registerText text-center">
-                    Don't have an account?{' '}
-                    <span 
-                      className="registerLink" 
-                      style={{color: '#0096D6', cursor: 'pointer'}}
-                      onClick={() => navigate('/signup')}
+                    <Button
+                      style={{backgroundColor:'#0096D6'}}
+                      type="submit"
+                      className="loginButton shadow"
+                      disabled={loading} // Disable during loading
                     >
-                      Register
-                    </span>
-                  </p> */}
-                </Form>
-              </Card.Body>
-            </Card>
-              </div>
+                      {loading ? (
+                        <>
+                          <Spinner
+                            as="span"
+                            animation="border"
+                            size="sm"
+                            role="status"
+                            aria-hidden="true"
+                            className="me-2"
+                          />
+                          Logging in...
+                        </>
+                      ) : (
+                        "Login"
+                      )}
+                    </Button>
 
+                    {/* <p className="orText text-center mt-3 mb-1">Or</p> */}
+                    {/* <p className="registerText text-center">
+                      Don't have an account?{' '}
+                      <span 
+                        className="registerLink" 
+                        style={{color: '#0096D6', cursor: 'pointer'}}
+                        onClick={() => navigate('/signup')}
+                      >
+                        Register
+                      </span>
+                    </p> */}
+                  </Form>
+                </Card.Body>
+              </Card>
+            </div>
           </Col>
         </Row>
       </Container>

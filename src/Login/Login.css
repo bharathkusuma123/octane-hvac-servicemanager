@@ -122,3 +122,38 @@ card{
 
   }
 }
+
+
+
+/* Add to Login.css */
+.loginButton:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+  transition: opacity 0.3s ease;
+}
+
+.form-control:disabled {
+  background-color: #f8f9fa;
+  opacity: 0.7;
+}
+
+.btn-outline-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Smooth transition for button */
+.loginButton {
+  transition: all 0.3s ease;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Spinner animation */
+.spinner-border {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}

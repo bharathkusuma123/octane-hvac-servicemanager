@@ -926,6 +926,11 @@
 // export default CustomerTable;
 
 
+
+//===============================================================
+// After fixing filter -Global search issue 
+
+
 import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -969,6 +974,14 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     return companyId;
   };
 
+  const getCompanySearchData = (companyId) => {
+    if (!companyId) return '';
+    if (!companiesData || companiesData.length === 0) return companyId;
+    
+    const company = companiesData.find(comp => comp.company_id === companyId);
+    return company ? `${company.company_id} ${company.company_name} ${company.company_name} (${company.company_id})` : companyId;
+  };
+
   const fetchCustomers = async () => {
     setLoading(true);
     setError(null);
@@ -999,33 +1012,7 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     });
   }, [selectedCompany, userId]);
 
-  useEffect(() => {
-    let results = customers;
-    
-    if (selectedCompany) {
-      results = results.filter(customer => 
-        customer.company === selectedCompany
-      );
-    }
-    
-    if (searchTerm) {
-      results = results.filter(customer =>
-        Object.values(customer)
-          .join(" ")
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    setFilteredCustomers(results);
-    setCurrentPage(1);
-  }, [selectedCompany, searchTerm, customers]);
-
-  const indexOfLastEntry = currentPage * entriesPerPage;
-  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentEntries = filteredCustomers.slice(indexOfFirstEntry, indexOfLastEntry);
-  const totalPages = Math.ceil(filteredCustomers.length / entriesPerPage);
-
+  // Function to format date for display
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -1034,6 +1021,175 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
+
+  // Function to format date in multiple formats for search
+  const formatDateForSearch = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    
+    if (isNaN(date.getTime())) return '';
+    
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    const monthName = date.toLocaleString('en-IN', { month: 'long' });
+    const monthShort = date.toLocaleString('en-IN', { month: 'short' });
+    const hour = date.getHours().toString().padStart(2, '0');
+    const minute = date.getMinutes().toString().padStart(2, '0');
+    const second = date.getSeconds().toString().padStart(2, '0');
+    
+    // Return multiple formats for better searchability
+    return [
+      `${day}/${month}/${year}`,                    // DD/MM/YYYY
+      `${day}/${month}/${year} ${hour}:${minute}:${second}`, // DD/MM/YYYY HH:MM:SS
+      `${month}/${day}/${year}`,                    // MM/DD/YYYY
+      `${year}-${month}-${day}`,                    // YYYY-MM-DD
+      `${year}${month}${day}`,                      // YYYYMMDD
+      `${day}-${month}-${year}`,                    // DD-MM-YYYY
+      date.toISOString(),                           // ISO string
+      monthName,                                    // January, February
+      monthShort,                                   // Jan, Feb
+      `${year}`,                                    // 2024
+      `${month}/${year}`,                           // MM/YYYY
+      `${day} ${monthName} ${year}`,               // 15 January 2024
+      `${day} ${monthShort} ${year}`,              // 15 Jan 2024
+      `${hour}:${minute}`,                          // HH:MM
+      `${hour}:${minute}:${second}`,               // HH:MM:SS
+    ].join(' ');
+  };
+
+  // Enhanced global search functionality
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      let results = customers;
+      if (selectedCompany) {
+        results = results.filter(customer => customer.company === selectedCompany);
+      }
+      setFilteredCustomers(results);
+      setCurrentPage(1);
+      return;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    
+    const filtered = customers.filter((customer) => {
+      // Filter by company first
+      if (selectedCompany && customer.company !== selectedCompany) {
+        return false;
+      }
+
+      // Get company data for search
+      const companySearchData = getCompanySearchData(customer.company);
+      
+      // Get dates in multiple formats for search
+      const createdDateFormats = formatDateForSearch(customer.created_at);
+      const updatedDateFormats = formatDateForSearch(customer.updated_at);
+      
+      // Create a comprehensive search string
+      const searchableText = [
+        // Raw customer data
+        customer.customer_id || '',
+        customer.company || '',
+        customer.full_name || '',
+        customer.username || '',
+        customer.email || '',
+        customer.mobile || '',
+        customer.city || '',
+        customer.customer_type || '',
+        customer.status || '',
+        customer.created_at || '',
+        customer.updated_at || '',
+        customer.created_by || '',
+        customer.updated_by || '',
+        customer.telephone || '',
+        customer.address || '',
+        customer.country_code || '',
+        customer.remarks || '',
+        customer.security_question1 || '',
+        customer.security_question2 || '',
+        customer.answer1 || '',
+        customer.answer2 || '',
+        
+        // Formatted company data for search
+        companySearchData,
+        
+        // Dates in multiple formats
+        createdDateFormats,
+        updatedDateFormats,
+        
+        // Display values (exactly as shown in table)
+        formatDate(customer.created_at),
+        getCompanyDisplayName(customer.company),
+        
+        // Status with badge text multiple times for better search
+        customer.status === 'Active' ? 'Active Active Active' : '',
+        customer.status === 'Inactive' ? 'Inactive Inactive Inactive' : '',
+        customer.status === 'Pending' ? 'Pending Pending Pending' : '',
+        customer.status === 'Suspended' ? 'Suspended Suspended Suspended' : '',
+        
+        // Customer type variations
+        customer.customer_type === 'Individual' ? 'Individual person personal' : '',
+        customer.customer_type === 'Corporate' ? 'Corporate business company organization' : '',
+        customer.customer_type === 'Government' ? 'Government govt public sector' : '',
+        
+        // Country variations
+        customer.country_code === 'KSA' ? 'KSA Saudi Arabia Kingdom' : '',
+        customer.country_code === 'UAE' ? 'UAE United Arab Emirates Emirates' : '',
+        customer.country_code === 'IND' ? 'IND India Indian' : '',
+        
+        // City variations
+        customer.city ? `city ${customer.city}` : '',
+        
+        // Email username variations (without domain)
+        customer.email ? customer.email.split('@')[0] : '',
+        
+        // Mobile number variations (without country code if present)
+        customer.mobile ? customer.mobile.replace(/[+\s-]/g, '') : '',
+        customer.mobile ? customer.mobile.replace(/\D/g, '') : '',
+        
+        // Name variations (for partial matching)
+        customer.full_name ? customer.full_name.toLowerCase().split(' ').join(' ') : '',
+        customer.full_name ? customer.full_name.toLowerCase().replace(/\s+/g, '') : '',
+        customer.username ? customer.username.toLowerCase().replace(/\s+/g, '') : '',
+        
+        // Company name variations
+        getCompanyDisplayName(customer.company).toLowerCase(),
+        
+        // Add any other properties that might exist
+        ...Object.values(customer).filter(val => 
+          val !== null && val !== undefined
+        ).map(val => {
+          if (typeof val === 'string' || typeof val === 'number') {
+            return String(val);
+          }
+          if (typeof val === 'boolean') {
+            return val ? 'true yes active' : 'false no inactive';
+          }
+          if (Array.isArray(val)) {
+            return val.join(' ');
+          }
+          if (typeof val === 'object' && val !== null) {
+            return JSON.stringify(val);
+          }
+          return '';
+        })
+      ]
+      .join(' ')                    // Combine into one string
+      .toLowerCase()                // Make case-insensitive
+      .replace(/\s+/g, ' ')         // Normalize spaces
+      .trim();
+      
+      return searchableText.includes(searchLower);
+    });
+    
+    setFilteredCustomers(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, customers, companiesData, selectedCompany]);
+
+  const indexOfLastEntry = currentPage * entriesPerPage;
+  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+  const currentEntries = filteredCustomers.slice(indexOfFirstEntry, indexOfLastEntry);
+  const totalPages = Math.ceil(filteredCustomers.length / entriesPerPage);
 
   const handleDeleteCustomer = (customerId) => {
     if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
@@ -1060,7 +1216,6 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     });
   };
 
-  // NEW: Function to navigate to customer details page
   const handleCustomerIdClick = (customerId) => {
     navigate(`/servicemanager/customers/${customerId}`, { 
       state: { 
@@ -1102,14 +1257,32 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
           entries
         </div>
 
-        <input
-          type="text"
-          placeholder="Search customers..."
-          className="form-control w-auto"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="d-flex align-items-center gap-2">
+          <input
+            type="text"
+            placeholder="Search in all columns..."
+            className="form-control"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ minWidth: '250px' }}
+          />
+          {searchTerm && (
+            <button 
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => setSearchTerm('')}
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Search Results Info */}
+      {searchTerm && (
+        <div className="alert alert-info mb-3">
+          <strong>Search Results:</strong> Found {filteredCustomers.length} customer(s) matching "{searchTerm}"
+        </div>
+      )}
 
       <div className="table-responsive mb-4">
         <table className="table">
@@ -1135,7 +1308,6 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
                 <tr key={index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>
-                    {/* Make Customer ID clickable like in ServiceTableContent */}
                     <button 
                       className="btn btn-link p-0 text-primary text-decoration-underline"
                       onClick={() => handleCustomerIdClick(customer.customer_id)}
@@ -1207,9 +1379,11 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
             ) : (
               <tr>
                 <td colSpan="12" className="text-center">
-                  {selectedCompany 
-                    ? `No customers found for ${getCompanyDisplayName(selectedCompany)}${searchTerm ? ' matching your search' : ''}`
-                    : 'No customers found'}
+                  {searchTerm 
+                    ? `No customers found matching "${searchTerm}"`
+                    : selectedCompany 
+                      ? `No customers found for ${getCompanyDisplayName(selectedCompany)}`
+                      : 'No customers found'}
                 </td>
               </tr>
             )}
@@ -1230,16 +1404,38 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
               </button>
             </li>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <li
-                key={page}
-                className={`page-item ${currentPage === page ? "active" : ""}`}
-              >
-                <button className="page-link" onClick={() => setCurrentPage(page)}>
-                  {page}
-                </button>
-              </li>
-            ))}
+            {(() => {
+              const maxVisiblePages = 5;
+              let pageNumbers = [];
+              
+              if (totalPages <= maxVisiblePages) {
+                for (let i = 1; i <= totalPages; i++) {
+                  pageNumbers.push(i);
+                }
+              } else {
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                
+                if (endPage - startPage + 1 < maxVisiblePages) {
+                  startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                  pageNumbers.push(i);
+                }
+              }
+              
+              return pageNumbers.map((page) => (
+                <li
+                  key={page}
+                  className={`page-item ${currentPage === page ? "active" : ""}`}
+                >
+                  <button className="page-link" onClick={() => setCurrentPage(page)}>
+                    {page}
+                  </button>
+                </li>
+              ));
+            })()}
 
             <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
               <button

@@ -12,71 +12,74 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false); // Added loading state
 
   const { login } = useContext(AuthContext); // using context
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true); // Start loading
 
-  try {
-    // Generate FCM token
-    const fcmToken = await generateToken();
+    try {
+      // Generate FCM token
+      const fcmToken = await generateToken();
 
-    // Send login request with FCM token
-    const response = await axios.post(`${baseURL}/user-login/`, {
-      username,
-      password,
-      fcm_token: fcmToken || '',
-    });
+      // Send login request with FCM token
+      const response = await axios.post(`${baseURL}/user-login/`, {
+        username,
+        password,
+        fcm_token: fcmToken || '',
+      });
 
-    const user = response.data.data;
+      const user = response.data.data;
 
-    if (user.role === "Service Manager") {
-      // Login and navigate
-      login("service-manager", user.user_id);
-      navigate("/servicemanager/preventive-maintainance-group");
+      if (user.role === "Service Manager") {
+        // Login and navigate
+        login("service-manager", user.user_id);
+        navigate("/servicemanager/preventive-maintainance-group");
 
-      // Send push notification after successful login
-      if (fcmToken) {
-        try {
-          const notifyResponse = await fetch(`${Notification_Url}/send-notification`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              token: fcmToken,
-              title: 'Welcome to LandNest!',
-              body: 'You have successfully logged in.',
-            }),
-          });
+        // Send push notification after successful login
+        if (fcmToken) {
+          try {
+            const notifyResponse = await fetch(`${Notification_Url}/send-notification`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                token: fcmToken,
+                title: 'Welcome to LandNest!',
+                body: 'You have successfully logged in.',
+              }),
+            });
 
-          const notifyData = await notifyResponse.json();
+            const notifyData = await notifyResponse.json();
 
-          if (notifyResponse.ok) {
-            console.log('Notification sent successfully:', notifyData);
-          } else {
-            console.error('Failed to send notification:', notifyData);
+            if (notifyResponse.ok) {
+              console.log('Notification sent successfully:', notifyData);
+            } else {
+              console.error('Failed to send notification:', notifyData);
+            }
+          } catch (notifyError) {
+            console.error('Error sending notification:', notifyError);
           }
-        } catch (notifyError) {
-          console.error('Error sending notification:', notifyError);
+        } else {
+          console.warn('No FCM token available for notification.');
         }
+
       } else {
-        console.warn('No FCM token available for notification.');
+        setError("Access denied. Only Service Managers are allowed.");
       }
 
-    } else {
-      setError("Access denied. Only Service Managers are allowed.");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.response?.data?.message || "Invalid username or password");
+    } finally {
+      setLoading(false); // Stop loading
     }
-
-  } catch (err) {
-    console.error("Login error:", err);
-    setError("Invalid username or password");
-  }
-};
-
+  };
 
   return (
     <LoginCard
@@ -84,6 +87,7 @@ const handleSubmit = async (e) => {
       username={username}
       password={password}
       showPassword={showPassword}
+      loading={loading} // Pass loading state
       setUsername={setUsername}
       setPassword={setPassword}
       setShowPassword={setShowPassword}
