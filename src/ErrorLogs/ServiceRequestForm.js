@@ -165,50 +165,67 @@ useEffect(() => {
   const getCurrentTime = () => new Date().toISOString().slice(11, 16);
 
   // Submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    try {
-      const payload = {
-        service_item: form.service_item,
-        source_type: 'Machine Alert',
-        preferred_date: getTodayDate(),     // AUTO
-        preferred_time: getCurrentTime(),   // AUTO
-        request_details: form.request_details,
-        problem_type: form.problem_type,
-        user_id: userId,
-        company_id: selectedCompany,
-        status: 'Open',
-        requested_by: `${userId}-Service Manager`,
-        created_by: userId, 
-        updated_by: userId,
-        customer: customer
-      };
+  console.log("🚀 Form submission started");
 
-      console.log("Payload:", payload);
+  try {
+    const payload = {
+      service_item: form.service_item,
+      source_type: "Machine Alert",
+      preferred_date: getTodayDate(),
+      preferred_time: getCurrentTime(),
+      request_details: form.request_details,
+      problem_type: form.problem_type,
+      user_id: userId,
+      company_id: selectedCompany,
+      status: "Open",
+      requested_by: "Service Manager",
+      created_by: userId,
+      updated_by: userId,
+      customer: customer,
+      company: selectedCompany
+    };
 
-      const response = await fetch(`${baseURL}/service-pools/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    console.log("📦 Payload being sent:", payload);
+    console.log("🌐 Request URL:", `${baseURL}/service-pools/`);
 
-      const result = await response.json();
+    const response = await fetch(`${baseURL}/service-pools/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-      if (response.ok) {
-        alert('Service request submitted successfully!');
-        navigate('/servicemanager/error-logs');
-      } else {
-        throw new Error(result.message || 'Failed to submit service request');
-      }
+    console.log("📥 Raw Response:", response);
 
-    } catch (error) {
-      alert(`Error submitting: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
+    const result = await response.json().catch((err) => {
+      console.error("❌ JSON Parsing Error:", err);
+      throw new Error("Invalid JSON response from server");
+    });
+
+    console.log("📄 Parsed Response Body:", result);
+
+    if (response.ok) {
+      console.log("✅ API Success:", result);
+      alert("Service request submitted successfully!");
+      navigate("/servicemanager/error-logs");
+    } else {
+      console.error("❌ API Error Status:", response.status);
+      console.error("❌ API Error Response:", result);
+      throw new Error(result.message || "Failed to submit service request");
     }
-  };
+
+  } catch (error) {
+    console.error("🔥 Final Catch Block Error:", error);
+    alert(`Error submitting: ${error.message}`);
+  } finally {
+    console.log("🔚 Form submission ended");
+    setIsSubmitting(false);
+  }
+};
+
 
   const handleCancel = () => navigate('/servicemanager/error-logs');
 

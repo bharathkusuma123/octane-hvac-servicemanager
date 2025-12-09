@@ -3,6 +3,7 @@ import axios from "axios";
 import baseURL from "../ApiUrl/Apiurl";
 import './ServicePoolTablenew.css'
 import { useLocation, useNavigate } from 'react-router-dom';
+import { FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
 
 const ServiceTableContent = ({
   selectedCompany,
@@ -579,14 +580,28 @@ console.log("Service Items:", serviceItems);
                         {engineerStatus}
                       </span>
                     </td>
-                    <td>
-                      <button
-                        className="btn btn-sm btn-info"
-                        onClick={() => handleServiceRequestHistory(item)}
-                      >
-                         + Add 
-                      </button>
-                    </td>
+                  <td className="">
+
+  {/* + ADD BUTTON */}
+  <button
+    className="btn btn-sm btn-info"
+    onClick={() => handleServiceRequestHistory(item)}
+  >
+    + Add
+  </button>
+
+  {/* VIEW ICON BUTTON */}
+  <button
+    className="btn btn-sm btn-outline-primary"
+     style={{ marginLeft: "6%" }}  // small gap
+    onClick={() => navigate(`/servicemanager/request-item-history/${item.request_id}`)}
+    title="View History"
+  >
+    <FaEye size={16} />
+  </button>
+
+</td>
+
                     <td>
                       {item.status === "Open" ? (
                         <button
