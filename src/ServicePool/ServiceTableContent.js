@@ -682,7 +682,7 @@ const ServiceTableContent = ({
   setEntriesPerPage,
   currentPage,
   setCurrentPage,
-  filteredData,
+  filteredData, // This comes from parent component already filtered by company
   historyResponse,
   navigate,
   handleAssignClick,
@@ -704,9 +704,17 @@ const ServiceTableContent = ({
   const dateInputRef = useRef(null);
   const [serviceItemFilter, setServiceItemFilter] = useState("");
   const [problemTypesMap, setProblemTypesMap] = useState({});
+  const [originalData, setOriginalData] = useState([]); // Store original data for search
   
   // Use useLocation hook to get navigation state
   const location = useLocation();
+
+  // Store original data when component mounts
+  useEffect(() => {
+    if (filteredData && filteredData.length > 0) {
+      setOriginalData(filteredData);
+    }
+  }, [filteredData]);
 
   // Fetch additional data for global search
   useEffect(() => {
@@ -753,13 +761,6 @@ const ServiceTableContent = ({
     return user ? user.username : userId;
   };
 
-  // Function to get user search data (both ID and username)
-  const getUserSearchData = (userId) => {
-    if (!userId) return '';
-    const user = usersData.find(user => user.user_id === userId);
-    return user ? `${userId} ${user.username} ${user.email || ''}` : userId;
-  };
-
   // Function to get customer name by customer ID
   const getCustomerNameSearch = (customerId) => {
     if (!customerId || customersData.length === 0) return customerId;
@@ -768,26 +769,12 @@ const ServiceTableContent = ({
     return customer ? `${customer.full_name} (${customer.username})` : customerId;
   };
 
-  // Function to get customer search data
-  const getCustomerSearchData = (customerId) => {
-    if (!customerId) return '';
-    const customer = customersData.find(cust => cust.customer_id === customerId);
-    return customer ? `${customerId} ${customer.username} ${customer.full_name} ${customer.email}` : customerId;
-  };
-
   // Function to get resource name by resource ID
   const getResourceName = (resourceId) => {
     if (!resourceId || resourcesData.length === 0) return resourceId;
     
     const resource = resourcesData.find(res => res.resource_id === resourceId);
     return resource ? `${resource.first_name} ${resource.last_name}` : resourceId;
-  };
-
-  // Function to get resource search data
-  const getResourceSearchData = (resourceId) => {
-    if (!resourceId) return '';
-    const resource = resourcesData.find(res => res.resource_id === resourceId);
-    return resource ? `${resourceId} ${resource.first_name} ${resource.last_name} ${resource.email}` : resourceId;
   };
 
   // Function to get product name by product ID
@@ -804,20 +791,12 @@ const ServiceTableContent = ({
     return serviceItem ? serviceItem.service_item_name : serviceItemId;
   };
 
-  // Function to get service item search data
-  const getServiceItemSearchData = (serviceItemId) => {
-    if (!serviceItemId) return '';
-    const serviceItem = serviceItems.find(item => item.service_item_id === serviceItemId);
-    if (!serviceItem) return serviceItemId;
+  // Function to get service item details
+  const getServiceItemDetails = (serviceItemId) => {
+    if (!serviceItemId || serviceItems.length === 0) return {};
     
-    return [
-      serviceItemId,
-      serviceItem.service_item_name || '',
-      serviceItem.serial_number || '',
-      serviceItem.pcb_serial_number || '',
-      serviceItem.location || '',
-      serviceItem.product_description || '',
-    ].filter(Boolean).join(' ');
+    const serviceItem = serviceItems.find(item => item.service_item_id === serviceItemId);
+    return serviceItem ? serviceItem : {};
   };
 
   // Function to format date as dd/mm/yyyy
@@ -858,32 +837,23 @@ const ServiceTableContent = ({
     }
   };
 
-  // Function to format date in multiple formats for search
-  const formatDateForSearch = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    
-    if (isNaN(date.getTime())) return '';
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const monthName = date.toLocaleString('en-IN', { month: 'long' });
-    const monthShort = date.toLocaleString('en-IN', { month: 'short' });
-    
-    return [
-      `${day}/${month}/${year}`,                    // DD/MM/YYYY
-      `${month}/${day}/${year}`,                    // MM/DD/YYYY
-      `${year}-${month}-${day}`,                    // YYYY-MM-DD
-      `${year}${month}${day}`,                      // YYYYMMDD
-      `${day}-${month}-${year}`,                    // DD-MM-YYYY
-      monthName,                                    // January, February
-      monthShort,                                   // Jan, Feb
-      `${year}`,                                    // 2024
-      `${month}/${year}`,                           // MM/YYYY
-      `${day} ${monthName} ${year}`,               // 15 January 2024
-      `${day} ${monthShort} ${year}`,              // 15 Jan 2024
-    ].join(' ');
+  // Function to format time only
+  const formatTime = (dateTimeString) => {
+    if (!dateTimeString) return '';
+    try {
+      const date = new Date(dateTimeString);
+      if (isNaN(date.getTime())) return '';
+      
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const period = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+    } catch (error) {
+      console.error('Error formatting time:', error);
+      return '';
+    }
   };
 
   useEffect(() => {
@@ -973,25 +943,6 @@ const ServiceTableContent = ({
     });
   };
 
-  // Utility functions
-  const formatTime = (dateTimeString) => {
-    if (!dateTimeString) return '';
-    try {
-      const date = new Date(dateTimeString);
-      if (isNaN(date.getTime())) return '';
-      
-      let hours = date.getHours();
-      const minutes = date.getMinutes();
-      const period = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12 || 12;
-      
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
-    } catch (error) {
-      console.error('Error formatting time:', error);
-      return '';
-    }
-  };
-
   const convertToISOFormat = (ddmmyyyy) => {
     if (!ddmmyyyy) return '';
     const parts = ddmmyyyy.split('/');
@@ -1041,14 +992,6 @@ const ServiceTableContent = ({
     }
   };
 
-  // Function to get service item details
-  const getServiceItemDetails = (serviceItemId) => {
-    if (!serviceItemId || serviceItems.length === 0) return { location: "Loading..." };
-    
-    const serviceItem = serviceItems.find(item => item.service_item_id === serviceItemId);
-    return serviceItem ? serviceItem : { location: "Location not found" };
-  };
-
   const getStatusBadgeClass = (status) => {
     switch (status) {
       case 'Open':
@@ -1085,11 +1028,134 @@ const ServiceTableContent = ({
     }
   };
 
-  // Enhanced global search functionality
+  // MAIN SEARCH FUNCTION - SEARCH ACROSS ALL COLUMNS
   const enhancedFilteredData = useMemo(() => {
-    let results = filteredData;
+    // Start with all data that's already filtered by company
+    let results = [...originalData];
 
-    // Apply engineer status filter
+    // Apply search term filter FIRST
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      
+      results = results.filter((item) => {
+        // Get engineer status for this item
+        const historyData = historyResponse.data || [];
+        const latestAssignment = Array.isArray(historyData) 
+          ? historyData.find(history => history.request === item.request_id)
+          : null;
+        const engineerStatus = latestAssignment?.status || "N/A";
+        
+        // Get customer ID from service item
+        const customerIdFromServiceItem = getCustomerFromServiceItem(item.service_item);
+        const customerNameFromServiceItem = customerIdFromServiceItem ? getCustomerName(customerIdFromServiceItem) : '';
+        
+        // Get service item details
+        const serviceItemDetails = getServiceItemDetails(item.service_item);
+        
+        // Create an array of ALL searchable values for this row
+        const searchableValues = [
+          // Column 1: Request ID
+          item.request_id,
+          
+          // Column 2: Requested By
+          getCustomerName(item.requested_by),
+          
+          // Column 3: Customer ID
+          customerIdFromServiceItem,
+          customerNameFromServiceItem,
+          
+          // Column 4: Request/Problem Type
+          problemTypesMap[item.problem_type],
+          item.problem_type,
+          
+          // Column 5: Service Item
+          item.service_item,
+          getServiceItemDisplay(item.service_item),
+          serviceItemDetails?.serial_number,
+          serviceItemDetails?.pcb_serial_number,
+          serviceItemDetails?.product_description,
+          serviceItemDetails?.product_name,
+          
+          // Column 6: Location
+          serviceItemDetails?.location,
+          serviceItemDetails?.address,
+          serviceItemDetails?.city,
+          serviceItemDetails?.state,
+          serviceItemDetails?.country,
+          serviceItemDetails?.zip_code,
+          
+          // Column 7: Preferred Date/Time
+          item.preferred_date,
+          item.preferred_time,
+          formatDateTime(`${item.preferred_date}T${item.preferred_time}`),
+          formatDate(item.preferred_date),
+          
+          // Column 8: Created Date/Time
+          item.created_at,
+          formatDateTime(item.created_at),
+          formatDate(item.created_at),
+          
+          // Column 9: Status
+          item.status,
+          // Status variations for better search
+          ...(item.status === 'Open' ? ['open', 'new'] : []),
+          ...(item.status === 'Assigned' ? ['assigned', 'allocated'] : []),
+          ...(item.status === 'UnderProgress' ? ['underprogress', 'inprogress', 'progress'] : []),
+          ...(item.status === 'Closed' ? ['closed', 'completed', 'finished'] : []),
+          ...(item.status === 'Reopened' ? ['reopened'] : []),
+          ...(item.status === 'Waiting for Quote' ? ['waiting', 'quote', 'quotation'] : []),
+          ...(item.status === 'Waiting for Spares' ? ['waiting', 'spares', 'parts'] : []),
+          
+          // Column 10: Engineer
+          item.assigned_engineer,
+          getResourceName(item.assigned_engineer),
+          
+          // Column 11: Engineer Status
+          engineerStatus,
+          // Engineer status variations
+          ...(engineerStatus === 'Pending' ? ['pending', 'waiting'] : []),
+          ...(engineerStatus === 'Accepted' ? ['accepted', 'approved'] : []),
+          ...(engineerStatus === 'Declined' ? ['declined', 'rejected'] : []),
+          ...(engineerStatus === 'N/A' ? ['na', 'not', 'available'] : []),
+          
+          // Column 12: Service Request Item History indicator
+          historyData.some(h => h.request === item.request_id) ? 'has history' : 'no history',
+          
+          // Additional fields from the data
+          item.description,
+          item.request_details,
+          item.resolution_notes,
+          item.priority,
+          item.source_type,
+          item.category,
+          item.subcategory,
+          item.dynamics_service_order_no,
+          item.estimated_completion_time,
+          item.estimated_price,
+          item.est_start_datetime,
+          item.est_end_datetime,
+          item.feedback,
+          item.rating,
+          item.pm_group,
+          item.reopened_from,
+          item.alert_details,
+          
+          // Company name
+          getCompanyName(item.company),
+          
+          // User info
+          getUsernameById(item.created_by),
+          getUsernameById(item.updated_by),
+        ];
+        
+        // Convert all searchable values to lowercase strings and check if any contains search term
+        return searchableValues.some(value => 
+          value && value.toString().toLowerCase().includes(searchLower)
+        );
+      });
+    }
+
+    // Apply other filters AFTER search
     if (engineerStatusFilter) {
       const historyData = historyResponse.data || [];
       results = results.filter(item => {
@@ -1101,17 +1167,14 @@ const ServiceTableContent = ({
       });
     }
 
-    // Apply status filter
     if (statusFilter) {
       results = results.filter(item => item.status === statusFilter);
     }
 
-    // Apply service item filter
     if (serviceItemFilter) {
       results = results.filter(item => item.service_item === serviceItemFilter);
     }
 
-    // Apply created date filter
     if (createdDateFilter) {
       results = results.filter(item => {
         const itemDate = new Date(item.created_at).toISOString().split('T')[0];
@@ -1119,189 +1182,17 @@ const ServiceTableContent = ({
       });
     }
 
-    // Apply global search term filter
-    if (!searchTerm.trim()) {
-      return results;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-    
-    return results.filter((item) => {
-      // Get user data for search
-      const createdBySearch = getUserSearchData(item.created_by);
-      const updatedBySearch = getUserSearchData(item.updated_by);
-      const requestedBySearch = getCustomerSearchData(item.requested_by);
-      
-      // Get other relational data for search
-      const customerSearch = getCustomerSearchData(item.customer);
-      const assignedEngineerSearch = getResourceSearchData(item.assigned_engineer);
-      const companySearch = getCompanyName(item.company);
-      const productSearch = getProductName(item.product);
-      const serviceItemSearch = getServiceItemSearchData(item.service_item);
-      const problemTypeSearch = problemTypesMap[item.problem_type] || '';
-      
-      // Get engineer status for search
-      const historyData = historyResponse.data || [];
-      const latestAssignment = Array.isArray(historyData) 
-        ? historyData.find(history => history.request === item.request_id)
-        : null;
-      const engineerStatus = latestAssignment?.status || "N/A";
-      
-      // Get dates in multiple formats for search
-      const preferredDateFormats = formatDateForSearch(item.preferred_date);
-      const createdDateFormats = formatDateForSearch(item.created_at);
-      const updatedDateFormats = formatDateForSearch(item.updated_at);
-      const closedDateFormats = formatDateForSearch(item.closed_date);
-      
-      // Create a comprehensive search string
-      const searchableText = [
-        // Raw service request data
-        item.request_id || '',
-        item.service_name || '',
-        item.status || '',
-        item.priority || '',
-        item.description || '',
-        item.request_details || '',
-        item.resolution_notes || '',
-        item.feedback || '',
-        item.rating || '',
-        item.category || '',
-        item.subcategory || '',
-        item.location || '',
-        item.city || '',
-        item.state || '',
-        item.country || '',
-        item.zip_code || '',
-        item.phone || '',
-        item.email || '',
-        item.preferred_time || '',
-        item.assigned_engineer || '',
-        item.company || '',
-        item.product || '',
-        item.service_item || '',
-        item.problem_type || '',
-        item.preferred_date || '',
-        item.created_at || '',
-        item.updated_at || '',
-        item.closed_date || '',
-        item.dynamics_service_order_no || '',
-        item.pm_group || '',
-        item.estimated_completion_time || '',
-        item.estimated_price || '',
-        item.est_start_datetime || '',
-        item.est_end_datetime || '',
-        item.source_type || '',
-        item.reopened_from || '',
-        
-        // Formatted relational data
-        createdBySearch,
-        updatedBySearch,
-        requestedBySearch,
-        customerSearch,
-        assignedEngineerSearch,
-        companySearch,
-        productSearch,
-        serviceItemSearch,
-        problemTypeSearch,
-        
-        // Dates in multiple formats
-        preferredDateFormats,
-        createdDateFormats,
-        updatedDateFormats,
-        closedDateFormats,
-        
-        // Display values (exactly as shown in table)
-        formatDateTime(item.created_at),
-        formatDateTime(item.updated_at),
-        formatDateTime(`${item.preferred_date}T${item.preferred_time}`),
-        getUsernameById(item.created_by),
-        getUsernameById(item.updated_by),
-        getCustomerName(item.requested_by),
-        getResourceName(item.assigned_engineer),
-        getCompanyName(item.company),
-        getProductName(item.product),
-        getServiceItemDisplay(item.service_item),
-        engineerStatus,
-        
-        // Status variations for search
-        item.status === 'Open' ? 'open new created' : '',
-        item.status === 'Assigned' ? 'assigned allocated given' : '',
-        item.status === 'UnderProgress' ? 'under progress in progress processing ongoing' : '',
-        item.status === 'Reopened' ? 'reopened reopened restarted again' : '',
-        item.status === 'Closed' ? 'closed completed finished done resolved' : '',
-        item.status === 'Waiting for Quote' ? 'waiting for quote quotation price estimate' : '',
-        item.status === 'Waiting for Spares' ? 'waiting for spares parts waiting pending spares' : '',
-        
-        // Engineer status variations for search
-        engineerStatus === 'Pending' ? 'pending waiting approval' : '',
-        engineerStatus === 'Accepted' ? 'accepted approved confirmed' : '',
-        engineerStatus === 'Declined' ? 'declined rejected refused' : '',
-        engineerStatus === 'N/A' ? 'na not available not assigned' : '',
-        
-        // Priority variations
-        item.priority === 'High' ? 'high urgent critical emergency' : '',
-        item.priority === 'Medium' ? 'medium normal regular standard' : '',
-        item.priority === 'Low' ? 'low minor trivial' : '',
-        
-        // Category variations
-        item.category === 'Installation' ? 'installation install setup' : '',
-        item.category === 'Repair' ? 'repair fix maintenance service' : '',
-        item.category === 'Preventive Maintenance' ? 'preventive maintenance pm checkup' : '',
-        item.category === 'Emergency' ? 'emergency urgent critical' : '',
-        item.category === 'Complaint' ? 'complaint issue problem' : '',
-        
-        // Source type variations
-        item.source_type === 'Customer' ? 'customer client user' : '',
-        item.source_type === 'System' ? 'system automatic generated' : '',
-        item.source_type === 'Re-Opened' ? 'reopened reopened from previous' : '',
-        
-        // Location variations
-        getServiceItemDetails(item.service_item).location ? `location address place ${getServiceItemDetails(item.service_item).location}` : '',
-        
-        // Service item variations
-        getServiceItemDisplay(item.service_item) ? `service item ${getServiceItemDisplay(item.service_item)}` : '',
-        
-        // Add any other properties that might exist
-        ...Object.values(item).filter(val => 
-          val !== null && val !== undefined
-        ).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') {
-            return String(val);
-          }
-          if (typeof val === 'boolean') {
-            return val ? 'true yes active' : 'false no inactive';
-          }
-          if (Array.isArray(val)) {
-            return val.join(' ');
-          }
-          if (typeof val === 'object' && val !== null) {
-            return JSON.stringify(val);
-          }
-          return '';
-        })
-      ]
-      .join(' ')                    // Combine into one string
-      .toLowerCase()                // Make case-insensitive
-      .replace(/\s+/g, ' ')         // Normalize spaces
-      .trim();
-      
-      return searchableText.includes(searchLower);
-    });
+    return results;
   }, [
-    searchTerm, 
-    filteredData, 
-    engineerStatusFilter, 
-    statusFilter, 
-    serviceItemFilter, 
+    originalData,
+    searchTerm,
+    engineerStatusFilter,
+    statusFilter,
+    serviceItemFilter,
     createdDateFilter,
     historyResponse.data,
-    usersData,
-    customersData,
-    resourcesData,
-    companiesData,
-    productsData,
-    serviceItems,
-    problemTypesMap
+    problemTypesMap,
+    serviceItems
   ]);
 
   const indexOfLastEntry = currentPage * entriesPerPage;

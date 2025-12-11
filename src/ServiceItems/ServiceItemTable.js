@@ -2923,7 +2923,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                 <th>Installation Date</th>
                 <th>Warranty End</th>
                 <th>Status</th>
-                <th>IoT Access</th>
+                <th>IoT status</th>
                 <th>Last Service</th>
                 <th>Description</th>
                 <th>Actions</th>
