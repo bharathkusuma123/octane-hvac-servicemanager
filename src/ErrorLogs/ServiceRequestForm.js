@@ -163,6 +163,8 @@ useEffect(() => {
   // Auto Date/Time
   const getTodayDate = () => new Date().toISOString().split('T')[0];
   const getCurrentTime = () => new Date().toISOString().slice(11, 16);
+  console.log("Current Date:", getTodayDate());
+  console.log("Current Time:", getCurrentTime());
 
   // Submit
  const handleSubmit = async (e) => {

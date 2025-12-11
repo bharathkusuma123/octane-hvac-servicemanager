@@ -113,6 +113,9 @@ const ServiceRequestItemHistory = () => {
     }
   }, [userId, selectedCompany, serviceRequest?.assigned_engineer]);
 
+  const isEngineerMissing = !serviceRequest?.assigned_engineer;
+
+
   // Calculate labour hours and cost when dates change
   useEffect(() => {
     if (completionData.act_start_datetime && completionData.act_end_datetime) {
@@ -494,6 +497,12 @@ const ServiceRequestItemHistory = () => {
               <span className="text-muted ms-2">Loading engineer data...</span>
             )}
           </p>
+          {!serviceRequest.assigned_engineer && (
+  <p className="text-danger fw-bold">
+    ⚠ Cannot submit items until an engineer is assigned.
+  </p>
+)}
+
           {isEditMode && (
             <Alert variant="info" className="mt-2">
               <strong>Editing Mode:</strong> You are currently editing an existing service item.
@@ -688,20 +697,21 @@ const ServiceRequestItemHistory = () => {
                         >
                           Cancel Edit
                         </Button>
-                        <Button
-                          variant="warning"
-                          onClick={handleSubmitItems}
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                              Updating Item...
-                            </>
-                          ) : (
-                            'Update Item'
-                          )}
-                        </Button>
+                       <Button
+  variant="warning"
+  onClick={handleSubmitItems}
+  disabled={submitting || isEngineerMissing}
+>
+  {submitting ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+      Updating Item...
+    </>
+  ) : (
+    'Update Item'
+  )}
+</Button>
+
                       </>
                     ) : (
                       <>
@@ -711,20 +721,21 @@ const ServiceRequestItemHistory = () => {
                         >
                           Cancel
                         </Button>
-                        <Button
-                          variant="primary"
-                          onClick={handleSubmitItems}
-                          disabled={submitting}
-                        >
-                          {submitting ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                              Submitting {items.length} Item(s)...
-                            </>
-                          ) : (
-                            `Submit ${items.length} Item(s)`
-                          )}
-                        </Button>
+                       <Button
+  variant="primary"
+  onClick={handleSubmitItems}
+  disabled={submitting || isEngineerMissing}
+>
+  {submitting ? (
+    <>
+      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+      Submitting {items.length} Item(s)...
+    </>
+  ) : (
+    `Submit ${items.length} Item(s)`
+  )}
+</Button>
+
                       </>
                     )}
                   </div>
