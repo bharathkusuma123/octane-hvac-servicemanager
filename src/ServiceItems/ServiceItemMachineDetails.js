@@ -14,43 +14,38 @@ const ServiceItemMachineDetails = () => {
   const { selectedCompany } = useCompany();
   const { userId } = useContext(AuthContext);
 
-  useEffect(() => {
-    const fetchMachineData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await axios.get(
-          `${baseURL}/get-latest-data/${pcbSerialNumber}/?user_id=${userId}&company_id=${selectedCompany}`
-        );
-        
-        if (response.data.status === "success" && response.data.data) {
-          setMachineData(response.data.data);
-        } else {
-          setError(response.data.message || "Failed to fetch machine data");
-        }
-      } catch (error) {
-        console.error("Error fetching machine data:", error);
-        
-        if (error.response && error.response.status === 403) {
-          setError(error.response.data?.message || "You do not have permission to view this machine data");
-        } else if (error.response && error.response.status === 404) {
-          setError("Machine data not found");
-        } else {
-          setError("Failed to load machine data");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchMachineData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    if (pcbSerialNumber && userId && selectedCompany) {
-      fetchMachineData();
-    } else {
+      const response = await axios.get(
+        `${baseURL}/latest-all-sensor-data/${pcbSerialNumber}/?company_id=${selectedCompany}&user_id=${userId}`
+      );
+
+      if (response.data?.status === "success") {
+        setMachineData(response.data); // 👈 store full response
+      } else {
+        setError(response.data?.message || "Failed to fetch machine data");
+      }
+
+    } catch (error) {
+      console.error("Error fetching machine data:", error);
+      setError("Failed to load machine data");
+    } finally {
       setLoading(false);
-      setError("Missing required parameters");
     }
-  }, [pcbSerialNumber, selectedCompany, userId]);
+  };
+
+  if (pcbSerialNumber && userId && selectedCompany) {
+    fetchMachineData();
+  } else {
+    setLoading(false);
+    setError("Missing required parameters");
+  }
+}, [pcbSerialNumber, selectedCompany, userId]);
+
 
   const handleBack = () => {
     navigate(-1);
@@ -166,133 +161,64 @@ const getfanspeedBadge = (value) => {
           </div>
         </div>
 
-        <div className="card-body">
-          {/* PCB Serial Number Header */}
-          <div className="row mb-4">
-            <div className="col-12">
-              <div className="alert alert-info">
-                <h6 className="mb-1">PCB Serial Number</h6>
-                <h4 className="mb-0">{machineData.pcb_serial_number}</h4>
-              </div>
-            </div>
-          </div>
+     <div className="card-body">
 
-          {/* Temperature and Humidity Data */}
-          <div className="row mb-4">
-            <div className="col-md-6">
-              <h6 className="border-bottom pb-2 mb-3">Environmental Data</h6>
-              <div className="table-responsive">
-                <table className="table table-bordered">
-                  <tbody>
-                    <tr>
-                      <th>Outdoor Temperature</th>
-                      <td>{formatValue(machineData.outdoor_temperature)}</td>
-                    </tr>
-                    <tr>
-                      <th>Room Temperature</th>
-                      <td>{formatValue(machineData.room_temperature)}</td>
-                    </tr>
-                    <tr>
-                      <th>Room Humidity</th>
-                      <td>{formatValue(machineData.room_humidity)}</td>
-                    </tr>
-                    <tr>
-                      <th>Set Temperature</th>
-                      <td>{formatValue(machineData.set_temperature)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+<div className="alert alert-info mb-3 d-flex justify-content-between align-items-center">
+  <div>
+    <strong>PCB Serial Number:</strong> {machineData.pcb_serial_number}
+  </div>
 
-            <div className="col-md-6">
-              <h6 className="border-bottom pb-2 mb-3">System Status</h6>
-              <div className="table-responsive">
-                <table className="table table-bordered">
-                  <tbody>
-                    <tr>
-                      <th>HVAC Status</th>
-                      <td>{getStatusBadge(machineData.hvac_on?.value)}</td>
-                    </tr>
-                    <tr>
-                      {/* <th>Mode</th>
-                      <td>
-                        {machineData.mode?.value === "1" ? (
-                          <span className="badge bg-info">Cooling</span>
-                        ) : machineData.mode?.value === "2" ? (
-                          <span className="badge bg-warning">Heating</span>
-                        ) : (
-                          <span className="badge bg-secondary">Unknown</span>
-                        )}
-                      </td> */}
-                       <th>Modes</th>
-                      <td>{getModesBadge(machineData.mode?.value)}</td>
-                    </tr>
-                    <tr>
-                      <th>Fan Speed</th>
-                      <td>{getfanspeedBadge(machineData.fan_speed?.value)}</td>
-                    </tr>
-                    <tr>
-                      <th>HVAC Busy</th>
-                      <td>{getStatusBadge(machineData.hvac_busy?.value)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+  <div>
+    <strong>Status:</strong>{" "}
+    {machineData.is_online ? (
+      <span className="badge bg-success ms-2">Online</span>
+    ) : (
+      <span className="badge bg-danger ms-2">Offline</span>
+    )}
+  </div>
+</div>
 
-          {/* Error and Alarm Status */}
-          <div className="row">
-            <div className="col-12">
-              <h6 className="border-bottom pb-2 mb-3">System Health</h6>
-              <div className="row">
-                <div className="col-md-6">
-                  <div className="card">
-                    <div className="card-body text-center">
-                      <h5 className="card-title">Error Status</h5>
-                      <div className="mt-3">
-                        {getErrorStatus(machineData.error_flag?.value)}
-                      </div>
-                      <p className="text-muted mt-2 mb-0">
-                        {machineData.error_flag?.value === "0" ? 
-                          "System operating normally" : 
-                          "System has detected an error"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="col-md-6">
-                  <div className="card">
-                    <div className="card-body text-center">
-                      <h5 className="card-title">Alarm Status</h5>
-                      <div className="mt-3">
-                        {getErrorStatus(machineData.alarm_occurred?.value)}
-                      </div>
-                      <p className="text-muted mt-2 mb-0">
-                        {machineData.alarm_occurred?.value === "0" ? 
-                          "No alarms triggered" : 
-                          "Alarm has been triggered"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Raw Data (Optional - for debugging) */}
-          {/* <div className="row mt-4">
-            <div className="col-12">
-              <details>
-                <summary className="h6">Raw Data</summary>
-                <pre className="mt-2 p-3 bg-light rounded">
-                  {JSON.stringify(machineData, null, 2)}
-                </pre>
-              </details>
-            </div>
-          </div> */}
-        </div>
+  {/* Sensor Data Table */}
+  <div className="table-responsive">
+    <table className="table table-bordered table-striped">
+      <thead className="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Value</th>
+          <th>Unit</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {machineData.data && machineData.data.length > 0 ? (
+          machineData.data.map((item, index) => (
+            <tr key={index}>
+              <td>{index + 1}</td>
+              <td>{item.code}</td>
+              <td>{item.name}</td>
+              <td>{item.value}</td>
+              <td>{item.unit || "-"}</td>
+              <td>
+                {new Date(item.timestamp).toLocaleString()}
+              </td>
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td colSpan="6" className="text-center text-muted">
+              No sensor data available
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
       </div>
     </div>
   );
