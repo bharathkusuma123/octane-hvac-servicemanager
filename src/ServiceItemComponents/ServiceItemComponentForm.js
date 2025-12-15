@@ -636,19 +636,17 @@ const ServiceItemComponentsForm = () => {
 
               <div className="col-md-4">
                 <label htmlFor="vendor_id" className="form-label">
-                  Vendor (optional)
+                  Vendor
                 </label>
-                <select
+                <input
+                  type="text"
                   id="vendor_id"
                   name="vendor_id"
-                  className="form-select"
+                  className="form-control"
                   value={formData.vendor_id}
                   onChange={handleChange}
-                >
-                  <option value="">Select Vendor</option>
-                  <option value="vendor1">Vendor 1</option>
-                  <option value="vendor2">Vendor 2</option>
-                </select>
+                  placeholder="Enter vendor name"
+                />
               </div>
 
               <div className="col-md-4">

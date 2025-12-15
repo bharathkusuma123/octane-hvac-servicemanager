@@ -1,0 +1,82 @@
+/* ViewContract.css */
+.card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  border-radius: 8px 8px 0 0 !important;
+  font-weight: 600;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  font-weight: 500;
+}
+
+.btn {
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Print styles */
+@media print {
+  .btn,
+  .card-header .btn {
+    display: none !important;
+  }
+  
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+  
+  .card {
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  
+  .card-header {
+    background-color: #fff !important;
+    color: #000 !important;
+    border-bottom: 2px solid #000 !important;
+  }
+  
+  h2, h6 {
+    color: #000 !important;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  .d-grid {
+    gap: 0.5rem;
+  }
+}

@@ -539,23 +539,13 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
       }
     };
 
-    // const fetchVendors = async () => {
-    //   try {
-    //     const response = await fetch(`${baseURL}/vendors/`);
-    //     const result = await response.json();
-    //     if (result.status === 'success' && Array.isArray(result.data)) {
-    //       setVendors(result.data);
-    //     } else {
-    //       console.error('Unexpected API response format for vendors:', result);
-    //     }
-    //   } catch (error) {
-    //     console.error('Error fetching vendors:', error);
-    //   }
-    // };
-
     if (addComponents) {
       fetchAvailableComponents();
-      // fetchVendors();
+      // Clear any existing components when option changes to 'yes'
+      setComponents([]);
+    } else {
+      // Clear components when option changes to 'no'
+      setComponents([]);
     }
   }, [addComponents]);
 
@@ -783,7 +773,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                 </select>
               </div>
 
-                {/* Customer */}
+              {/* Customer */}
               <div className="col-md-4">
                 <label className="form-label">Customer</label>
                 <select
@@ -814,8 +804,6 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                   rows={3}
                 ></textarea>
               </div>
-
-            
 
               {/* Location */}
               <div className="col-md-4">
@@ -935,8 +923,6 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                 </select>
               </div>
 
-            
-
               {/* Add Components Section with Two Checkboxes */}
               <div className="col-4">
                 <label className="form-label">Do you want to add service item components?</label>
@@ -980,6 +966,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                       <h6 className="mb-0">Service Item Components</h6>
                     </div>
                     <div className="card-body">
+                      {/* Show components if any exist */}
                       {components.map((component, index) => (
                         <div key={index} className="component-form mb-4 p-3 border rounded">
                           <div className="row g-3">
@@ -1034,25 +1021,16 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                               />
                             </div>
 
-<div className="col-md-4">
-  <label className="form-label">Vendor</label>
-  <select
-    className="form-control"
-    value={component.vendor_id || ''}
-    onChange={(e) => handleComponentChange(index, 'vendor_id', e.target.value)}
-    required
-  >
-    <option value="">Select Vendor</option>
-    <option value="VEND001">VEND001 - ABC Electronics</option>
-    <option value="VEND002">VEND002 - XYZ Components</option>
-    <option value="VEND003">VEND003 - Global Parts Ltd</option>
-    <option value="VEND004">VEND004 - Tech Suppliers Inc</option>
-    <option value="VEND005">VEND005 - Quality Hardware Co</option>
-    <option value="VEND006">VEND006 - Precision Instruments</option>
-    <option value="VEND007">VEND007 - Industrial Solutions</option>
-    <option value="VEND008">VEND008 - Mega Parts Corporation</option>
-  </select>
-</div>
+                            <div className="col-md-4">
+                              <label className="form-label">Vendor</label>
+                              <input
+                                type="text"
+                                className="form-control"
+                                value={component.vendor_id || ''}
+                                onChange={(e) => handleComponentChange(index, 'vendor_id', e.target.value)}
+                                placeholder="Enter vendor name or ID"
+                              />
+                            </div>
 
                             <div className="col-12">
                               <button
@@ -1067,13 +1045,24 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                         </div>
                       ))}
 
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={addNewComponent}
-                      >
-                        + Add Another Component
-                      </button>
+                      {/* Show appropriate button based on whether components exist */}
+                      {components.length === 0 ? (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          onClick={addNewComponent}
+                        >
+                          + Add Component
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          onClick={addNewComponent}
+                        >
+                          + Add Another Component
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

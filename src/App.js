@@ -36,6 +36,7 @@ import CustomerView from "./Customer/CustomerView";
 import ServiceItemDetails from "./ServiceItems/ServiceItemDetails";
 import ServiceItemMachineDetails from "./ServiceItems/ServiceItemMachineDetails";
 import RequestItemHistory from "./ServicePool/RequestItemHistory";
+import ViewContract from './ServiceItems/ViewContract';
 
 function App() {
   return (
@@ -163,6 +164,14 @@ function App() {
             element={
               <PanelLayout>
                 <ServiceContractForm />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/view-contract"
+            element={
+              <PanelLayout>
+                <ViewContract />
               </PanelLayout>
             }
           />

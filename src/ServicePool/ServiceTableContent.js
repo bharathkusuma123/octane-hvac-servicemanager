@@ -1027,6 +1027,7 @@ const ServiceTableContent = ({
         return 'badge bg-secondary';
     }
   };
+  
 
   // MAIN SEARCH FUNCTION - SEARCH ACROSS ALL COLUMNS
   const enhancedFilteredData = useMemo(() => {
@@ -1112,6 +1113,8 @@ const ServiceTableContent = ({
           
           // Column 11: Engineer Status
           engineerStatus,
+          engineerStatus?.toLowerCase(),
+
           // Engineer status variations
           ...(engineerStatus === 'Pending' ? ['pending', 'waiting'] : []),
           ...(engineerStatus === 'Accepted' ? ['accepted', 'approved'] : []),
