@@ -434,28 +434,39 @@ const ServiceItemMachineDetails = () => {
                   <th style={{width: '30%', borderColor: 'rgba(255,255,255,0.2)'}}>Timestamp</th>
                 </tr>
               </thead>
-              <tbody>
-                {machineData.data && machineData.data.length > 0 ? (
-                  machineData.data.map((item, index) => (
-                    <tr key={index}>
-                      <td style={{width: '5%'}}>{index + 1}</td>
-                      <td style={{width: '15%'}}>{item.code}</td>
-                      <td style={{width: '25%'}}>{item.name}</td>
-                      <td style={{width: '15%'}}>{item.value}</td>
-                      <td style={{width: '10%'}}>{item.unit || "-"}</td>
-                      <td style={{width: '30%'}}>
-                        {new Date(item.timestamp).toLocaleString()}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted">
-                      No sensor data available
-                    </td>
-                  </tr>
-                )}
-              </tbody>
+            <tbody>
+  {machineData.data && machineData.data.length > 0 ? (
+    machineData.data
+      // ❌ remove Error Code row
+      .filter(item => item.code !== "EC")
+      .map((item, index) => (
+        <tr key={index}>
+          <td>{index + 1}</td>
+          <td>{item.code}</td>
+          <td>{item.name}</td>
+
+          {/* ✅ VALUE COLUMN LOGIC */}
+          <td>
+            {item.code === "MD"
+              ? getModesBadge(item.value)
+              : item.code === "FS"
+              ? getfanspeedBadge(item.value)
+              : item.value}
+          </td>
+
+          <td>{item.unit || "-"}</td>
+          <td>{new Date(item.timestamp).toLocaleString()}</td>
+        </tr>
+      ))
+  ) : (
+    <tr>
+      <td colSpan="6" className="text-center text-muted">
+        No sensor data available
+      </td>
+    </tr>
+  )}
+</tbody>
+
             </table>
           </div>
         </div>
