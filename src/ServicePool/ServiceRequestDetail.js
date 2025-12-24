@@ -1062,7 +1062,7 @@ const ServiceRequestDetail = () => {
       </div>
 
       {/* Tab Content */}
-      <div className="tab-content">
+      <div className="pool-tab-content">
         {activeTab === 'requestDetails' && (
           <div className="request-details-section">
             <h3 className="section-title">Service Request Information</h3>
