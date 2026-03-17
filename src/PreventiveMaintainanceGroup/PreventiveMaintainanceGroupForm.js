@@ -93,7 +93,7 @@
 
 
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import baseURL from '../ApiUrl/Apiurl';
 import Swal from 'sweetalert2';
 
@@ -111,6 +111,14 @@ const PMGroupForm = ({ fetchPmGroups, toggleForm, initialData = {} }) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+  setFormData({
+    pm_group_id: initialData.pm_group_id || '',
+    pm_group_name: initialData.pm_group_name || '',
+    series: initialData.series || ''
+  });
+}, [initialData]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

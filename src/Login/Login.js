@@ -7,7 +7,7 @@ import baseURL from '../ApiUrl/Apiurl';
 import  Notification_Url from "../ApiUrl/PushNotificanURL";
 import { generateToken } from "../Firebase/Firebase";
 
-const Login = () => {
+const Login = () => { 
   const [username, setUsername] = useState(""); 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -93,6 +93,7 @@ const Login = () => {
       setShowPassword={setShowPassword}
       handleSubmit={handleSubmit}
       error={error}
+      navigate={navigate}   // ✅ Added
     />
   );
 };

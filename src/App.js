@@ -37,6 +37,9 @@ import ServiceItemDetails from "./ServiceItems/ServiceItemDetails";
 import ServiceItemMachineDetails from "./ServiceItems/ServiceItemMachineDetails";
 import RequestItemHistory from "./ServicePool/RequestItemHistory";
 import ViewContract from './ServiceItems/ViewContract';
+import Signup from "./Login/Signup";
+import ForgotPassword from "./Login/ForgotPassword";
+import AdminResetPasswordScreen from "./Login/ResetPassword";
 
 function App() {
   return (
@@ -45,8 +48,11 @@ function App() {
         <Routes>
           <Route path="/contact-api" element={<ContactPage />} />
           <Route path="/" element={<ServiceManagerLogin />} />
-          <Route path="/signup" element={<SignUpScreen />} />
-          <Route path="/signupset-password-screen" element={<SignupSetPassword />} />
+          {/* <Route path="/signup" element={<SignUpScreen />} /> */}
+          {/* <Route path="/signupset-password-screen" element={<SignupSetPassword />} /> */}
+           <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<AdminResetPasswordScreen />} />
           
           <Route
             path="/servicemanager/new-customer"

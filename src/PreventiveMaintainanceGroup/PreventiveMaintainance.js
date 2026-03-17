@@ -462,8 +462,10 @@ const PreventiveMaintenance = () => {
   }, [searchTerm, pmGroups, users]);
 
   const toggleForm = () => {
-    setShowForm(!showForm);
-  };
+  setShowForm(false);
+  setSelectedGroup(null); // 👈 RESET WHEN GOING BACK
+};
+
 
   const handleEdit = (group) => {
     setSelectedGroup(group);
@@ -479,7 +481,16 @@ const PreventiveMaintenance = () => {
               <h2 className="pm-title">Preventive Maintenance Group</h2>
               <p className="pm-subtitle">Manage preventive maintenance groups</p>
             </div>
-            <button onClick={toggleForm} className="btn btn-primary">Add New PM Group</button>
+            <button
+  onClick={() => {
+    setSelectedGroup(null);   // 👈 RESET EDIT DATA
+    setShowForm(true);
+  }}
+  className="btn btn-primary"
+>
+  Add New PM Group
+</button>
+
           </div>
           <PMGroupTable
             filteredGroups={filteredGroups}

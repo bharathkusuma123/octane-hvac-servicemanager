@@ -117,23 +117,29 @@ const LoginCard = ({
   username,
   password,
   showPassword,
-  loading, // Added loading prop
+  loading,
   setUsername,
   setPassword,
   setShowPassword,
   handleSubmit,
   error,
 }) => {
+
   const navigate = useNavigate();
 
   return (
     <div className="d-flex align-items-center justify-content-center min-vh-100">
       <Container className="mt-3">
         <Row className="justify-content-center">
+
           <Col md={6} lg={5} xl={4}>
+
             <div className="login-card-container">
+
               <Card className="shadow">
+
                 <Card.Body>
+
                   <div className="text-center mb-4">
                     <img
                       src={logo}
@@ -146,45 +152,69 @@ const LoginCard = ({
                   {error && <Alert variant="danger">{error}</Alert>}
 
                   <Form onSubmit={handleSubmit}>
-                    <Form.Group className="mb-1">
+
+                    <Form.Group className="mb-3">
                       <Form.Label>Username</Form.Label>
+
                       <Form.Control
                         type="text"
                         placeholder="Enter username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
-                        disabled={loading} // Disable during loading
+                        disabled={loading}
                       />
+
                     </Form.Group>
 
-                    <Form.Group className="mb-1">
+                    <Form.Group className="mb-2">
+
                       <Form.Label>Password</Form.Label>
+
                       <InputGroup>
+
                         <Form.Control
                           type={showPassword ? "text" : "password"}
                           placeholder="Password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
-                          disabled={loading} // Disable during loading
+                          disabled={loading}
                         />
+
                         <Button
                           variant="outline-secondary"
                           onClick={() => setShowPassword(!showPassword)}
-                          disabled={loading} // Disable during loading
+                          disabled={loading}
                         >
                           {showPassword ? <EyeSlashFill /> : <EyeFill />}
                         </Button>
+
                       </InputGroup>
+
                     </Form.Group>
 
+                    {/* Forgot Password */}
+
+                    <div className="text-end mb-3">
+
+                      <span
+                        className="forgot"
+                        style={{ cursor: "pointer", color: "#0096D6" }}
+                        onClick={() => navigate("/forgot-password")}
+                      >
+                        Forgot Password?
+                      </span>
+
+                    </div>
+
                     <Button
-                      style={{backgroundColor:'#0096D6'}}
+                      style={{ backgroundColor: "#0096D6" }}
                       type="submit"
-                      className="loginButton shadow"
-                      disabled={loading} // Disable during loading
+                      className="loginButton shadow w-100"
+                      disabled={loading}
                     >
+
                       {loading ? (
                         <>
                           <Spinner
@@ -200,24 +230,35 @@ const LoginCard = ({
                       ) : (
                         "Login"
                       )}
+
                     </Button>
 
-                    {/* <p className="orText text-center mt-3 mb-1">Or</p> */}
-                    {/* <p className="registerText text-center">
-                      Don't have an account?{' '}
-                      <span 
-                        className="registerLink" 
-                        style={{color: '#0096D6', cursor: 'pointer'}}
-                        onClick={() => navigate('/signup')}
-                      >
-                        Register
-                      </span>
-                    </p> */}
                   </Form>
+
+                  {/* First Time Login */}
+
+                  <p className="registerText text-center mt-3">
+
+                    First time login?{" "}
+
+                    <span
+                      className="registerLink"
+                      style={{ cursor: "pointer", color: "#0096D6" }}
+                      onClick={() => navigate("/signup")}
+                    >
+                      Set your security questions
+                    </span>
+
+                  </p>
+
                 </Card.Body>
+
               </Card>
+
             </div>
+
           </Col>
+
         </Row>
       </Container>
     </div>

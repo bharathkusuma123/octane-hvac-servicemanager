@@ -566,7 +566,7 @@ import ChartTable from "./PreventiveMaintainanceChartTable";
 import ChartForm from "./PreventiveMaintainanceChartForm";
 import "./PreventiveMaintainanceChart.css";
 import baseURL from '../ApiUrl/Apiurl';
-import Swal from 'sweetalert2';
+import Swal from 'sweetalert2'; 
 
 const PreventiveMaintainanceChart = () => {
   const [showForm, setShowForm] = useState(false);
@@ -647,10 +647,28 @@ const PreventiveMaintainanceChart = () => {
     return user ? `${userId} ${user.username}` : userId;
   };
 
-  const toggleForm = () => {
-    setShowForm(!showForm);
-    setSelectedChart(null);
-  };
+ const resetForm = () => {
+  setSelectedChart(null);
+  setFormData({
+    pm_group: "",
+    pm_id: "",
+    description: "",
+    task_type: "",
+    frequency_days: "",
+    alert_days: "",
+    overdue_alert_days: "",
+    responsible: "",
+    remarks: "",
+    created_by: "Service Manager",
+    updated_by: "Service Manager",
+  });
+};
+
+const toggleForm = () => {
+  setShowForm(false);
+  resetForm();
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -958,7 +976,29 @@ const PreventiveMaintainanceChart = () => {
             <h2 className="pm-title">Preventive Maintenance Chart</h2>
             <p className="pm-subtitle">Create and manage maintenance tasks and schedules</p>
           </div>
-          <button onClick={toggleForm} className="btn btn-primary">Add New Chart</button>
+          <button
+  onClick={() => {
+    setSelectedChart(null);
+    setFormData({
+      pm_group: "",
+      pm_id: "",
+      description: "",
+      task_type: "",
+      frequency_days: "",
+      alert_days: "",
+      overdue_alert_days: "",
+      responsible: "",
+      remarks: "",
+      created_by: "Service Manager",
+      updated_by: "Service Manager",
+    });
+    setShowForm(true);
+  }}
+  className="btn btn-primary"
+>
+  Add New Chart
+</button>
+
         </div>
       )}
 
