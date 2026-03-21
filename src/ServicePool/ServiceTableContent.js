@@ -1509,7 +1509,8 @@ const ServiceTableContent = ({
                             }}
                             title={`View Customer Details: ${customerId}`}
                           >
-                            {customerName}
+                            {/* {customerName} */}
+                              {customerName} {customerId && `(${customerId})`}
                           </button>
                         );
                       })()}
@@ -1553,9 +1554,42 @@ const ServiceTableContent = ({
                         {item.status}
                       </span>
                     </td>
-                    <td title={`ID: ${item.assigned_engineer}`}>
+                    {/* <td title={`ID: ${item.assigned_engineer}`}>
                       {item.assigned_engineer ? getResourceName(item.assigned_engineer) : "N/A"}
-                    </td>
+                    </td> */}
+                    <td title={`ID: ${item.assigned_engineer}`}>
+  {item.assigned_engineer ? (
+    <button 
+      className="btn btn-link p-0 text-primary text-decoration-underline"
+      onClick={() => {
+        // Get the engineer's full name
+        const engineerFullName = getResourceName(item.assigned_engineer);
+        
+        navigate(`/servicemanager/resource-view/${item.assigned_engineer}`, { 
+          state: { 
+            resourceId: item.assigned_engineer,
+            resourceName: engineerFullName,
+            selectedCompany: selectedCompany,
+            userId: userId,
+            fromServicePool: true
+          } 
+        });
+      }}
+      style={{
+        color: '#0d6efd',
+        textDecoration: 'underline',
+        border: 'none',
+        background: 'none',
+        cursor: 'pointer',
+        fontSize: 'inherit',
+        padding: 0
+      }}
+      title={`View Resource Details: ${getResourceName(item.assigned_engineer)}`}
+    >
+      {getResourceName(item.assigned_engineer)} ({item.assigned_engineer})
+    </button>
+  ) : "N/A"}
+</td>
                     <td>
                       <span className={getEngineerStatusBadgeClass(engineerStatus)}>
                         {engineerStatus}

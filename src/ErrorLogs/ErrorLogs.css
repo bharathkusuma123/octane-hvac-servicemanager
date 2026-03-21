@@ -1,0 +1,269 @@
+/* ErrorLogs.css */
+
+/* Container */
+.error-logs-container {
+  padding: 0 15px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Buttons */
+.btn-raise-request {
+  padding: 8px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.btn-raise-request:hover {
+  background-color: #0056b3;
+}
+
+.btn-raise-request.mobile {
+  width: 100%;
+  padding: 10px;
+}
+
+/* Mobile Card Styles */
+.mobile-error-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.mobile-error-card.high-priority {
+  border-left: 4px solid #dc3545;
+}
+
+.mobile-error-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.mobile-error-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mobile-error-sno {
+  font-size: 12px;
+  color: #666;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.mobile-pcb-serial {
+  font-size: 14px;
+  color: #333;
+  word-break: break-word;
+}
+
+.mobile-error-body {
+  margin-bottom: 12px;
+}
+
+.mobile-error-row {
+  display: flex;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.mobile-error-label {
+  width: 80px;
+  font-size: 12px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.mobile-error-value {
+  flex: 1;
+  font-size: 13px;
+  color: #333;
+  word-break: break-word;
+}
+
+.mobile-error-value.description {
+  color: #555;
+  line-height: 1.4;
+}
+
+.mobile-error-value.small {
+  font-size: 11px;
+  color: #888;
+}
+
+.mobile-error-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+/* Table Styles */
+.error-description-cell {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1200px) {
+  .error-description-cell {
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 992px) {
+  .error-description-cell {
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .error-logs-container {
+    padding: 0 10px;
+  }
+  
+  .header-title-section {
+    margin-bottom: 10px;
+    width: 100%;
+  }
+  
+  .error-logs-title {
+    font-size: 1.5rem;
+  }
+  
+  .error-logs-subtitle {
+    font-size: 0.875rem;
+  }
+  
+  .header-actions {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .mobile-search-section {
+    margin-top: 10px;
+    width: 100%;
+  }
+  
+  .mobile-entries-select {
+    width: 100%;
+    margin-top: 10px;
+  }
+  
+  .mobile-entries-select select {
+    width: 100%;
+  }
+  
+  .row.mb-4 {
+    margin-bottom: 1rem !important;
+  }
+  
+  .g-3 {
+    gap: 0.5rem !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .error-logs-container {
+    padding: 0 8px;
+  }
+  
+  .btn-raise-request {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .mobile-error-label {
+    width: 70px;
+    font-size: 11px;
+  }
+  
+  .mobile-error-value {
+    font-size: 12px;
+  }
+  
+  .badge {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+  
+  .page-link {
+    padding: 0.3rem 0.6rem;
+    font-size: 12px;
+  }
+}
+
+/* Fix for very small screens */
+@media (max-width: 360px) {
+  .mobile-error-row {
+    flex-direction: column;
+  }
+  
+  .mobile-error-label {
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  
+  .mobile-error-value {
+    width: 100%;
+  }
+  
+  .mobile-error-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Utility Classes */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+/* Fix for Bootstrap Grid */
+@media (max-width: 768px) {
+  .container-fluid, .container {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .row {
+    margin-left: -5px;
+    margin-right: -5px;
+  }
+  
+  [class*="col-"] {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}

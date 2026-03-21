@@ -42,6 +42,7 @@ import ForgotPassword from "./Login/ForgotPassword";
 import AdminResetPasswordScreen from "./Login/ResetPassword";
 import CustomerResetPassword from "./Customer/CustomerResetPassword";
 
+import ResourceView from './ServicePool/ResourceView'; 
 function App() {
   return (
     <AuthProvider>
@@ -74,6 +75,13 @@ function App() {
            <Route path="/servicemanager/customers/:customerId" element={
               <PanelLayout>
                  <CustomerView />
+              </PanelLayout>
+           
+          } 
+            />
+                <Route path="/servicemanager/resource-view/:resourceId" element={
+              <PanelLayout>
+                 <ResourceView />
               </PanelLayout>
            
           } 
