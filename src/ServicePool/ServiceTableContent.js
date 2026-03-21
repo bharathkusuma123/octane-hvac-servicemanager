@@ -1573,13 +1573,19 @@ const ServiceTableContent = ({
 
                       {/* VIEW ICON BUTTON */}
                       <button
-                        className="btn btn-sm btn-outline-primary"
-                        style={{ marginLeft: "6%" }}  // small gap
-                        onClick={() => navigate(`/servicemanager/request-item-history/${item.request_id}`)}
-                        title="View History"
-                      >
-                        <FaEye size={16} />
-                      </button>
+  className="btn btn-sm btn-outline-primary"
+  style={{ marginLeft: "6%" }}
+  onClick={() => navigate(`/servicemanager/request-item-history/${item.request_id}`, {
+    state: {
+      customerId: getCustomerFromServiceItem(item.service_item),
+      serviceItem: item.service_item,
+      location: serviceItemDetails.location || "Location not found"
+    }
+  })}
+  title="View History"
+>
+  <FaEye size={16} />
+</button>
 
                     </td>
                     <td>

@@ -235,7 +235,7 @@ const ChartForm = ({ formData, handleChange, handleSubmit, pmGroups, toggleForm 
                   <option value="">Select Task Type</option>
                   <option value="Replace">Replace</option>
                   <option value="Clean">Clean</option>
-                  <option value="Tighten">Top-up</option>
+                  <option value="Top-up">Top-up</option>
                 </select>
               </div>
 

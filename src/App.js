@@ -40,6 +40,7 @@ import ViewContract from './ServiceItems/ViewContract';
 import Signup from "./Login/Signup";
 import ForgotPassword from "./Login/ForgotPassword";
 import AdminResetPasswordScreen from "./Login/ResetPassword";
+import CustomerResetPassword from "./Customer/CustomerResetPassword";
 
 function App() {
   return (
@@ -59,6 +60,14 @@ function App() {
             element={
               <PanelLayout>
                 <NewCustomer />
+              </PanelLayout>
+            }
+          />
+           <Route
+            path="/servicemanager/customers/:customerId/reset-password"
+            element={
+              <PanelLayout>
+                <CustomerResetPassword />
               </PanelLayout>
             }
           />

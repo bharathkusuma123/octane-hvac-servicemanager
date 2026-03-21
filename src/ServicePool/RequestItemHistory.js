@@ -226,7 +226,7 @@
 
 
 import React, { useContext, useEffect, useState, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { FaEye, FaTrashAlt, FaEdit } from "react-icons/fa";
 import baseURL from "../ApiUrl/Apiurl";
 import { AuthContext } from "../AuthContext/AuthContext";
@@ -237,6 +237,9 @@ const RequestItemHistory = () => {
   console.log("Request ID from URL:", request_id);
   const { userId } = useContext(AuthContext);
   const { selectedCompany } = useCompany();
+const location = useLocation();
+const navigate = useNavigate();
+const { customerId, serviceItem, location: itemLocation } = location.state || {};
 
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
@@ -678,6 +681,9 @@ const RequestItemHistory = () => {
             <tr>
               <th>S.No</th>
               <th>SR Item ID</th>
+              <th>Customer ID</th>
+              <th>Service Item ID</th>
+              <th>Location</th>
               <th>Service Request</th>
               <th>Component Type</th>
               <th>Component</th>
@@ -698,6 +704,28 @@ const RequestItemHistory = () => {
                 <tr key={item.sr_item_id || index}>
                   <td>{indexOfFirst + index + 1}</td>
                   <td>{item.sr_item_id}</td>
+                <td>
+  <button
+    className="btn btn-link p-0 text-primary text-decoration-underline"
+    onClick={() => navigate(`/servicemanager/customers/${customerId}`)}
+    style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 'inherit' }}
+    title={`View Customer: ${customerId}`}
+  >
+    {customerId || '-'}
+  </button>
+</td>
+
+<td>
+  <button
+    className="btn btn-link p-0 text-primary text-decoration-underline"
+    onClick={() => navigate(`/servicemanager/service-item-details/${serviceItem}`)}
+    style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 'inherit' }}
+    title={`View Service Item: ${serviceItem}`}
+  >
+    {serviceItem || '-'}
+  </button>
+</td>
+                  <td>{itemLocation || '-'}</td>
                   <td title={`Service Request ID: ${item.service_request}`}>
                     {item.service_request}
                   </td>

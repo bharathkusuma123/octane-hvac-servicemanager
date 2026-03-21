@@ -937,7 +937,7 @@ import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
-import { FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
+import { FaTrashAlt, FaEdit, FaEye, FaKey } from 'react-icons/fa';
 
 const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
   const [customers, setCustomers] = useState([]);
@@ -951,8 +951,7 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
   const { selectedCompany } = useCompany();
   const { userId } = useContext(AuthContext);
   const navigate = useNavigate();
-
-  // Fetch companies data
+ 
   const fetchCompanies = async () => {
     try {
       const response = await axios.get(`${baseURL}/companies/`);
@@ -963,25 +962,22 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
       console.error("Failed to load companies data", error);
     }
   };
-
+ 
   const getCompanyDisplayName = (companyId) => {
     if (!companiesData || companiesData.length === 0) return companyId;
-    
     const company = companiesData.find(comp => comp.company_id === companyId);
-    if (company) {
-      return `${company.company_name} (${company.company_id})`;
-    }
-    return companyId;
+    return company ? `${company.company_name} (${company.company_id})` : companyId;
   };
-
+ 
   const getCompanySearchData = (companyId) => {
     if (!companyId) return '';
     if (!companiesData || companiesData.length === 0) return companyId;
-    
     const company = companiesData.find(comp => comp.company_id === companyId);
-    return company ? `${company.company_id} ${company.company_name} ${company.company_name} (${company.company_id})` : companyId;
+    return company
+      ? `${company.company_id} ${company.company_name} ${company.company_name} (${company.company_id})`
+      : companyId;
   };
-
+ 
   const fetchCustomers = async () => {
     setLoading(true);
     setError(null);
@@ -990,7 +986,6 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
         setError('Missing user ID or company ID');
         return;
       }
-      
       const response = await axios.get(
         `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
       );
@@ -1002,17 +997,14 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
       console.error('Error fetching customer data:', error);
       setError('Failed to load customers');
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
-
+ 
   useEffect(() => {
-    fetchCompanies().then(() => {
-      fetchCustomers();
-    });
+    fetchCompanies().then(() => fetchCustomers());
   }, [selectedCompany, userId]);
-
-  // Function to format date for display
+ 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -1021,14 +1013,11 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
-
-  // Function to format date in multiple formats for search
+ 
   const formatDateForSearch = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    
     if (isNaN(date.getTime())) return '';
-    
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
@@ -1037,28 +1026,25 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     const hour = date.getHours().toString().padStart(2, '0');
     const minute = date.getMinutes().toString().padStart(2, '0');
     const second = date.getSeconds().toString().padStart(2, '0');
-    
-    // Return multiple formats for better searchability
     return [
-      `${day}/${month}/${year}`,                    // DD/MM/YYYY
-      `${day}/${month}/${year} ${hour}:${minute}:${second}`, // DD/MM/YYYY HH:MM:SS
-      `${month}/${day}/${year}`,                    // MM/DD/YYYY
-      `${year}-${month}-${day}`,                    // YYYY-MM-DD
-      `${year}${month}${day}`,                      // YYYYMMDD
-      `${day}-${month}-${year}`,                    // DD-MM-YYYY
-      date.toISOString(),                           // ISO string
-      monthName,                                    // January, February
-      monthShort,                                   // Jan, Feb
-      `${year}`,                                    // 2024
-      `${month}/${year}`,                           // MM/YYYY
-      `${day} ${monthName} ${year}`,               // 15 January 2024
-      `${day} ${monthShort} ${year}`,              // 15 Jan 2024
-      `${hour}:${minute}`,                          // HH:MM
-      `${hour}:${minute}:${second}`,               // HH:MM:SS
+      `${day}/${month}/${year}`,
+      `${day}/${month}/${year} ${hour}:${minute}:${second}`,
+      `${month}/${day}/${year}`,
+      `${year}-${month}-${day}`,
+      `${year}${month}${day}`,
+      `${day}-${month}-${year}`,
+      date.toISOString(),
+      monthName,
+      monthShort,
+      `${year}`,
+      `${month}/${year}`,
+      `${day} ${monthName} ${year}`,
+      `${day} ${monthShort} ${year}`,
+      `${hour}:${minute}`,
+      `${hour}:${minute}:${second}`,
     ].join(' ');
   };
-
-  // Enhanced global search functionality
+ 
   useEffect(() => {
     if (!searchTerm.trim()) {
       let results = customers;
@@ -1069,25 +1055,17 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
       setCurrentPage(1);
       return;
     }
-
+ 
     const searchLower = searchTerm.toLowerCase().trim();
-    
+ 
     const filtered = customers.filter((customer) => {
-      // Filter by company first
-      if (selectedCompany && customer.company !== selectedCompany) {
-        return false;
-      }
-
-      // Get company data for search
+      if (selectedCompany && customer.company !== selectedCompany) return false;
+ 
       const companySearchData = getCompanySearchData(customer.company);
-      
-      // Get dates in multiple formats for search
       const createdDateFormats = formatDateForSearch(customer.created_at);
       const updatedDateFormats = formatDateForSearch(customer.updated_at);
-      
-      // Create a comprehensive search string
+ 
       const searchableText = [
-        // Raw customer data
         customer.customer_id || '',
         customer.company || '',
         customer.full_name || '',
@@ -1099,149 +1077,98 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
         customer.status || '',
         customer.created_at || '',
         customer.updated_at || '',
-        customer.created_by || '',
-        customer.updated_by || '',
         customer.telephone || '',
         customer.address || '',
         customer.country_code || '',
         customer.remarks || '',
-        customer.security_question1 || '',
-        customer.security_question2 || '',
-        customer.answer1 || '',
-        customer.answer2 || '',
-        
-        // Formatted company data for search
         companySearchData,
-        
-        // Dates in multiple formats
         createdDateFormats,
         updatedDateFormats,
-        
-        // Display values (exactly as shown in table)
         formatDate(customer.created_at),
         getCompanyDisplayName(customer.company),
-        
-        // Status with badge text multiple times for better search
-        customer.status === 'Active' ? 'Active Active Active' : '',
-        customer.status === 'Inactive' ? 'Inactive Inactive Inactive' : '',
-        customer.status === 'Pending' ? 'Pending Pending Pending' : '',
-        customer.status === 'Suspended' ? 'Suspended Suspended Suspended' : '',
-        
-        // Customer type variations
-        customer.customer_type === 'Individual' ? 'Individual person personal' : '',
-        customer.customer_type === 'Corporate' ? 'Corporate business company organization' : '',
-        customer.customer_type === 'Government' ? 'Government govt public sector' : '',
-        
-        // Country variations
-        customer.country_code === 'KSA' ? 'KSA Saudi Arabia Kingdom' : '',
-        customer.country_code === 'UAE' ? 'UAE United Arab Emirates Emirates' : '',
-        customer.country_code === 'IND' ? 'IND India Indian' : '',
-        
-        // City variations
-        customer.city ? `city ${customer.city}` : '',
-        
-        // Email username variations (without domain)
         customer.email ? customer.email.split('@')[0] : '',
-        
-        // Mobile number variations (without country code if present)
         customer.mobile ? customer.mobile.replace(/[+\s-]/g, '') : '',
-        customer.mobile ? customer.mobile.replace(/\D/g, '') : '',
-        
-        // Name variations (for partial matching)
-        customer.full_name ? customer.full_name.toLowerCase().split(' ').join(' ') : '',
         customer.full_name ? customer.full_name.toLowerCase().replace(/\s+/g, '') : '',
-        customer.username ? customer.username.toLowerCase().replace(/\s+/g, '') : '',
-        
-        // Company name variations
-        getCompanyDisplayName(customer.company).toLowerCase(),
-        
-        // Add any other properties that might exist
-        ...Object.values(customer).filter(val => 
-          val !== null && val !== undefined
-        ).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') {
-            return String(val);
-          }
-          if (typeof val === 'boolean') {
-            return val ? 'true yes active' : 'false no inactive';
-          }
-          if (Array.isArray(val)) {
-            return val.join(' ');
-          }
-          if (typeof val === 'object' && val !== null) {
-            return JSON.stringify(val);
-          }
+        ...Object.values(customer).filter(val => val !== null && val !== undefined).map(val => {
+          if (typeof val === 'string' || typeof val === 'number') return String(val);
+          if (typeof val === 'boolean') return val ? 'true yes active' : 'false no inactive';
+          if (Array.isArray(val)) return val.join(' ');
+          if (typeof val === 'object' && val !== null) return JSON.stringify(val);
           return '';
         })
       ]
-      .join(' ')                    // Combine into one string
-      .toLowerCase()                // Make case-insensitive
-      .replace(/\s+/g, ' ')         // Normalize spaces
-      .trim();
-      
+        .join(' ')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+ 
       return searchableText.includes(searchLower);
     });
-    
+ 
     setFilteredCustomers(filtered);
     setCurrentPage(1);
   }, [searchTerm, customers, companiesData, selectedCompany]);
-
+ 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
   const currentEntries = filteredCustomers.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredCustomers.length / entriesPerPage);
-
+ 
   const handleDeleteCustomer = (customerId) => {
     if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
       axios
         .delete(`${baseURL}/customers/${customerId}/?user_id=${userId}&company_id=${selectedCompany}`)
-        .then(response => {
-          console.log("Customer deleted successfully", response);
+        .then(() => {
           alert('Customer deleted successfully');
           fetchCustomers();
         })
-        .catch(error => {
-          console.error("Error deleting customer:", error);
-          alert("Failed to delete customer. Please try again.");
-        });
+        .catch(() => alert("Failed to delete customer. Please try again."));
     }
   };
-
+ 
   const handleViewCustomer = (customer) => {
-    navigate(`/servicemanager/customers/${customer.customer_id}`, { 
-      state: { 
-        selectedCompany: selectedCompany, 
-        userId: userId 
-      } 
+    navigate(`/servicemanager/customers/${customer.customer_id}`, {
+      state: { selectedCompany, userId },
     });
   };
-
+ 
   const handleCustomerIdClick = (customerId) => {
-    navigate(`/servicemanager/customers/${customerId}`, { 
-      state: { 
-        selectedCompany: selectedCompany, 
-        userId: userId 
-      } 
+    navigate(`/servicemanager/customers/${customerId}`, {
+      state: { selectedCompany, userId },
     });
   };
-
+ 
+  // ── NEW: Navigate to Reset Password page, passing customer data ──────────
+  const handleResetPassword = (customer) => {
+    navigate(`/servicemanager/customers/${customer.customer_id}/reset-password`, {
+      state: {
+        customer,           // full customer object (has mobile, security_question1/2, answer1/2)
+        selectedCompany,
+        userId,
+      },
+    });
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+ 
   if (loading) return <div className="text-center my-4">Loading customers...</div>;
   if (error) return <div className="alert alert-danger my-4">{error}</div>;
-
+ 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
         <div>
           <h2 className="customer-title mb-0">Customers</h2>
           <p className="customer-subtitle mb-0 text-muted">
-            {selectedCompany ? `Showing customers for ${getCompanyDisplayName(selectedCompany)}` : 'Showing all customers'}
+            {selectedCompany
+              ? `Showing customers for ${getCompanyDisplayName(selectedCompany)}`
+              : 'Showing all customers'}
           </p>
         </div>
         <button onClick={toggleForm} className="btn btn-primary">
           Add New Customer
         </button>
       </div>
-      
+ 
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
         <div className="d-flex align-items-center gap-2">
           Show
@@ -1256,7 +1183,7 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
           </select>
           entries
         </div>
-
+ 
         <div className="d-flex align-items-center gap-2">
           <input
             type="text"
@@ -1267,23 +1194,19 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
             style={{ minWidth: '250px' }}
           />
           {searchTerm && (
-            <button 
-              className="btn btn-sm btn-outline-secondary"
-              onClick={() => setSearchTerm('')}
-            >
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => setSearchTerm('')}>
               Clear
             </button>
           )}
         </div>
       </div>
-
-      {/* Search Results Info */}
+ 
       {searchTerm && (
         <div className="alert alert-info mb-3">
           <strong>Search Results:</strong> Found {filteredCustomers.length} customer(s) matching "{searchTerm}"
         </div>
       )}
-
+ 
       <div className="table-responsive mb-4">
         <table className="table">
           <thead className="new-customer-table-header">
@@ -1299,6 +1222,7 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
               <th>Type</th>
               <th>Status</th>
               <th>Created At</th>
+              <th>Reset Password</th>  {/* ── NEW column header ── */}
               <th>Actions</th>
             </tr>
           </thead>
@@ -1308,17 +1232,10 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
                 <tr key={index}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>
-                    <button 
+                    <button
                       className="btn btn-link p-0 text-primary text-decoration-underline"
                       onClick={() => handleCustomerIdClick(customer.customer_id)}
-                      style={{
-                        color: '#0d6efd',
-                        textDecoration: 'underline',
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        fontSize: 'inherit'
-                      }}
+                      style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 'inherit' }}
                       title="View Customer Details"
                     >
                       {customer.customer_id}
@@ -1343,32 +1260,34 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
                     </span>
                   </td>
                   <td>{formatDate(customer.created_at)}</td>
+ 
+                  {/* ── NEW: Reset Password cell ── */}
+                  <td>
+                    <button
+                      className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+                      onClick={() => handleResetPassword(customer)}
+                      title={`Reset password for ${customer.full_name}`}
+                    >
+                      <FaKey size={12} />
+                      Reset Password
+                    </button>
+                  </td>
+                  {/* ── END NEW ── */}
+ 
                   <td>
                     <div className="d-flex gap-2">
-                      <FaEye 
-                        style={{ 
-                          color: "#0d6efd", 
-                          cursor: "pointer",
-                          fontSize: "18px"
-                        }}
+                      <FaEye
+                        style={{ color: "#0d6efd", cursor: "pointer", fontSize: "18px" }}
                         onClick={() => handleViewCustomer(customer)}
                         title="View Customer"
                       />
-                      <FaEdit 
-                        style={{ 
-                          color: "#ffc107", 
-                          cursor: "pointer",
-                          fontSize: "18px"
-                        }}
+                      <FaEdit
+                        style={{ color: "#ffc107", cursor: "pointer", fontSize: "18px" }}
                         onClick={() => onEditCustomer(customer)}
                         title="Edit Customer"
                       />
-                      <FaTrashAlt 
-                        style={{ 
-                          color: "#dc3545", 
-                          cursor: "pointer",
-                          fontSize: "18px"
-                        }}
+                      <FaTrashAlt
+                        style={{ color: "#dc3545", cursor: "pointer", fontSize: "18px" }}
                         onClick={() => handleDeleteCustomer(customer.customer_id)}
                         title="Delete Customer"
                       />
@@ -1378,71 +1297,48 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
               ))
             ) : (
               <tr>
-                <td colSpan="12" className="text-center">
-                  {searchTerm 
+                <td colSpan="13" className="text-center">
+                  {searchTerm
                     ? `No customers found matching "${searchTerm}"`
-                    : selectedCompany 
-                      ? `No customers found for ${getCompanyDisplayName(selectedCompany)}`
-                      : 'No customers found'}
+                    : selectedCompany
+                    ? `No customers found for ${getCompanyDisplayName(selectedCompany)}`
+                    : 'No customers found'}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-
+ 
       {totalPages > 1 && (
         <nav aria-label="Page navigation">
           <ul className="pagination justify-content-center">
             <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-              <button
-                className="page-link"
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
+              <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
                 Previous
               </button>
             </li>
-
             {(() => {
               const maxVisiblePages = 5;
               let pageNumbers = [];
-              
               if (totalPages <= maxVisiblePages) {
-                for (let i = 1; i <= totalPages; i++) {
-                  pageNumbers.push(i);
-                }
+                for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
               } else {
                 let startPage = Math.max(1, currentPage - 2);
                 let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-                
                 if (endPage - startPage + 1 < maxVisiblePages) {
                   startPage = Math.max(1, endPage - maxVisiblePages + 1);
                 }
-                
-                for (let i = startPage; i <= endPage; i++) {
-                  pageNumbers.push(i);
-                }
+                for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
               }
-              
               return pageNumbers.map((page) => (
-                <li
-                  key={page}
-                  className={`page-item ${currentPage === page ? "active" : ""}`}
-                >
-                  <button className="page-link" onClick={() => setCurrentPage(page)}>
-                    {page}
-                  </button>
+                <li key={page} className={`page-item ${currentPage === page ? "active" : ""}`}>
+                  <button className="page-link" onClick={() => setCurrentPage(page)}>{page}</button>
                 </li>
               ));
             })()}
-
             <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-              <button
-                className="page-link"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
+              <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
                 Next
               </button>
             </li>
