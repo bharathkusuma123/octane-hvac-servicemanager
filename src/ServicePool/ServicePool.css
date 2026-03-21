@@ -1003,3 +1003,31 @@ h2 {
     border-bottom-color: transparent;
   }
 }
+
+
+
+/* Media files styling */
+.media-files-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.media-item {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.image-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.image-preview img {
+  transition: opacity 0.3s ease;
+}
+
+.image-preview img:hover {
+  opacity: 0.8;
+}

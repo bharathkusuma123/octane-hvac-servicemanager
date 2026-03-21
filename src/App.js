@@ -40,7 +40,7 @@ import ViewContract from './ServiceItems/ViewContract';
 import Signup from "./Login/Signup";
 import ForgotPassword from "./Login/ForgotPassword";
 import AdminResetPasswordScreen from "./Login/ResetPassword";
-
+import ResourceView from './ServicePool/ResourceView'; 
 function App() {
   return (
     <AuthProvider>
@@ -65,6 +65,13 @@ function App() {
            <Route path="/servicemanager/customers/:customerId" element={
               <PanelLayout>
                  <CustomerView />
+              </PanelLayout>
+           
+          } 
+            />
+                <Route path="/servicemanager/resource-view/:resourceId" element={
+              <PanelLayout>
+                 <ResourceView />
               </PanelLayout>
            
           } 
