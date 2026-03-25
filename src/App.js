@@ -41,12 +41,24 @@ import Signup from "./Login/Signup";
 import ForgotPassword from "./Login/ForgotPassword";
 import AdminResetPasswordScreen from "./Login/ResetPassword";
 import CustomerResetPassword from "./Customer/CustomerResetPassword";
-
+import NotificationHandler from "./Firebase/NotificationHandler"; // Import the notification handler
 import ResourceView from './ServicePool/ResourceView'; 
+import { ToastContainer } from 'react-toastify';                  // ← add this import
+// import 'react-toastify/dist/ReactToastify.css';  
+
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <NotificationHandler />   {/* ← ADD THIS — inside Router, before Routes */}
+
+        <ToastContainer           
+          position="top-right"
+          autoClose={5000}
+          newestOnTop
+          pauseOnHover
+          draggable
+        />
         <Routes>
           <Route path="/contact-api" element={<ContactPage />} />
           <Route path="/" element={<ServiceManagerLogin />} />
