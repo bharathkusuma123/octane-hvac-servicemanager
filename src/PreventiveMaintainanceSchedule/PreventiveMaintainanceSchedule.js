@@ -306,33 +306,42 @@ const PreventiveMaintenanceSchedule = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch data from API
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`);
+ const [chartsData, setChartsData] = useState({});
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
-        }
+// In your existing fetchData useEffect, add chart fetch:
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [schedulesRes, chartsRes] = await Promise.all([
+        fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`),
+        fetch(`${baseURL}/pm-charts/?company_id=${selectedCompany}`) // 👈 adjust endpoint if different
+      ]);
 
-        const data = await response.json();
+      const schedulesData = await schedulesRes.json();
+      const chartsData = await chartsRes.json();
 
-        if (data.status === 'success') {
-          setPmSchedules(data.data);
-          filterSchedules(data.data, 'factory');
-        } else {
-          throw new Error(data.message || 'Failed to retrieve PM schedules');
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      // Build a lookup map: { chart_id: frequency_days }
+      if (chartsData.status === "success") {
+        const chartMap = {};
+        chartsData.data.forEach(chart => {
+          chartMap[chart.chart_id] = chart.frequency_days;
+        });
+        setChartsData(chartMap);
       }
-    };
 
-    fetchData();
-  }, [selectedCompany]);
+      if (schedulesData.status === "success") {
+        setPmSchedules(schedulesData.data);
+        filterSchedules(schedulesData.data, "factory");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchData();
+}, [selectedCompany]);
 
   // Filter schedules based on active tab
   useEffect(() => {
@@ -420,7 +429,7 @@ const PreventiveMaintenanceSchedule = () => {
               : s
           )
         );
-        
+        window.dispatchEvent(new Event("pm-schedule-updated"));   
         alert(`Service request created successfully for PM Schedule ID: ${schedule.pm_schedule_id}`);
       } else {
         throw new Error(result.message || 'Failed to create service request');
@@ -433,18 +442,43 @@ const PreventiveMaintenanceSchedule = () => {
     }
   };
 
-  // Check if button should be disabled
-  const isButtonDisabled = (schedule) => {
-    if (!schedule.is_alert_sent && schedule.status === 'Pending') {
-      return true;
-    }
-    
-    if (schedule.is_alert_sent && schedule.status !== 'Pending') {
-      return true;
-    }
-    
+ const isButtonDisabled = (schedule) => {
+  // Not eligible at all
+  if (!schedule.is_alert_sent || schedule.status !== "Pending") {
+    return true;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const overdueDate = new Date(schedule.overdue_alert_date);
+  overdueDate.setHours(0, 0, 0, 0);
+
+  // Within valid alert window — enabled
+  if (today <= overdueDate) {
     return false;
-  };
+  }
+
+  // Past overdue date — check if frequency cycle has restarted
+  const frequencyDays = chartsData[schedule.chart] || null;
+
+  if (!frequencyDays) {
+    // No chart data found — keep disabled after overdue
+    return true;
+  }
+
+  const nextEnableDate = new Date(overdueDate);
+  nextEnableDate.setDate(nextEnableDate.getDate() + frequencyDays);
+  nextEnableDate.setHours(0, 0, 0, 0);
+
+  // Re-enabled after frequency cycle
+  if (today >= nextEnableDate) {
+    return false;
+  }
+
+  // In the gap between overdue and next cycle — disabled
+  return true;
+};
 
   // Define the blue color for consistency
   const blueColor = '#0096D6';

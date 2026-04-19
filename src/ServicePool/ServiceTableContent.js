@@ -1457,7 +1457,10 @@ const ServiceTableContent = ({
                 const serviceItemDetails = getServiceItemDetails(item.service_item);
 
                 return (
-                  <tr key={item.request_id || index}>
+                 <tr
+  key={item.request_id || index}
+  className={item.source_type === "PM Alert" ? "pm-alert-row" : ""}
+>
                     <td>{indexOfFirstEntry + index + 1}</td>
                     <td>
                       <button 

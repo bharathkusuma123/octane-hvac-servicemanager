@@ -17,69 +17,67 @@ const Login = () => {
   const { login } = useContext(AuthContext); // using context
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true); // Start loading
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      // Generate FCM token
-      const fcmToken = await generateToken();
+  try {
+    const fcmToken = await generateToken();
 
-      // Send login request with FCM token
-      const response = await axios.post(`${baseURL}/user-login/`, {
-        username,
-        password,
-        fcm_token: fcmToken || '',
-      });
+    const response = await axios.post(`${baseURL}/user-login/`, {
+      username,
+      password,
+      fcm_token: fcmToken || '',
+    });
 
-      const user = response.data.data;
+    const user = response.data.data;
+    const sessionId = response.data.data.session_id; // ✅ ADD THIS
 
-      if (user.role === "Service Manager") {
-        // Login and navigate
-        login("service-manager", user.user_id);
-        navigate("/servicemanager/preventive-maintainance-group");
+    if (user.role === "Service Manager") {
+      // ✅ Pass session_id
+      login("service-manager", user.user_id, sessionId);
 
-        // Send push notification after successful login
-        if (fcmToken) {
-          try {
-            const notifyResponse = await fetch(`${Notification_Url}/send-notification`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                token: fcmToken,
-                title: 'Welcome to LandNest!',
-                body: 'You have successfully logged in.',
-              }),
-            });
+      navigate("/servicemanager/preventive-maintainance-group");
 
-            const notifyData = await notifyResponse.json();
+      // 🔔 Notification (unchanged)
+      if (fcmToken) {
+        try {
+          const notifyResponse = await fetch(`${Notification_Url}/send-notification`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token: fcmToken,
+              title: 'Welcome to app!',
+              body: 'You have successfully logged in.',
+            }),
+          });
 
-            if (notifyResponse.ok) {
-              console.log('Notification sent successfully:', notifyData);
-            } else {
-              console.error('Failed to send notification:', notifyData);
-            }
-          } catch (notifyError) {
-            console.error('Error sending notification:', notifyError);
+          const notifyData = await notifyResponse.json();
+
+          if (notifyResponse.ok) {
+            console.log('Notification sent successfully:', notifyData);
+          } else {
+            console.error('Failed to send notification:', notifyData);
           }
-        } else {
-          console.warn('No FCM token available for notification.');
+        } catch (notifyError) {
+          console.error('Error sending notification:', notifyError);
         }
-
       } else {
-        setError("Access denied. Only Service Managers are allowed.");
+        console.warn('No FCM token available for notification.');
       }
 
-    } catch (err) {
-      console.error("Login error:", err);
-      setError(err.response?.data?.message || "Invalid username or password");
-    } finally {
-      setLoading(false); // Stop loading
+    } else {
+      setError("Access denied. Only Service Managers are allowed.");
     }
-  };
+
+  } catch (err) {
+    console.error("Login error:", err);
+    setError(err.response?.data?.message || "Invalid username or password");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <LoginCard

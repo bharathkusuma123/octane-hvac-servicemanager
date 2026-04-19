@@ -667,6 +667,32 @@ const ServiceItemDetails = () => {
                       </div>
                     </td>
                   </tr>
+                   <tr>
+                    <th>Customer ID</th>
+                    <td>
+  {(() => {
+    const customerId = serviceItem.customer;
+
+    return customerId && customerId !== '-' ? (
+      <button
+        className="btn btn-link p-0 text-primary text-decoration-underline"
+        onClick={() => navigate(`/servicemanager/customers/${customerId}`)}
+        style={{
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+          fontSize: 'inherit'
+        }}
+        title={`View Customer ID: ${customerId}`}
+      >
+        {customerId}
+      </button>
+    ) : (
+      '-'
+    );
+  })()}
+</td>
+                  </tr>
                   <tr>
                     <th>Customer</th>
                     <td>

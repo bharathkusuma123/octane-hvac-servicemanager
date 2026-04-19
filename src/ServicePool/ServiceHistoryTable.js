@@ -293,6 +293,7 @@ import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import { AuthContext } from "../AuthContext/AuthContext";
 import { FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
   const [items, setItems] = useState([]);
@@ -306,6 +307,8 @@ const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
   const { userId } = useContext(AuthContext);
   const [users, setUsers] = useState([]); // To store user data for search
   const [components, setComponents] = useState([]); // To store component data for search
+  const [servicePools, setServicePools] = useState([]);
+  const navigate = useNavigate();
 
   // Fetch users data for username search
   const fetchUsers = async () => {
@@ -330,6 +333,26 @@ const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
       console.error('Error fetching components:', error);
     }
   };
+
+const fetchServicePools = async () => {
+  try {
+    const response = await axios.get(
+      `${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`
+    );
+
+    console.log("FULL RESPONSE:", response.data); // 🔍 DEBUG
+
+    if (response.data?.status === "success" && Array.isArray(response.data.data)) {
+      setServicePools(response.data.data);
+      console.log("Fetched service pools:", response.data.data);
+    } else {
+      console.warn("Unexpected API format:", response.data);
+    }
+
+  } catch (error) {
+    console.error("Error fetching service pools:", error);
+  }
+};
 
   const fetchServiceRequestItems = async () => {
     setLoading(true);
@@ -360,10 +383,27 @@ const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
     }
   };
 
+  const getServiceItem = (requestId) => {
+  if (!requestId || servicePools.length === 0) return "-";
+  const match = servicePools.find(
+    (item) => item.request_id === requestId
+  );
+  return match ? match.service_item : "-";
+};
+
+const getCustomer = (requestId) => {
+  if (!requestId || servicePools.length === 0) return "-";
+  const match = servicePools.find(
+    (item) => item.request_id === requestId
+  );
+  return match ? match.customer : "-";
+};
+
   useEffect(() => {
     fetchUsers();
     fetchComponents();
     fetchServiceRequestItems();
+     fetchServicePools();   // ✅ ADD THIS
   }, [selectedCompany, userId]);
 
   // Function to get username from user_id
@@ -690,6 +730,8 @@ const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
               <th>S.No</th>
               <th>SR Item ID</th>
               <th>Service Request</th>
+              <th>Service Item</th>
+<th>Customer</th>
               <th>Component Type</th>
               <th>Component</th>
               <th>Task Type</th>
@@ -709,6 +751,55 @@ const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>{item.sr_item_id}</td>
                   <td>{item.service_request}</td>
+                 <td>
+  {(() => {
+    const customerId = getCustomer(item.service_request);
+
+    return customerId && customerId !== '-' ? (
+      <button
+        className="btn btn-link p-0 text-primary text-decoration-underline"
+        onClick={() => navigate(`/servicemanager/customers/${customerId}`)}
+        style={{
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+          fontSize: 'inherit'
+        }}
+        title={`View Customer: ${customerId}`}
+      >
+        {customerId}
+      </button>
+    ) : (
+      '-'
+    );
+  })()}
+</td>
+
+<td>
+  {(() => {
+    const serviceItem = getServiceItem(item.service_request);
+
+    return serviceItem && serviceItem !== '-' ? (
+      <button
+        className="btn btn-link p-0 text-primary text-decoration-underline"
+        onClick={() =>
+          navigate(`/servicemanager/service-item-details/${serviceItem}`)
+        }
+        style={{
+          border: 'none',
+          background: 'none',
+          cursor: 'pointer',
+          fontSize: 'inherit'
+        }}
+        title={`View Service Item: ${serviceItem}`}
+      >
+        {serviceItem}
+      </button>
+    ) : (
+      '-'
+    );
+  })()}
+</td>
                   <td>{item.component_type}</td>
                   <td>{getComponentName(item.component)}</td>
                   <td>{item.task_type}</td>

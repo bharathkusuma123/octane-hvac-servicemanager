@@ -168,3 +168,10 @@
   background-color: #17a2b8 !important;
   color: white !important;
 }
+.pm-alert-row td {
+  background-color: #fff3cd !important;
+}
+
+.pm-alert-row td:first-child {
+  border-left: 4px solid #ffc107;
+}
