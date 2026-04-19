@@ -43,7 +43,8 @@ import AdminResetPasswordScreen from "./Login/ResetPassword";
 import CustomerResetPassword from "./Customer/CustomerResetPassword";
 import NotificationHandler from "./Firebase/NotificationHandler"; // Import the notification handler
 import ResourceView from './ServicePool/ResourceView'; 
-import { ToastContainer } from 'react-toastify';                  // ← add this import
+import { ToastContainer } from 'react-toastify';     
+import ManagerServiceRequestForm from "./ServicePool/ServiceRequestForm"             // ← add this import
 // import 'react-toastify/dist/ReactToastify.css';  
 
 function App() {
@@ -229,6 +230,16 @@ function App() {
                 <ServicePool />
               </PanelLayout>
             }
+
+          />
+           <Route
+            path="/servicemanager/service-request-form"
+            element={
+              <PanelLayout>
+                <ManagerServiceRequestForm />
+              </PanelLayout>
+            }
+            
           />
           {/* Add the new Service Table History route */}
           <Route
