@@ -1,13 +1,23 @@
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js');
 importScripts('https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js');
 
+// firebase.initializeApp({
+//  apiKey: "AIzaSyDVp-QW_qn6chS_ymv0jZsY42nNVg3bOj8",
+//   authDomain: "hvac-d1f0f.firebaseapp.com",
+//   projectId: "hvac-d1f0f",
+//   storageBucket: "hvac-d1f0f.firebasestorage.app",
+//   messagingSenderId: "68719274682",
+//   appId: "1:68719274682:web:8faa0757d78eeaadc77083"
+// });
+
 firebase.initializeApp({
- apiKey: "AIzaSyDVp-QW_qn6chS_ymv0jZsY42nNVg3bOj8",
-  authDomain: "hvac-d1f0f.firebaseapp.com",
-  projectId: "hvac-d1f0f",
-  storageBucket: "hvac-d1f0f.firebasestorage.app",
-  messagingSenderId: "68719274682",
-  appId: "1:68719274682:web:8faa0757d78eeaadc77083"
+ apiKey: "AIzaSyCpRXDExn810IhYAvdJR74fLNj93XKggT4",
+  authDomain: "tt-tracker-68b24.firebaseapp.com",
+  databaseURL: "https://tt-tracker-68b24-default-rtdb.firebaseio.com",
+  projectId: "tt-tracker-68b24",
+  storageBucket: "tt-tracker-68b24.appspot.com",
+  messagingSenderId: "763692843847",
+  appId: "1:763692843847:web:7dc46b1872b339c8170262"
 });
 
 const messaging = firebase.messaging();

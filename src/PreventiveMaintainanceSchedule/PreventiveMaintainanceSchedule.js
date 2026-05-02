@@ -1,1396 +1,15 @@
-// import React, { useState, useEffect, useContext } from 'react';
-// import { AuthContext } from '../AuthContext/AuthContext';
-// import { useCompany } from '../AuthContext/CompanyContext';
-// import baseURL from '../ApiUrl/Apiurl';
-
-// const PreventiveMaintenanceSchedule = () => {
-//   const { userId } = useContext(AuthContext);
-//   const { selectedCompany } = useCompany();
-//   const [activeTab, setActiveTab] = useState('factory');
-//   const [pmSchedules, setPmSchedules] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [processingId, setProcessingId] = useState(null); // Track which schedule is being processed
-
-//   // Fetch data from API
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         setLoading(true);
-//         const response = await fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`);
-
-//         if (!response.ok) {
-//           throw new Error('Failed to fetch data');
-//         }
-
-//         const data = await response.json();
-
-//         if (data.status === 'success') {
-//           setPmSchedules(data.data);
-//         } else {
-//           throw new Error(data.message || 'Failed to retrieve PM schedules');
-//         }
-//       } catch (err) {
-//         setError(err.message);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchData();
-//   }, [selectedCompany, activeTab]);
-
-//   // Filter schedules based on active tab
-//   const filteredSchedules = pmSchedules.filter(schedule =>
-//     activeTab === 'factory'
-//       ? schedule.responsible.toLowerCase() === 'factory'
-//       : schedule.responsible.toLowerCase() === 'customer'
-//   );
-
-//   // Handle raise request button click
-//   const handleRaiseRequest = async (schedule) => {
-//     setProcessingId(schedule.pm_schedule_id);
-    
-//     try {
-//       const response = await fetch(`${baseURL}/pm-schedules/${schedule.pm_schedule_id}/create-service-request/`, {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//       });
-
-//       const result = await response.json();
-      
-//       // Check if the response contains a success message
-//       if (response.ok && result.message && result.message.includes("successfully")) {
-//         // Update the schedule status to "Processed"
-//         setPmSchedules(prevSchedules => 
-//           prevSchedules.map(s => 
-//             s.pm_schedule_id === schedule.pm_schedule_id 
-//               ? { ...s, status: 'Processed', is_alert_sent: true } 
-//               : s
-//           )
-//         );
-        
-//         alert(`Service request created successfully for PM Schedule ID: ${schedule.pm_schedule_id}`);
-//       } else {
-//         throw new Error(result.message || 'Failed to create service request');
-//       }
-//     } catch (err) {
-//       console.error('Error creating service request:', err);
-//       alert(`Failed to create service request: ${err.message}`);
-//     } finally {
-//       setProcessingId(null);
-//     }
-//   };
-
-//   // Check if button should be disabled
-//   const isButtonDisabled = (schedule) => {
-//     // Case 1: is_alert_sent: false AND status: Pending
-//     if (!schedule.is_alert_sent && schedule.status === 'Pending') {
-//       return true;
-//     }
-    
-//     // Case 2: is_alert_sent: true AND status is not Pending
-//     if (schedule.is_alert_sent && schedule.status !== 'Pending') {
-//       return true;
-//     }
-    
-//     // Enable button only if is_alert_sent is true AND status is still Pending
-//     return false;
-//   };
-
-//   // Define the blue color for consistency
-//   const blueColor = '#0096D6';
-
-//   // Format date for display as dd-mm-yyyy
-//   const formatDate = (dateString) => {
-//     if (!dateString) return 'N/A';
-//     const date = new Date(dateString);
-//     const day = String(date.getDate()).padStart(2, '0');
-//     const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-//     const year = date.getFullYear();
-//     return `${day}/${month}/${year}`;
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//         <div>Loading PM schedules...</div>
-//       </div>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//         <div>Error: {error}</div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//       <h1 className="delegate-title" style={{ color: '#333', marginBottom: '20px' }}>Preventive Maintenance Schedules</h1>
-
-//       {/* Tabs */}
-//       <div style={{ marginBottom: '20px' }}>
-//         <button
-//           onClick={() => setActiveTab('factory')}
-//           style={{
-//             padding: '10px 20px',
-//             marginRight: '10px',
-//             backgroundColor: activeTab === 'factory' ? blueColor : '#f1f1f1',
-//             color: activeTab === 'factory' ? 'white' : 'black',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: 'pointer',
-//             fontWeight: '500'
-//           }}
-//         >
-//           Factory
-//         </button>
-//         <button
-//           onClick={() => setActiveTab('customer')}
-//           style={{
-//             padding: '10px 20px',
-//             backgroundColor: activeTab === 'customer' ? blueColor : '#f1f1f1',
-//             color: activeTab === 'customer' ? 'white' : 'black',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: 'pointer',
-//             fontWeight: '500'
-//           }}
-//         >
-//           Customer
-//         </button>
-//       </div>
-
-//       {/* Factory Tab Content */}
-//       {activeTab === 'factory' && (
-//         <div>
-//           <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Factory PM Schedules</h2>
-//           <div className="table-responsive">
-//             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-//               <thead>
-//                 <tr>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Action</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {filteredSchedules.map((schedule) => {
-//                   const disabled = isButtonDisabled(schedule);
-//                   const isProcessing = processingId === schedule.pm_schedule_id;
-                  
-//                   return (
-//                     <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd' }}>
-//                       <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.service_item}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.description}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.due_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.status}</td>
-//                       <td style={{ padding: '12px' }}>
-//                         <button
-//                           onClick={() => handleRaiseRequest(schedule)}
-//                           disabled={disabled || isProcessing}
-//                           style={{
-//                             padding: '8px 12px',
-//                             backgroundColor: disabled ? '#ccc' : blueColor,
-//                             color: 'white',
-//                             border: 'none',
-//                             borderRadius: '4px',
-//                             cursor: disabled ? 'not-allowed' : 'pointer'
-//                           }}
-//                         >
-//                           {isProcessing ? 'Processing...' : 'Raise Request'}
-//                         </button>
-//                       </td>
-//                     </tr>
-//                   );
-//                 })}
-//                 {filteredSchedules.length === 0 && (
-//                   <tr>
-//                     <td colSpan="9" style={{ padding: '12px', textAlign: 'center' }}>
-//                       No factory PM schedules found
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Customer Tab Content */}
-//       {activeTab === 'customer' && (
-//         <div>
-//           <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Customer PM Schedules</h2>
-//           <div className="table-responsive">
-//             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-//               <thead>
-//                 <tr>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {filteredSchedules.map((schedule) => (
-//                   <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd' }}>
-//                     <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-//                     <td style={{ padding: '12px' }}>{schedule.service_item}</td>
-//                     <td style={{ padding: '12px' }}>{schedule.description}</td>
-//                     <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-//                     <td style={{ padding: '12px' }}>{formatDate(schedule.due_date)}</td>
-//                     <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-//                     <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-//                     <td style={{ padding: '12px' }}>{schedule.status}</td>
-//                   </tr>
-//                 ))}
-//                 {filteredSchedules.length === 0 && (
-//                   <tr>
-//                     <td colSpan="8" style={{ padding: '12px', textAlign: 'center' }}>
-//                       No customer PM schedules found
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default PreventiveMaintenanceSchedule;
-
-
-
-
-
-// import React, { useState, useEffect, useContext } from 'react';
-// import { AuthContext } from '../AuthContext/AuthContext';
-// import { useCompany } from '../AuthContext/CompanyContext';
-// import baseURL from '../ApiUrl/Apiurl';
-// import { useNavigate } from 'react-router-dom';
-
-// const PreventiveMaintenanceSchedule = () => {
-//   const { userId } = useContext(AuthContext);
-//   const { selectedCompany } = useCompany();
-//   const navigate = useNavigate();
-//   const [activeTab, setActiveTab] = useState('factory');
-//   const [pmSchedules, setPmSchedules] = useState([]);
-//   const [filteredSchedules, setFilteredSchedules] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [processingId, setProcessingId] = useState(null);
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [entriesPerPage, setEntriesPerPage] = useState(10);
-//   const [currentPage, setCurrentPage] = useState(1);
-
-//   // Fetch data from API
-//  const [chartsData, setChartsData] = useState({});
-
-// // In your existing fetchData useEffect, add chart fetch:
-// useEffect(() => {
-//   const fetchData = async () => {
-//     try {
-//       setLoading(true);
-//       const [schedulesRes, chartsRes] = await Promise.all([
-//         fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`),
-//         fetch(`${baseURL}/pm-charts/?company_id=${selectedCompany}`) // 👈 adjust endpoint if different
-//       ]);
-
-//       const schedulesData = await schedulesRes.json();
-//       const chartsData = await chartsRes.json();
-
-//       // Build a lookup map: { chart_id: frequency_days }
-//       if (chartsData.status === "success") {
-//         const chartMap = {};
-//         chartsData.data.forEach(chart => {
-//           chartMap[chart.chart_id] = chart.frequency_days;
-//         });
-//         setChartsData(chartMap);
-//       }
-
-//       if (schedulesData.status === "success") {
-//         setPmSchedules(schedulesData.data);
-//         filterSchedules(schedulesData.data, "factory");
-//       }
-//     } catch (err) {
-//       setError(err.message);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-//   fetchData();
-// }, [selectedCompany]);
-
-//   // Filter schedules based on active tab
-//   useEffect(() => {
-//     filterSchedules(pmSchedules, activeTab);
-//   }, [activeTab, pmSchedules]);
-
-//   // Apply search filter
-//   useEffect(() => {
-//     if (!searchTerm.trim()) {
-//       // If search term is empty, show all filtered schedules
-//       const filteredByTab = pmSchedules.filter(schedule =>
-//         activeTab === 'factory'
-//           ? schedule.responsible.toLowerCase() === 'factory'
-//           : schedule.responsible.toLowerCase() === 'customer'
-//       );
-//       setFilteredSchedules(filteredByTab);
-//       setCurrentPage(1); // Reset to first page when search is cleared
-//     } else {
-//       const lowercasedSearch = searchTerm.toLowerCase();
-//       const filteredByTab = pmSchedules.filter(schedule =>
-//         activeTab === 'factory'
-//           ? schedule.responsible.toLowerCase() === 'factory'
-//           : schedule.responsible.toLowerCase() === 'customer'
-//       );
-      
-//       const searchedSchedules = filteredByTab.filter(schedule =>
-//         schedule.pm_schedule_id?.toString().toLowerCase().includes(lowercasedSearch) ||
-//         schedule.service_item?.toString().toLowerCase().includes(lowercasedSearch) ||
-//         schedule.description?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.task_type?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.status?.toLowerCase().includes(lowercasedSearch) ||
-//         formatDate(schedule.due_date)?.toLowerCase().includes(lowercasedSearch) ||
-//         formatDate(schedule.alert_date)?.toLowerCase().includes(lowercasedSearch) ||
-//         formatDate(schedule.overdue_alert_date)?.toLowerCase().includes(lowercasedSearch)
-//       );
-      
-//       setFilteredSchedules(searchedSchedules);
-//       setCurrentPage(1); // Reset to first page when searching
-//     }
-//   }, [searchTerm, activeTab, pmSchedules]);
-
-//   const filterSchedules = (schedules, tab) => {
-//     const filtered = schedules.filter(schedule =>
-//       tab === 'factory'
-//         ? schedule.responsible.toLowerCase() === 'factory'
-//         : schedule.responsible.toLowerCase() === 'customer'
-//     );
-//     setFilteredSchedules(filtered);
-//     setCurrentPage(1); // Reset to first page when changing tabs
-//   };
-
-//   // Pagination calculations
-//   const indexOfLastEntry = currentPage * entriesPerPage;
-//   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-//   const currentItems = filteredSchedules.slice(indexOfFirstEntry, indexOfLastEntry);
-//   const totalPages = Math.ceil(filteredSchedules.length / entriesPerPage);
-
-//   // Handle service item click
-//   const handleServiceItemClick = (serviceItemId) => {
-//     if (serviceItemId) {
-//       navigate(`/servicemanager/service-item-details/${serviceItemId}`);
-//     }
-//   };
-
-//   // Handle raise request button click
-//   const handleRaiseRequest = async (schedule) => {
-//     setProcessingId(schedule.pm_schedule_id);
-    
-//     try {
-//       const response = await fetch(`${baseURL}/pm-schedules/${schedule.pm_schedule_id}/create-service-request/`, {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//       });
-
-//       const result = await response.json();
-      
-//       if (response.ok && result.message && result.message.includes("successfully")) {
-//         // Update the schedule status to "Processed"
-//         setPmSchedules(prevSchedules => 
-//           prevSchedules.map(s => 
-//             s.pm_schedule_id === schedule.pm_schedule_id 
-//               ? { ...s, status: 'Processed', is_alert_sent: true } 
-//               : s
-//           )
-//         );
-//         window.dispatchEvent(new Event("pm-schedule-updated"));   
-//         alert(`Service request created successfully for PM Schedule ID: ${schedule.pm_schedule_id}`);
-//       } else {
-//         throw new Error(result.message || 'Failed to create service request');
-//       }
-//     } catch (err) {
-//       console.error('Error creating service request:', err);
-//       alert(`Failed to create service request: ${err.message}`);
-//     } finally {
-//       setProcessingId(null);
-//     }
-//   };
-
-//  const isButtonDisabled = (schedule) => {
-//   // Not eligible at all
-//   if (!schedule.is_alert_sent || schedule.status !== "Pending") {
-//     return true;
-//   }
-
-//   const today = new Date();
-//   today.setHours(0, 0, 0, 0);
-
-//   const overdueDate = new Date(schedule.overdue_alert_date);
-//   overdueDate.setHours(0, 0, 0, 0);
-
-//   // Within valid alert window — enabled
-//   if (today <= overdueDate) {
-//     return false;
-//   }
-
-//   // Past overdue date — check if frequency cycle has restarted
-//   const frequencyDays = chartsData[schedule.chart] || null;
-
-//   if (!frequencyDays) {
-//     // No chart data found — keep disabled after overdue
-//     return true;
-//   }
-
-//   const nextEnableDate = new Date(overdueDate);
-//   nextEnableDate.setDate(nextEnableDate.getDate() + frequencyDays);
-//   nextEnableDate.setHours(0, 0, 0, 0);
-
-//   // Re-enabled after frequency cycle
-//   if (today >= nextEnableDate) {
-//     return false;
-//   }
-
-//   // In the gap between overdue and next cycle — disabled
-//   return true;
-// };
-
-//   // Define the blue color for consistency
-//   const blueColor = '#0096D6';
-
-//   // Format date for display as dd-mm-yyyy
-//   const formatDate = (dateString) => {
-//     if (!dateString) return 'N/A';
-//     const date = new Date(dateString);
-//     const day = String(date.getDate()).padStart(2, '0');
-//     const month = String(date.getMonth() + 1).padStart(2, '0');
-//     const year = date.getFullYear();
-//     return `${day}/${month}/${year}`;
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//         <div>Loading PM schedules...</div>
-//       </div>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//         <div>Error: {error}</div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//       <h1 className="delegate-title" style={{ color: '#333', marginBottom: '20px' }}>Preventive Maintenance Schedules</h1>
-
-//       {/* Tabs */}
-//       <div style={{ marginBottom: '20px' }}>
-//         <button
-//           onClick={() => setActiveTab('factory')}
-//           style={{
-//             padding: '10px 20px',
-//             marginRight: '10px',
-//             backgroundColor: activeTab === 'factory' ? blueColor : '#f1f1f1',
-//             color: activeTab === 'factory' ? 'white' : 'black',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: 'pointer',
-//             fontWeight: '500'
-//           }}
-//         >
-//           Factory
-//         </button>
-//         <button
-//           onClick={() => setActiveTab('customer')}
-//           style={{
-//             padding: '10px 20px',
-//             backgroundColor: activeTab === 'customer' ? blueColor : '#f1f1f1',
-//             color: activeTab === 'customer' ? 'white' : 'black',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: 'pointer',
-//             fontWeight: '500'
-//           }}
-//         >
-//           Customer
-//         </button>
-//       </div>
-
-//       {/* Search and Entries Per Page Controls */}
-//       <div style={{ 
-//         display: 'flex', 
-//         justifyContent: 'space-between', 
-//         alignItems: 'center', 
-//         marginBottom: '20px',
-//         flexWrap: 'wrap',
-//         gap: '10px'
-//       }}>
-//         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-//           Show
-//           <select
-//             value={entriesPerPage}
-//             onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-//             style={{
-//               padding: '5px 10px',
-//               borderRadius: '4px',
-//               border: '1px solid #ccc',
-//               cursor: 'pointer'
-//             }}
-//           >
-//             <option value={5}>5</option>
-//             <option value={10}>10</option>
-//             <option value={25}>25</option>
-//             <option value={50}>50</option>
-//             <option value={100}>100</option>
-//           </select>
-//           entries
-//         </div>
-        
-//         <input
-//           type="text"
-//           placeholder="Search PM schedules..."
-//           value={searchTerm}
-//           onChange={(e) => setSearchTerm(e.target.value)}
-//           style={{
-//             padding: '8px 12px',
-//             borderRadius: '4px',
-//             border: '1px solid #ccc',
-//             minWidth: '250px'
-//           }}
-//         />
-//       </div>
-
-//       {/* Factory Tab Content */}
-//       {activeTab === 'factory' && (
-//         <div>
-//           <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Factory PM Schedules</h2>
-//           <div className="table-responsive">
-//             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-//               <thead>
-//                 <tr>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>S.No</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Action</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {currentItems.map((schedule, index) => {
-//                   const disabled = isButtonDisabled(schedule);
-//                   const isProcessing = processingId === schedule.pm_schedule_id;
-                  
-//                   return (
-//                     <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd' }}>
-//                       <td style={{ padding: '12px' }}>{indexOfFirstEntry + index + 1}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-//                       <td style={{ padding: '12px' }}>
-//                         <button 
-//                           onClick={() => handleServiceItemClick(schedule.service_item)}
-//                           style={{
-//                             color: '#0077cc',
-//                             textDecoration: 'underline',
-//                             border: 'none',
-//                             background: 'none',
-//                             cursor: 'pointer',
-//                             fontSize: 'inherit',
-//                             fontWeight: "600",
-//                             padding: '0',
-//                             textAlign: 'left'
-//                           }}
-//                         >
-//                           {schedule.service_item}
-//                         </button>
-//                       </td>
-//                       <td style={{ padding: '12px' }}>{schedule.description}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.due_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.status}</td>
-//                       <td style={{ padding: '12px' }}>
-//                         <button
-//                           onClick={() => handleRaiseRequest(schedule)}
-//                           disabled={disabled || isProcessing}
-//                           style={{
-//                             padding: '8px 12px',
-//                             backgroundColor: disabled ? '#ccc' : blueColor,
-//                             color: 'white',
-//                             border: 'none',
-//                             borderRadius: '4px',
-//                             cursor: disabled ? 'not-allowed' : 'pointer'
-//                           }}
-//                         >
-//                           {isProcessing ? 'Processing...' : 'Raise Request'}
-//                         </button>
-//                       </td>
-//                     </tr>
-//                   );
-//                 })}
-//                 {filteredSchedules.length === 0 && (
-//                   <tr>
-//                     <td colSpan="10" style={{ padding: '12px', textAlign: 'center' }}>
-//                       {searchTerm ? 'No matching PM schedules found' : 'No factory PM schedules found'}
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Customer Tab Content */}
-//       {activeTab === 'customer' && (
-//         <div>
-//           <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Customer PM Schedules</h2>
-//           <div className="table-responsive">
-//             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-//               <thead>
-//                 <tr>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>S.No</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {currentItems.map((schedule, index) => (
-//                   <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd' }}>
-//                     <td style={{ padding: '12px' }}>{indexOfFirstEntry + index + 1}</td>
-//                     <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-//                     <td style={{ padding: '12px' }}>
-//                       <button 
-//                         onClick={() => handleServiceItemClick(schedule.service_item)}
-//                         style={{
-//                           color: '#0077cc',
-//                           textDecoration: 'underline',
-//                           border: 'none',
-//                           background: 'none',
-//                           cursor: 'pointer',
-//                           fontSize: 'inherit',
-//                           fontWeight: "600",
-//                           padding: '0',
-//                           textAlign: 'left'
-//                         }}
-//                       >
-//                         {schedule.service_item}
-//                       </button>
-//                     </td>
-//                     <td style={{ padding: '12px' }}>{schedule.description}</td>
-//                     <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-//                     <td style={{ padding: '12px' }}>{formatDate(schedule.due_date)}</td>
-//                     <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-//                     <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-//                     <td style={{ padding: '12px' }}>{schedule.status}</td>
-//                   </tr>
-//                 ))}
-//                 {filteredSchedules.length === 0 && (
-//                   <tr>
-//                     <td colSpan="9" style={{ padding: '12px', textAlign: 'center' }}>
-//                       {searchTerm ? 'No matching PM schedules found' : 'No customer PM schedules found'}
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Pagination */}
-//       {totalPages > 1 && (
-//         <div style={{ 
-//           display: 'flex', 
-//           justifyContent: 'center', 
-//           marginTop: '20px',
-//           alignItems: 'center',
-//           gap: '10px'
-//         }}>
-//           <button
-//             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-//             disabled={currentPage === 1}
-//             style={{
-//               padding: '6px 12px',
-//               backgroundColor: currentPage === 1 ? '#f1f1f1' : blueColor,
-//               color: currentPage === 1 ? '#666' : 'white',
-//               border: 'none',
-//               borderRadius: '4px',
-//               cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-//             }}
-//           >
-//             Previous
-//           </button>
-          
-//           <div style={{ display: 'flex', gap: '5px' }}>
-//             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-//               <button
-//                 key={page}
-//                 onClick={() => setCurrentPage(page)}
-//                 style={{
-//                   padding: '6px 12px',
-//                   backgroundColor: currentPage === page ? blueColor : '#f1f1f1',
-//                   color: currentPage === page ? 'white' : 'black',
-//                   border: 'none',
-//                   borderRadius: '4px',
-//                   cursor: 'pointer'
-//                 }}
-//               >
-//                 {page}
-//               </button>
-//             ))}
-//           </div>
-          
-//           <button
-//             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-//             disabled={currentPage === totalPages}
-//             style={{
-//               padding: '6px 12px',
-//               backgroundColor: currentPage === totalPages ? '#f1f1f1' : blueColor,
-//               color: currentPage === totalPages ? '#666' : 'white',
-//               border: 'none',
-//               borderRadius: '4px',
-//               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-//             }}
-//           >
-//             Next
-//           </button>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default PreventiveMaintenanceSchedule;
-
-
-
-// import React, { useState, useEffect, useContext } from 'react';
-// import { AuthContext } from '../AuthContext/AuthContext';
-// import { useCompany } from '../AuthContext/CompanyContext';
-// import baseURL from '../ApiUrl/Apiurl';
-// import { useNavigate } from 'react-router-dom';
-
-// const PreventiveMaintenanceSchedule = () => {
-//   const { userId } = useContext(AuthContext);
-//   const { selectedCompany } = useCompany();
-//   const navigate = useNavigate();
-//   const [activeTab, setActiveTab] = useState('factory');
-//   const [pmSchedules, setPmSchedules] = useState([]);
-//   const [filteredSchedules, setFilteredSchedules] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [processingId, setProcessingId] = useState(null);
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [entriesPerPage, setEntriesPerPage] = useState(10);
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [chartsData, setChartsData] = useState({});
-  
-//   // State for service items and customers data
-//   const [serviceItemsMap, setServiceItemsMap] = useState({});
-//   const [customersMap, setCustomersMap] = useState({});
-
-//   // Fetch all data including service items and customers
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         setLoading(true);
-        
-//         // Fetch all four APIs in parallel
-//         const [schedulesRes, chartsRes, serviceItemsRes, customersRes] = await Promise.all([
-//           fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`),
-//           fetch(`${baseURL}/pm-charts/?company_id=${selectedCompany}`),
-//           fetch(`${baseURL}/service-items/?user_id=${userId}&company_id=${selectedCompany}`),
-//           fetch(`${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`)
-//         ]);
-
-//         const schedulesData = await schedulesRes.json();
-//         const chartsData = await chartsRes.json();
-//         const serviceItemsData = await serviceItemsRes.json();
-//         const customersData = await customersRes.json();
-
-//         // Build service items lookup map: { service_item_id: serviceItemObject }
-//         const serviceItemsLookup = {};
-//         if (serviceItemsData.status === "success") {
-//           serviceItemsData.data.forEach(item => {
-//             serviceItemsLookup[item.service_item_id] = item;
-//           });
-//         }
-//         setServiceItemsMap(serviceItemsLookup);
-
-//         // Build customers lookup map: { customer_id: customerObject }
-//         const customersLookup = {};
-//         if (customersData.status === "success") {
-//           customersData.data.forEach(customer => {
-//             customersLookup[customer.customer_id] = customer;
-//           });
-//         }
-//         setCustomersMap(customersLookup);
-
-//         // Build chart frequency map
-//         if (chartsData.status === "success") {
-//           const chartMap = {};
-//           chartsData.data.forEach(chart => {
-//             chartMap[chart.chart_id] = chart.frequency_days;
-//           });
-//           setChartsData(chartMap);
-//         }
-
-//         if (schedulesData.status === "success") {
-//           // Enrich PM schedules with customer data (including city from customer API)
-//           const enrichedSchedules = schedulesData.data.map(schedule => {
-//             const serviceItem = serviceItemsLookup[schedule.service_item];
-//             const customer = serviceItem ? customersLookup[serviceItem.customer] : null;
-            
-//             return {
-//               ...schedule,
-//               serviceItemDetails: serviceItem || null,
-//               customerDetails: customer || null,
-//               // Use city from customer API, not location from service item
-//               city: customer?.city || 'N/A'
-//             };
-//           });
-          
-//           setPmSchedules(enrichedSchedules);
-//           filterSchedules(enrichedSchedules, "factory");
-//         }
-//       } catch (err) {
-//         setError(err.message);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-    
-//     if (userId && selectedCompany) {
-//       fetchData();
-//     }
-//   }, [userId, selectedCompany]);
-
-//   // Filter schedules based on active tab
-//   useEffect(() => {
-//     filterSchedules(pmSchedules, activeTab);
-//   }, [activeTab, pmSchedules]);
-
-//   // Apply search filter
-//   useEffect(() => {
-//     if (!searchTerm.trim()) {
-//       const filteredByTab = pmSchedules.filter(schedule =>
-//         activeTab === 'factory'
-//           ? schedule.responsible?.toLowerCase() === 'factory'
-//           : schedule.responsible?.toLowerCase() === 'customer'
-//       );
-//       setFilteredSchedules(filteredByTab);
-//       setCurrentPage(1);
-//     } else {
-//       const lowercasedSearch = searchTerm.toLowerCase();
-//       const filteredByTab = pmSchedules.filter(schedule =>
-//         activeTab === 'factory'
-//           ? schedule.responsible?.toLowerCase() === 'factory'
-//           : schedule.responsible?.toLowerCase() === 'customer'
-//       );
-      
-//       const searchedSchedules = filteredByTab.filter(schedule =>
-//         schedule.pm_schedule_id?.toString().toLowerCase().includes(lowercasedSearch) ||
-//         schedule.service_item?.toString().toLowerCase().includes(lowercasedSearch) ||
-//         schedule.description?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.task_type?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.status?.toLowerCase().includes(lowercasedSearch) ||
-//         formatDate(schedule.due_date)?.toLowerCase().includes(lowercasedSearch) ||
-//         formatDate(schedule.alert_date)?.toLowerCase().includes(lowercasedSearch) ||
-//         formatDate(schedule.overdue_alert_date)?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.customerDetails?.customer_id?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.customerDetails?.username?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.customerDetails?.full_name?.toLowerCase().includes(lowercasedSearch) ||
-//         schedule.city?.toLowerCase().includes(lowercasedSearch)
-//       );
-      
-//       setFilteredSchedules(searchedSchedules);
-//       setCurrentPage(1);
-//     }
-//   }, [searchTerm, activeTab, pmSchedules]);
-
-//   const filterSchedules = (schedules, tab) => {
-//     const filtered = schedules.filter(schedule =>
-//       tab === 'factory'
-//         ? schedule.responsible?.toLowerCase() === 'factory'
-//         : schedule.responsible?.toLowerCase() === 'customer'
-//     );
-//     setFilteredSchedules(filtered);
-//     setCurrentPage(1);
-//   };
-
-//   // Pagination calculations
-//   const indexOfLastEntry = currentPage * entriesPerPage;
-//   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-//   const currentItems = filteredSchedules.slice(indexOfFirstEntry, indexOfLastEntry);
-//   const totalPages = Math.ceil(filteredSchedules.length / entriesPerPage);
-
-//   // Handle service item click
-//   const handleServiceItemClick = (serviceItemId) => {
-//     if (serviceItemId) {
-//       navigate(`/servicemanager/service-item-details/${serviceItemId}`);
-//     }
-//   };
-
-//   // Handle raise request button click
-//   const handleRaiseRequest = async (schedule) => {
-//     setProcessingId(schedule.pm_schedule_id);
-    
-//     try {
-//       const response = await fetch(`${baseURL}/pm-schedules/${schedule.pm_schedule_id}/create-service-request/`, {
-//         method: 'POST',
-//         headers: {
-//           'Content-Type': 'application/json',
-//         },
-//       });
-
-//       const result = await response.json();
-      
-//       if (response.ok && result.message && result.message.includes("successfully")) {
-//         setPmSchedules(prevSchedules => 
-//           prevSchedules.map(s => 
-//             s.pm_schedule_id === schedule.pm_schedule_id 
-//               ? { ...s, status: 'Processed', is_alert_sent: true } 
-//               : s
-//           )
-//         );
-//         window.dispatchEvent(new Event("pm-schedule-updated"));   
-//         alert(`Service request created successfully for PM Schedule ID: ${schedule.pm_schedule_id}`);
-//       } else {
-//         throw new Error(result.message || 'Failed to create service request');
-//       }
-//     } catch (err) {
-//       console.error('Error creating service request:', err);
-//       alert(`Failed to create service request: ${err.message}`);
-//     } finally {
-//       setProcessingId(null);
-//     }
-//   };
-
-//   const isButtonDisabled = (schedule) => {
-//     if (!schedule.is_alert_sent || schedule.status !== "Pending") {
-//       return true;
-//     }
-
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0);
-
-//     const overdueDate = new Date(schedule.overdue_alert_date);
-//     overdueDate.setHours(0, 0, 0, 0);
-
-//     if (today <= overdueDate) {
-//       return false;
-//     }
-
-//     const frequencyDays = chartsData[schedule.chart] || null;
-
-//     if (!frequencyDays) {
-//       return true;
-//     }
-
-//     const nextEnableDate = new Date(overdueDate);
-//     nextEnableDate.setDate(nextEnableDate.getDate() + frequencyDays);
-//     nextEnableDate.setHours(0, 0, 0, 0);
-
-//     if (today >= nextEnableDate) {
-//       return false;
-//     }
-
-//     return true;
-//   };
-
-//   const blueColor = '#0096D6';
-
-//   const formatDate = (dateString) => {
-//     if (!dateString) return 'N/A';
-//     const date = new Date(dateString);
-//     const day = String(date.getDate()).padStart(2, '0');
-//     const month = String(date.getMonth() + 1).padStart(2, '0');
-//     const year = date.getFullYear();
-//     return `${day}/${month}/${year}`;
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//         <div>Loading PM schedules...</div>
-//       </div>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//         <div>Error: {error}</div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-//       <h1 className="delegate-title" style={{ color: '#333', marginBottom: '20px' }}>Preventive Maintenance Schedules</h1>
-
-//       {/* Tabs */}
-//       <div style={{ marginBottom: '20px' }}>
-//         <button
-//           onClick={() => setActiveTab('factory')}
-//           style={{
-//             padding: '10px 20px',
-//             marginRight: '10px',
-//             backgroundColor: activeTab === 'factory' ? blueColor : '#f1f1f1',
-//             color: activeTab === 'factory' ? 'white' : 'black',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: 'pointer',
-//             fontWeight: '500'
-//           }}
-//         >
-//           Factory
-//         </button>
-//         <button
-//           onClick={() => setActiveTab('customer')}
-//           style={{
-//             padding: '10px 20px',
-//             backgroundColor: activeTab === 'customer' ? blueColor : '#f1f1f1',
-//             color: activeTab === 'customer' ? 'white' : 'black',
-//             border: 'none',
-//             borderRadius: '4px',
-//             cursor: 'pointer',
-//             fontWeight: '500'
-//           }}
-//         >
-//           Customer
-//         </button>
-//       </div>
-
-//       {/* Search and Entries Per Page Controls */}
-//       <div style={{ 
-//         display: 'flex', 
-//         justifyContent: 'space-between', 
-//         alignItems: 'center', 
-//         marginBottom: '20px',
-//         flexWrap: 'wrap',
-//         gap: '10px'
-//       }}>
-//         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-//           Show
-//           <select
-//             value={entriesPerPage}
-//             onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-//             style={{
-//               padding: '5px 10px',
-//               borderRadius: '4px',
-//               border: '1px solid #ccc',
-//               cursor: 'pointer'
-//             }}
-//           >
-//             <option value={5}>5</option>
-//             <option value={10}>10</option>
-//             <option value={25}>25</option>
-//             <option value={50}>50</option>
-//             <option value={100}>100</option>
-//           </select>
-//           entries
-//         </div>
-        
-//         <input
-//           type="text"
-//           placeholder="Search PM schedules..."
-//           value={searchTerm}
-//           onChange={(e) => setSearchTerm(e.target.value)}
-//           style={{
-//             padding: '8px 12px',
-//             borderRadius: '4px',
-//             border: '1px solid #ccc',
-//             minWidth: '250px'
-//           }}
-//         />
-//       </div>
-
-//       {/* Factory Tab Content */}
-//       {activeTab === 'factory' && (
-//         <div>
-//           <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Factory PM Schedules</h2>
-//           <div className="table-responsive">
-//             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-//               <thead>
-//                 <tr>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>S.No</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer Name</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>City</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Action</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {currentItems.map((schedule, index) => {
-//                   const disabled = isButtonDisabled(schedule);
-//                   const isProcessing = processingId === schedule.pm_schedule_id;
-//                   const customer = schedule.customerDetails;
-//                   const customerName = customer ? `${customer.username} (${customer.full_name})` : 'N/A';
-                  
-//                   return (
-//                     <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd' }}>
-//                       <td style={{ padding: '12px' }}>{indexOfFirstEntry + index + 1}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-//                       <td style={{ padding: '12px' }}>
-//                         <button 
-//                           onClick={() => handleServiceItemClick(schedule.service_item)}
-//                           style={{
-//                             color: '#0077cc',
-//                             textDecoration: 'underline',
-//                             border: 'none',
-//                             background: 'none',
-//                             cursor: 'pointer',
-//                             fontSize: 'inherit',
-//                             fontWeight: "600",
-//                             padding: '0',
-//                             textAlign: 'left'
-//                           }}
-//                         >
-//                           {schedule.service_item}
-//                         </button>
-//                       </td>
-//                       <td style={{ padding: '12px' }}>{customer?.customer_id || 'N/A'}</td>
-//                       <td style={{ padding: '12px' }}>{customerName}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.city}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.description}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.due_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.status}</td>
-//                       <td style={{ padding: '12px' }}>
-//                         <button
-//                           onClick={() => handleRaiseRequest(schedule)}
-//                           disabled={disabled || isProcessing}
-//                           style={{
-//                             padding: '8px 12px',
-//                             backgroundColor: disabled ? '#ccc' : blueColor,
-//                             color: 'white',
-//                             border: 'none',
-//                             borderRadius: '4px',
-//                             cursor: disabled ? 'not-allowed' : 'pointer'
-//                           }}
-//                         >
-//                           {isProcessing ? 'Processing...' : 'Raise Request'}
-//                         </button>
-//                       </td>
-//                     </tr>
-//                   );
-//                 })}
-//                 {filteredSchedules.length === 0 && (
-//                   <tr>
-//                     <td colSpan="13" style={{ padding: '12px', textAlign: 'center' }}>
-//                       {searchTerm ? 'No matching PM schedules found' : 'No factory PM schedules found'}
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Customer Tab Content */}
-//       {activeTab === 'customer' && (
-//         <div>
-//           <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Customer PM Schedules</h2>
-//           <div className="table-responsive">
-//             <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-//               <thead>
-//                 <tr>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>S.No</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer ID</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer Name</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>City</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-//                   <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {currentItems.map((schedule, index) => {
-//                   const customer = schedule.customerDetails;
-//                   const customerName = customer ? `${customer.username} (${customer.full_name})` : 'N/A';
-                  
-//                   return (
-//                     <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd' }}>
-//                       <td style={{ padding: '12px' }}>{indexOfFirstEntry + index + 1}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-//                       <td style={{ padding: '12px' }}>
-//                         <button 
-//                           onClick={() => handleServiceItemClick(schedule.service_item)}
-//                           style={{
-//                             color: '#0077cc',
-//                             textDecoration: 'underline',
-//                             border: 'none',
-//                             background: 'none',
-//                             cursor: 'pointer',
-//                             fontSize: 'inherit',
-//                             fontWeight: "600",
-//                             padding: '0',
-//                             textAlign: 'left'
-//                           }}
-//                         >
-//                           {schedule.service_item}
-//                         </button>
-//                       </td>
-//                       <td style={{ padding: '12px' }}>{customer?.customer_id || 'N/A'}</td>
-//                       <td style={{ padding: '12px' }}>{customerName}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.city}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.description}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.due_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-//                       <td style={{ padding: '12px' }}>{schedule.status}</td>
-//                     </tr>
-//                   );
-//                 })}
-//                 {filteredSchedules.length === 0 && (
-//                   <tr>
-//                     <td colSpan="12" style={{ padding: '12px', textAlign: 'center' }}>
-//                       {searchTerm ? 'No matching PM schedules found' : 'No customer PM schedules found'}
-//                     </td>
-//                   </tr>
-//                 )}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* Pagination */}
-//       {totalPages > 1 && (
-//         <div style={{ 
-//           display: 'flex', 
-//           justifyContent: 'center', 
-//           marginTop: '20px',
-//           alignItems: 'center',
-//           gap: '10px'
-//         }}>
-//           <button
-//             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-//             disabled={currentPage === 1}
-//             style={{
-//               padding: '6px 12px',
-//               backgroundColor: currentPage === 1 ? '#f1f1f1' : blueColor,
-//               color: currentPage === 1 ? '#666' : 'white',
-//               border: 'none',
-//               borderRadius: '4px',
-//               cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
-//             }}
-//           >
-//             Previous
-//           </button>
-          
-//           <div style={{ display: 'flex', gap: '5px' }}>
-//             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-//               <button
-//                 key={page}
-//                 onClick={() => setCurrentPage(page)}
-//                 style={{
-//                   padding: '6px 12px',
-//                   backgroundColor: currentPage === page ? blueColor : '#f1f1f1',
-//                   color: currentPage === page ? 'white' : 'black',
-//                   border: 'none',
-//                   borderRadius: '4px',
-//                   cursor: 'pointer'
-//                 }}
-//               >
-//                 {page}
-//               </button>
-//             ))}
-//           </div>
-          
-//           <button
-//             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-//             disabled={currentPage === totalPages}
-//             style={{
-//               padding: '6px 12px',
-//               backgroundColor: currentPage === totalPages ? '#f1f1f1' : blueColor,
-//               color: currentPage === totalPages ? '#666' : 'white',
-//               border: 'none',
-//               borderRadius: '4px',
-//               cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
-//             }}
-//           >
-//             Next
-//           </button>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default PreventiveMaintenanceSchedule;
-
-
-
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../AuthContext/AuthContext';
 import { useCompany } from '../AuthContext/CompanyContext';
 import baseURL from '../ApiUrl/Apiurl';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 
 const PreventiveMaintenanceSchedule = () => {
   const { userId } = useContext(AuthContext);
   const { selectedCompany } = useCompany();
   const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState('factory');
   const [pmSchedules, setPmSchedules] = useState([]);
   const [filteredSchedules, setFilteredSchedules] = useState([]);
@@ -1400,152 +19,28 @@ const PreventiveMaintenanceSchedule = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [chartsData, setChartsData] = useState({});
-  const [sortOrder, setSortOrder] = useState('overdue'); // 'overdue', 'due', 'none'
-  
-  // State for service items and customers data
-  const [serviceItemsMap, setServiceItemsMap] = useState({});
-  const [customersMap, setCustomersMap] = useState({});
 
-  // Helper function to determine schedule status
-  const getScheduleStatus = (schedule) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const dueDate = new Date(schedule.due_date);
-    dueDate.setHours(0, 0, 0, 0);
-    
-    const overdueDate = new Date(schedule.overdue_alert_date);
-    overdueDate.setHours(0, 0, 0, 0);
-    
-    if (today > dueDate) {
-      return 'overdue';
-    } else if (today >= overdueDate && today <= dueDate) {
-      return 'due';
-    }
-    return 'normal';
-  };
+  // Filter state
+  const [filterType, setFilterType] = useState('all'); // 'all' | 'due_date' | 'alert_date' | 'overdue_date'
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
 
-  // Sort schedules: overdue first, then due, then others
-  const sortSchedules = (schedules) => {
-    if (sortOrder === 'none') return schedules;
-    
-    return [...schedules].sort((a, b) => {
-      const statusA = getScheduleStatus(a);
-      const statusB = getScheduleStatus(b);
-      
-      // Priority order: overdue (1), due (2), normal (3)
-      const priorityMap = {
-        'overdue': 1,
-        'due': 2,
-        'normal': 3
-      };
-      
-      const priorityA = priorityMap[statusA];
-      const priorityB = priorityMap[statusB];
-      
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-      
-      // If same status, sort by due date (earliest first)
-      return new Date(a.due_date) - new Date(b.due_date);
-    });
-  };
+  const blueColor = '#0096D6';
 
-  // Check if a schedule is overdue for highlighting
-  const isOverdue = (schedule) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const dueDate = new Date(schedule.due_date);
-    dueDate.setHours(0, 0, 0, 0);
-    return today > dueDate;
-  };
-
-  // Check if a schedule is due for highlighting (within alert period)
-  const isDue = (schedule) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const alertDate = new Date(schedule.alert_date);
-    alertDate.setHours(0, 0, 0, 0);
-    const dueDate = new Date(schedule.due_date);
-    dueDate.setHours(0, 0, 0, 0);
-    return today >= alertDate && today <= dueDate;
-  };
-
-  // Get row background color based on status
-  const getRowStyle = (schedule) => {
-    if (isOverdue(schedule)) {
-      return { backgroundColor: '#ffebee' }; // Light red for overdue
-    } else if (isDue(schedule)) {
-      return { backgroundColor: '#fff3e0' }; // Light orange for due
-    }
-    return {};
-  };
-
-  // Fetch all data including service items and customers
+  // ─── Fetch ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch all four APIs in parallel
-        const [schedulesRes, chartsRes, serviceItemsRes, customersRes] = await Promise.all([
-          fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`),
-          fetch(`${baseURL}/pm-charts/?company_id=${selectedCompany}`),
-          fetch(`${baseURL}/service-items/?user_id=${userId}&company_id=${selectedCompany}`),
-          fetch(`${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`)
-        ]);
-
-        const schedulesData = await schedulesRes.json();
-        const chartsData = await chartsRes.json();
-        const serviceItemsData = await serviceItemsRes.json();
-        const customersData = await customersRes.json();
-
-        // Build service items lookup map: { service_item_id: serviceItemObject }
-        const serviceItemsLookup = {};
-        if (serviceItemsData.status === "success") {
-          serviceItemsData.data.forEach(item => {
-            serviceItemsLookup[item.service_item_id] = item;
-          });
-        }
-        setServiceItemsMap(serviceItemsLookup);
-
-        // Build customers lookup map: { customer_id: customerObject }
-        const customersLookup = {};
-        if (customersData.status === "success") {
-          customersData.data.forEach(customer => {
-            customersLookup[customer.customer_id] = customer;
-          });
-        }
-        setCustomersMap(customersLookup);
-
-        // Build chart frequency map
-        if (chartsData.status === "success") {
-          const chartMap = {};
-          chartsData.data.forEach(chart => {
-            chartMap[chart.chart_id] = chart.frequency_days;
-          });
-          setChartsData(chartMap);
-        }
-
-        if (schedulesData.status === "success") {
-          // Enrich PM schedules with customer data (including city from customer API)
-          const enrichedSchedules = schedulesData.data.map(schedule => {
-            const serviceItem = serviceItemsLookup[schedule.service_item];
-            const customer = serviceItem ? customersLookup[serviceItem.customer] : null;
-            
-            return {
-              ...schedule,
-              serviceItemDetails: serviceItem || null,
-              customerDetails: customer || null,
-              // Use city from customer API, not location from service item
-              city: customer?.city || 'N/A'
-            };
-          });
-          
-          setPmSchedules(enrichedSchedules);
-          filterSchedules(enrichedSchedules, "factory");
+        const response = await fetch(
+          `${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`
+        );
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const data = await response.json();
+        if (data.status === 'success') {
+          setPmSchedules(data.data);
+        } else {
+          throw new Error(data.message || 'Failed to retrieve PM schedules');
         }
       } catch (err) {
         setError(err.message);
@@ -1553,148 +48,60 @@ const PreventiveMaintenanceSchedule = () => {
         setLoading(false);
       }
     };
-    
-    if (userId && selectedCompany) {
-      fetchData();
-    }
-  }, [userId, selectedCompany]);
+    fetchData();
+  }, [selectedCompany]);
 
-  // Filter schedules based on active tab
+  // ─── Apply all filters whenever relevant state changes ────────────────────
   useEffect(() => {
-    filterSchedules(pmSchedules, activeTab);
-  }, [activeTab, pmSchedules]);
-
-  // Apply search filter and sorting
-  useEffect(() => {
-    let filtered = [...pmSchedules];
-    
-    // Apply tab filter
-    filtered = filtered.filter(schedule =>
+    let result = pmSchedules.filter(s =>
       activeTab === 'factory'
-        ? schedule.responsible?.toLowerCase() === 'factory'
-        : schedule.responsible?.toLowerCase() === 'customer'
+        ? s.responsible.toLowerCase() === 'factory'
+        : s.responsible.toLowerCase() === 'customer'
     );
-    
-    // Apply search filter
+
+    // Date range filter
+    if (filterType !== 'all') {
+      const fieldMap = {
+        due_date: 'due_date',
+        alert_date: 'alert_date',
+        overdue_date: 'overdue_alert_date',
+      };
+      const field = fieldMap[filterType];
+
+      if (filterDateFrom) {
+        result = result.filter(s => s[field] && s[field] >= filterDateFrom);
+      }
+      if (filterDateTo) {
+        result = result.filter(s => s[field] && s[field] <= filterDateTo);
+      }
+    }
+
+    // Search filter
     if (searchTerm.trim()) {
-      const lowercasedSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter(schedule =>
-        schedule.pm_schedule_id?.toString().toLowerCase().includes(lowercasedSearch) ||
-        schedule.service_item?.toString().toLowerCase().includes(lowercasedSearch) ||
-        schedule.description?.toLowerCase().includes(lowercasedSearch) ||
-        schedule.task_type?.toLowerCase().includes(lowercasedSearch) ||
-        schedule.status?.toLowerCase().includes(lowercasedSearch) ||
-        formatDate(schedule.due_date)?.toLowerCase().includes(lowercasedSearch) ||
-        formatDate(schedule.alert_date)?.toLowerCase().includes(lowercasedSearch) ||
-        formatDate(schedule.overdue_alert_date)?.toLowerCase().includes(lowercasedSearch) ||
-        schedule.customerDetails?.customer_id?.toLowerCase().includes(lowercasedSearch) ||
-        schedule.customerDetails?.username?.toLowerCase().includes(lowercasedSearch) ||
-        schedule.customerDetails?.full_name?.toLowerCase().includes(lowercasedSearch) ||
-        schedule.city?.toLowerCase().includes(lowercasedSearch)
+      const lower = searchTerm.toLowerCase();
+      result = result.filter(s =>
+        s.pm_schedule_id?.toString().toLowerCase().includes(lower) ||
+        s.service_item?.toString().toLowerCase().includes(lower) ||
+        s.description?.toLowerCase().includes(lower) ||
+        s.task_type?.toLowerCase().includes(lower) ||
+        s.status?.toLowerCase().includes(lower) ||
+        formatDate(s.due_date)?.toLowerCase().includes(lower) ||
+        formatDate(s.alert_date)?.toLowerCase().includes(lower) ||
+        formatDate(s.overdue_alert_date)?.toLowerCase().includes(lower)
       );
     }
-    
-    // Apply sorting
-    filtered = sortSchedules(filtered);
-    
-    setFilteredSchedules(filtered);
-    setCurrentPage(1);
-  }, [searchTerm, activeTab, pmSchedules, sortOrder]);
 
-  const filterSchedules = (schedules, tab) => {
-    let filtered = schedules.filter(schedule =>
-      tab === 'factory'
-        ? schedule.responsible?.toLowerCase() === 'factory'
-        : schedule.responsible?.toLowerCase() === 'customer'
-    );
-    
-    filtered = sortSchedules(filtered);
-    setFilteredSchedules(filtered);
+    setFilteredSchedules(result);
     setCurrentPage(1);
-  };
+  }, [activeTab, pmSchedules, searchTerm, filterType, filterDateFrom, filterDateTo]);
 
-  // Pagination calculations
+  // ─── Pagination ───────────────────────────────────────────────────────────
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
   const currentItems = filteredSchedules.slice(indexOfFirstEntry, indexOfLastEntry);
   const totalPages = Math.ceil(filteredSchedules.length / entriesPerPage);
 
-  // Handle service item click
-  const handleServiceItemClick = (serviceItemId) => {
-    if (serviceItemId) {
-      navigate(`/servicemanager/service-item-details/${serviceItemId}`);
-    }
-  };
-
-  // Handle raise request button click
-  const handleRaiseRequest = async (schedule) => {
-    setProcessingId(schedule.pm_schedule_id);
-    
-    try {
-      const response = await fetch(`${baseURL}/pm-schedules/${schedule.pm_schedule_id}/create-service-request/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-      
-      if (response.ok && result.message && result.message.includes("successfully")) {
-        setPmSchedules(prevSchedules => 
-          prevSchedules.map(s => 
-            s.pm_schedule_id === schedule.pm_schedule_id 
-              ? { ...s, status: 'Processed', is_alert_sent: true } 
-              : s
-          )
-        );
-        window.dispatchEvent(new Event("pm-schedule-updated"));   
-        alert(`Service request created successfully for PM Schedule ID: ${schedule.pm_schedule_id}`);
-      } else {
-        throw new Error(result.message || 'Failed to create service request');
-      }
-    } catch (err) {
-      console.error('Error creating service request:', err);
-      alert(`Failed to create service request: ${err.message}`);
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const isButtonDisabled = (schedule) => {
-    if (!schedule.is_alert_sent || schedule.status !== "Pending") {
-      return true;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const overdueDate = new Date(schedule.overdue_alert_date);
-    overdueDate.setHours(0, 0, 0, 0);
-
-    if (today <= overdueDate) {
-      return false;
-    }
-
-    const frequencyDays = chartsData[schedule.chart] || null;
-
-    if (!frequencyDays) {
-      return true;
-    }
-
-    const nextEnableDate = new Date(overdueDate);
-    nextEnableDate.setDate(nextEnableDate.getDate() + frequencyDays);
-    nextEnableDate.setHours(0, 0, 0, 0);
-
-    if (today >= nextEnableDate) {
-      return false;
-    }
-
-    return true;
-  };
-
-  const blueColor = '#0096D6';
-
+  // ─── Helpers ──────────────────────────────────────────────────────────────
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
@@ -1704,323 +111,477 @@ const PreventiveMaintenanceSchedule = () => {
     return `${day}/${month}/${year}`;
   };
 
+  const isButtonDisabled = (schedule) => {
+  // Disable if status is not Pending
+  if (schedule.status !== 'Pending') return true;
+
+  // Enable ONLY if is_alert_sent is explicitly true
+  if (schedule.is_alert_sent === true) return false;
+
+  // All other cases — disable (including overdue date condition removed)
+  return true;
+};
+
+  const handleServiceItemClick = (serviceItemId) => {
+    if (serviceItemId) navigate(`/servicemanager/service-item-details/${serviceItemId}`);
+  };
+
+  const handleClearFilters = () => {
+    setFilterType('all');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setSearchTerm('');
+  };
+
+  // ─── Raise Request ────────────────────────────────────────────────────────
+  const handleRaiseRequest = async (schedule) => {
+    setProcessingId(schedule.pm_schedule_id);
+    try {
+      const response = await fetch(
+        `${baseURL}/pm-schedules/${schedule.pm_schedule_id}/create-service-request/`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok && result.message && result.message.toLowerCase().includes('successfully')) {
+        setPmSchedules(prev =>
+          prev.map(s =>
+            s.pm_schedule_id === schedule.pm_schedule_id
+              ? { ...s, status: 'Processed', is_alert_sent: true }
+              : s
+          )
+        );
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: `Service request created successfully for PM Schedule ID: ${schedule.pm_schedule_id}`,
+          confirmButtonColor: blueColor,
+        });
+      } else {
+        // Show the exact API error message
+        Swal.fire({
+          icon: 'error',
+          title: 'Request Failed',
+          text: result.error || result.message || 'Failed to create service request',
+          confirmButtonColor: blueColor,
+        });
+      }
+    } catch (err) {
+      console.error('Error creating service request:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: err.message || 'An unexpected error occurred',
+        confirmButtonColor: blueColor,
+      });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  // ─── Column definitions ───────────────────────────────────────────────────
+  const commonColumns = [
+    { label: 'S.No' },
+    { label: 'PM Schedule ID' },
+    { label: 'Service Item' },
+    { label: 'Description' },
+    { label: 'Task Type' },
+    { label: 'Due Date' },
+    { label: 'Alert Date' },
+    { label: 'Overdue Date' },
+    { label: 'Status' },
+  ];
+
+  const thStyle = {
+    padding: '12px',
+    backgroundColor: blueColor,
+    color: 'white',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+  };
+
+  const tdStyle = { padding: '12px' };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <div>Loading PM schedules...</div>
+      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+        Loading PM schedules...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <div>Error: {error}</div>
+      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+        Error: {error}
       </div>
     );
   }
 
   return (
-    <div className="pm-container" style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1 className="delegate-title" style={{ color: '#333', marginBottom: '20px' }}>Preventive Maintenance Schedules</h1>
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h1 style={{ color: '#333', marginBottom: '20px' }}>
+        Preventive Maintenance Schedules
+      </h1>
 
-      {/* Tabs */}
+      {/* ── Tabs ── */}
       <div style={{ marginBottom: '20px' }}>
-        <button
-          onClick={() => setActiveTab('factory')}
-          style={{
-            padding: '10px 20px',
-            marginRight: '10px',
-            backgroundColor: activeTab === 'factory' ? blueColor : '#f1f1f1',
-            color: activeTab === 'factory' ? 'white' : 'black',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: '500'
-          }}
-        >
-          Factory
-        </button>
-        <button
-          onClick={() => setActiveTab('customer')}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: activeTab === 'customer' ? blueColor : '#f1f1f1',
-            color: activeTab === 'customer' ? 'white' : 'black',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontWeight: '500'
-          }}
-        >
-          Customer
-        </button>
+        {['factory', 'customer'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '10px 20px',
+              marginRight: '10px',
+              backgroundColor: activeTab === tab ? blueColor : '#f1f1f1',
+              color: activeTab === tab ? 'white' : 'black',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontWeight: '500',
+              textTransform: 'capitalize',
+            }}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* Search, Entries Per Page, and Sort Controls */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '20px',
-        flexWrap: 'wrap',
-        gap: '10px'
-      }}>
+      {/* ── Filter Bar ── */}
+      <div
+        style={{
+          backgroundColor: '#f8f9fa',
+          border: '1px solid #dee2e6',
+          borderRadius: '6px',
+          padding: '16px',
+          marginBottom: '20px',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            alignItems: 'flex-end',
+          }}
+        >
+          {/* Filter type */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '600', color: '#555' }}>
+              Filter By Date
+            </label>
+            <select
+              value={filterType}
+              onChange={e => {
+                setFilterType(e.target.value);
+                setFilterDateFrom('');
+                setFilterDateTo('');
+              }}
+              style={{
+                padding: '8px 10px',
+                borderRadius: '4px',
+                border: '1px solid #ccc',
+                cursor: 'pointer',
+                minWidth: '160px',
+              }}
+            >
+              <option value="all">All Records</option>
+              <option value="due_date">Due Date</option>
+              <option value="alert_date">Alert Date</option>
+              <option value="overdue_date">Overdue Date</option>
+            </select>
+          </div>
+
+          {/* Date From */}
+          {filterType !== 'all' && (
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#555' }}>
+                  From
+                </label>
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={e => setFilterDateFrom(e.target.value)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#555' }}>
+                  To
+                </label>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={e => setFilterDateTo(e.target.value)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: '4px',
+                    border: '1px solid #ccc',
+                  }}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Quick filter buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '13px', fontWeight: '600', color: '#555' }}>
+              Quick Filters
+            </label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { label: 'Overdue', field: 'overdue_date' },
+                { label: 'Due Today', field: 'due_date' },
+                { label: 'Alert Today', field: 'alert_date' },
+              ].map(({ label, field }) => (
+                <button
+                  key={field}
+                  onClick={() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    setFilterType(field);
+                    if (field === 'overdue_date') {
+                      setFilterDateFrom('');
+                      setFilterDateTo(today);
+                    } else {
+                      setFilterDateFrom(today);
+                      setFilterDateTo(today);
+                    }
+                  }}
+                  style={{
+                    padding: '8px 12px',
+                    backgroundColor:
+                      field === 'overdue_date' ? '#dc3545' :
+                      field === 'due_date' ? '#fd7e14' : '#6f42c1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Clear */}
+          {(filterType !== 'all' || filterDateFrom || filterDateTo || searchTerm) && (
+            <button
+              onClick={handleClearFilters}
+              style={{
+                padding: '8px 14px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                alignSelf: 'flex-end',
+              }}
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ── Search + Entries ── */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px',
+          flexWrap: 'wrap',
+          gap: '10px',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           Show
           <select
             value={entriesPerPage}
-            onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-            style={{
-              padding: '5px 10px',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              cursor: 'pointer'
-            }}
+            onChange={e => setEntriesPerPage(Number(e.target.value))}
+            style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid #ccc', cursor: 'pointer' }}
           >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
+            {[5, 10, 25, 50, 100].map(n => (
+              <option key={n} value={n}>{n}</option>
+            ))}
           </select>
           entries
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <label style={{ fontWeight: '500' }}>Sort by:</label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            style={{
-              padding: '5px 10px',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              cursor: 'pointer'
-            }}
-          >
-            <option value="overdue">Overdue First</option>
-            <option value="due">Due First</option>
-            <option value="none">No Sorting</option>
-          </select>
-        </div>
-        
+
         <input
           type="text"
           placeholder="Search PM schedules..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={e => setSearchTerm(e.target.value)}
           style={{
             padding: '8px 12px',
             borderRadius: '4px',
             border: '1px solid #ccc',
-            minWidth: '250px'
+            minWidth: '250px',
           }}
         />
       </div>
 
-      {/* Legend for highlighting */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '20px', 
-        marginBottom: '15px',
-        padding: '10px',
-        backgroundColor: '#f9f9f9',
-        borderRadius: '4px',
-        fontSize: '12px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '20px', height: '20px', backgroundColor: '#ffebee', border: '1px solid #ccc' }}></div>
-          <span>Overdue</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '20px', height: '20px', backgroundColor: '#fff3e0', border: '1px solid #ccc' }}></div>
-          <span>Due (Alert Period)</span>
-        </div>
+      {/* ── Results summary ── */}
+      <div style={{ marginBottom: '10px', fontSize: '13px', color: '#666' }}>
+        Showing {filteredSchedules.length} record{filteredSchedules.length !== 1 ? 's' : ''}
+        {filterType !== 'all' && (
+          <span style={{ marginLeft: '8px', color: blueColor, fontWeight: '600' }}>
+            (filtered by {filterType.replace('_', ' ')})
+          </span>
+        )}
       </div>
 
-      {/* Factory Tab Content */}
-      {activeTab === 'factory' && (
-        <div>
-          <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Factory PM Schedules</h2>
-          <div className="table-responsive">
-            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>S.No</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer ID</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer Name</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>City</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.map((schedule, index) => {
-                  const disabled = isButtonDisabled(schedule);
-                  const isProcessing = processingId === schedule.pm_schedule_id;
-                  const customer = schedule.customerDetails;
-                  const customerName = customer ? `${customer.username} (${customer.full_name})` : 'N/A';
-                  const rowStyle = getRowStyle(schedule);
-                  
-                  return (
-                    <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd', ...rowStyle }}>
-                      <td style={{ padding: '12px' }}>{indexOfFirstEntry + index + 1}</td>
-                      <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-                      <td style={{ padding: '12px' }}>
-                        <button 
-                          onClick={() => handleServiceItemClick(schedule.service_item)}
-                          style={{
-                            color: '#0077cc',
-                            textDecoration: 'underline',
-                            border: 'none',
-                            background: 'none',
-                            cursor: 'pointer',
-                            fontSize: 'inherit',
-                            fontWeight: "600",
-                            padding: '0',
-                            textAlign: 'left'
-                          }}
-                        >
-                          {schedule.service_item}
-                        </button>
-                      </td>
-                      <td style={{ padding: '12px' }}>{customer?.customer_id || 'N/A'}</td>
-                      <td style={{ padding: '12px' }}>{customerName}</td>
-                      <td style={{ padding: '12px' }}>{schedule.city}</td>
-                      <td style={{ padding: '12px' }}>{schedule.description}</td>
-                      <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-                      <td style={{ padding: '12px', fontWeight: isOverdue(schedule) ? 'bold' : 'normal', color: isOverdue(schedule) ? '#d32f2f' : 'inherit' }}>
-                        {formatDate(schedule.due_date)}
-                      </td>
-                      <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-                      <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-                      <td style={{ padding: '12px' }}>{schedule.status}</td>
-                      <td style={{ padding: '12px' }}>
+      {/* ── Table ── */}
+      <h2 style={{ color: '#333', marginBottom: '15px', textTransform: 'capitalize' }}>
+        {activeTab} PM Schedules
+      </h2>
+
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {commonColumns.map(col => (
+                <th key={col.label} style={thStyle}>{col.label}</th>
+              ))}
+              {activeTab === 'factory' && (
+                <th style={thStyle}>Action</th>
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {currentItems.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={activeTab === 'factory' ? 10 : 9}
+                  style={{ padding: '20px', textAlign: 'center', color: '#666' }}
+                >
+                  {searchTerm || filterType !== 'all'
+                    ? 'No matching PM schedules found'
+                    : `No ${activeTab} PM schedules found`}
+                </td>
+              </tr>
+            ) : (
+              currentItems.map((schedule, index) => {
+                const disabled = isButtonDisabled(schedule);
+                const isProcessing = processingId === schedule.pm_schedule_id;
+
+                // Row highlight: overdue rows in light red
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const overdueDate = schedule.overdue_alert_date
+                  ? new Date(schedule.overdue_alert_date)
+                  : null;
+                if (overdueDate) overdueDate.setHours(0, 0, 0, 0);
+                const isOverdue =
+                  overdueDate && today >= overdueDate && schedule.status === 'Pending';
+
+                return (
+                  <tr
+                    key={schedule.pm_schedule_id}
+                    style={{
+                      borderBottom: '1px solid #ddd',
+                      backgroundColor: isOverdue ? '#fff5f5' : 'transparent',
+                    }}
+                  >
+                    <td style={tdStyle}>{indexOfFirstEntry + index + 1}</td>
+                    <td style={tdStyle}>{schedule.pm_schedule_id}</td>
+                    <td style={tdStyle}>
+                      <button
+                        onClick={() => handleServiceItemClick(schedule.service_item)}
+                        style={{
+                          color: '#0077cc',
+                          textDecoration: 'underline',
+                          border: 'none',
+                          background: 'none',
+                          cursor: 'pointer',
+                          fontSize: 'inherit',
+                          fontWeight: '600',
+                          padding: '0',
+                          textAlign: 'left',
+                        }}
+                      >
+                        {schedule.service_item}
+                      </button>
+                    </td>
+                    <td style={tdStyle}>{schedule.description}</td>
+                    <td style={tdStyle}>{schedule.task_type}</td>
+                    <td style={tdStyle}>{formatDate(schedule.due_date)}</td>
+                    <td style={tdStyle}>{formatDate(schedule.alert_date)}</td>
+                    <td style={{ ...tdStyle, color: isOverdue ? '#dc3545' : 'inherit', fontWeight: isOverdue ? '600' : 'normal' }}>
+                      {formatDate(schedule.overdue_alert_date)}
+                    </td>
+                    <td style={tdStyle}>
+                      <span
+                        style={{
+                          padding: '3px 10px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          backgroundColor:
+                            schedule.status === 'Pending' ? '#fff3cd' :
+                            schedule.status === 'Processed' ? '#d1ecf1' : '#d4edda',
+                          color:
+                            schedule.status === 'Pending' ? '#856404' :
+                            schedule.status === 'Processed' ? '#0c5460' : '#155724',
+                        }}
+                      >
+                        {schedule.status}
+                      </span>
+                    </td>
+                    {activeTab === 'factory' && (
+                      <td style={tdStyle}>
                         <button
                           onClick={() => handleRaiseRequest(schedule)}
                           disabled={disabled || isProcessing}
                           style={{
-                            padding: '8px 12px',
+                            padding: '7px 12px',
                             backgroundColor: disabled ? '#ccc' : blueColor,
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: disabled ? 'not-allowed' : 'pointer'
+                            cursor: disabled ? 'not-allowed' : 'pointer',
+                            whiteSpace: 'nowrap',
+                            fontSize: '13px',
                           }}
                         >
                           {isProcessing ? 'Processing...' : 'Raise Request'}
                         </button>
                       </td>
-                    </tr>
-                  );
-                })}
-                {filteredSchedules.length === 0 && (
-                  <tr>
-                    <td colSpan="13" style={{ padding: '12px', textAlign: 'center' }}>
-                      {searchTerm ? 'No matching PM schedules found' : 'No factory PM schedules found'}
-                    </td>
+                    )}
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Customer Tab Content */}
-      {activeTab === 'customer' && (
-        <div>
-          <h2 className="pm-title" style={{ color: '#333', marginBottom: '15px' }}>Customer PM Schedules</h2>
-          <div className="table-responsive">
-            <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>S.No</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>PM Schedule ID</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Service Item</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer ID</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Customer Name</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>City</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Description</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Task Type</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Due Date</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Alert Date</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Overdue Date</th>
-                  <th style={{ padding: '12px', backgroundColor: blueColor, color: 'white', textAlign: 'left' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.map((schedule, index) => {
-                  const customer = schedule.customerDetails;
-                  const customerName = customer ? `${customer.username} (${customer.full_name})` : 'N/A';
-                  const rowStyle = getRowStyle(schedule);
-                  
-                  return (
-                    <tr key={schedule.pm_schedule_id} style={{ borderBottom: '1px solid #ddd', ...rowStyle }}>
-                      <td style={{ padding: '12px' }}>{indexOfFirstEntry + index + 1}</td>
-                      <td style={{ padding: '12px' }}>{schedule.pm_schedule_id}</td>
-                      <td style={{ padding: '12px' }}>
-                        <button 
-                          onClick={() => handleServiceItemClick(schedule.service_item)}
-                          style={{
-                            color: '#0077cc',
-                            textDecoration: 'underline',
-                            border: 'none',
-                            background: 'none',
-                            cursor: 'pointer',
-                            fontSize: 'inherit',
-                            fontWeight: "600",
-                            padding: '0',
-                            textAlign: 'left'
-                          }}
-                        >
-                          {schedule.service_item}
-                        </button>
-                      </td>
-                      <td style={{ padding: '12px' }}>{customer?.customer_id || 'N/A'}</td>
-                      <td style={{ padding: '12px' }}>{customerName}</td>
-                      <td style={{ padding: '12px' }}>{schedule.city}</td>
-                      <td style={{ padding: '12px' }}>{schedule.description}</td>
-                      <td style={{ padding: '12px' }}>{schedule.task_type}</td>
-                      <td style={{ padding: '12px', fontWeight: isOverdue(schedule) ? 'bold' : 'normal', color: isOverdue(schedule) ? '#d32f2f' : 'inherit' }}>
-                        {formatDate(schedule.due_date)}
-                      </td>
-                      <td style={{ padding: '12px' }}>{formatDate(schedule.alert_date)}</td>
-                      <td style={{ padding: '12px' }}>{formatDate(schedule.overdue_alert_date)}</td>
-                      <td style={{ padding: '12px' }}>{schedule.status}</td>
-                    </tr>
-                  );
-                })}
-                {filteredSchedules.length === 0 && (
-                  <tr>
-                    <td colSpan="12" style={{ padding: '12px', textAlign: 'center' }}>
-                      {searchTerm ? 'No matching PM schedules found' : 'No customer PM schedules found'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* Pagination */}
+      {/* ── Pagination ── */}
       {totalPages > 1 && (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          marginTop: '20px',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '20px',
+            alignItems: 'center',
+            gap: '10px',
+          }}
+        >
           <button
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
@@ -2030,14 +591,14 @@ const PreventiveMaintenanceSchedule = () => {
               color: currentPage === 1 ? '#666' : 'white',
               border: 'none',
               borderRadius: '4px',
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
             }}
           >
             Previous
           </button>
-          
+
           <div style={{ display: 'flex', gap: '5px' }}>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
               <button
                 key={page}
                 onClick={() => setCurrentPage(page)}
@@ -2047,14 +608,14 @@ const PreventiveMaintenanceSchedule = () => {
                   color: currentPage === page ? 'white' : 'black',
                   border: 'none',
                   borderRadius: '4px',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
               >
                 {page}
               </button>
             ))}
           </div>
-          
+
           <button
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
@@ -2064,7 +625,7 @@ const PreventiveMaintenanceSchedule = () => {
               color: currentPage === totalPages ? '#666' : 'white',
               border: 'none',
               borderRadius: '4px',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
             }}
           >
             Next

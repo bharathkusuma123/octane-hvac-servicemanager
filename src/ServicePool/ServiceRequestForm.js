@@ -353,11 +353,13 @@ const ServiceRequestForm = () => {
       source_type: form.source_type,
       request_details: form.request_details || "Service required",
       alert_details: isEditMode ? existingRequest.alert_details : "string",
-      requested_by: userId || "unknown",
+    requested_by: userId 
+  ? `${userId}-Service Manager` 
+  : "unknown",
       preferred_date: form.preferred_date,
       preferred_time: `${form.preferred_time}:00`,
       status: isEditMode ? existingRequest.status : "Open",
-      estimated_completion_time: isEditMode ? existingRequest.estimated_completion_time : null,
+      estimated_completion_time: isEditMode ? existingRequest.estimated_completion_time : null, 
       estimated_price: isEditMode ? existingRequest.estimated_price : "0.00",
       est_start_datetime: `${form.preferred_date}T${form.preferred_time}:00Z`,
       est_end_datetime: `${form.preferred_date}T${form.preferred_time}:00Z`,
@@ -485,7 +487,7 @@ const ServiceRequestForm = () => {
   };
 
   return (
-    <div className="container service-request-form">
+    <div className="container service-request-form mt-5">
       <div className="card requestformcard">
         <div className="card-header">
           <h5 className="mb-1">{isEditMode ? 'Edit Service Request' : 'Service Request Form'}</h5>

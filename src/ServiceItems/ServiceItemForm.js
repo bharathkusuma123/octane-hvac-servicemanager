@@ -592,6 +592,20 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+     // ✅ SHOW CONFIRMATION ONLY IN EDIT MODE
+  if (isEditMode) {
+    const confirmResult = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to update this Service Item?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Update",
+      cancelButtonText: "Cancel",
+    });
+
+    // ❌ If user clicks Cancel → stop here
+    if (!confirmResult.isConfirmed) return;
+  }
     setIsSubmitting(true);
     setError(null);
 

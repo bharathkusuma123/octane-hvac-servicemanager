@@ -3863,7 +3863,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                         </button>
                       </td>
                       <td title={getCompanyDisplayName(item.company)}>
-                        {getCompanyDisplayName(item.company)}
+                        {item.company}
                       </td>
                       <td title={`Customer ID: ${item.customer}`}>
                         {getCustomerUsername(item.customer)}

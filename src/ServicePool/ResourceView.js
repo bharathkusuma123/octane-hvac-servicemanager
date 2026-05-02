@@ -205,12 +205,7 @@ const ResourceView = () => {
               <button className="btn btn-primary" onClick={handleBack}>
                 Go Back
               </button>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => navigate('/servicemanager/resources')}
-              >
-                Return to Resources List
-              </button>
+             
             </div>
           </div>
         </div>

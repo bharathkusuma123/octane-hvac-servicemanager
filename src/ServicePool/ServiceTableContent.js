@@ -1713,7 +1713,8 @@ const ServiceTableContent = ({
   handleReopenService,
   getCustomerName,
   userId,
-  serviceItems
+  serviceItems,
+  handleRecallService
 }) => {
   // New filter states
   const [engineerStatusFilter, setEngineerStatusFilter] = useState("");
@@ -2668,27 +2669,40 @@ const ServiceTableContent = ({
 </button>
 
                     </td>
-                    <td>
-                      {item.status === "Open" ? (
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => handleAssignClick(item)}
-                        >
-                          Assign
-                        </button>
-                      ) : item.status === "Closed" ? (
-                        <button
-                          className="btn btn-sm btn-warning"
-                          onClick={() => handleReopenService(item)}
-                        >
-                          Re-open Service
-                        </button>
-                      ) : (
-                        <button className="btn btn-sm btn-secondary disabled">
-                          {item.status === "Reopened" ? "Already Reopened" : "Assign"}
-                        </button>
-                      )}
-                    </td>
+                   <td>
+  {item.status === "Open" ? (
+    <button
+      className="btn btn-sm btn-primary"
+      onClick={() => handleAssignClick(item)}
+    >
+      Assign
+    </button>
+  ) : item.status === "Closed" ? (
+    <button
+      className="btn btn-sm btn-warning"
+      onClick={() => handleReopenService(item)}
+    >
+      Re-open Service
+    </button>
+  ) : item.status === "Assigned" && engineerStatus === "Pending" ? (
+    <div className="d-flex flex-column gap-1">
+      <button className="btn btn-sm btn-secondary disabled">
+        Assign
+      </button>
+      <button
+        className="btn btn-sm btn-danger"
+        onClick={() => handleRecallService(item)}
+        title="Recall this assignment"
+      >
+        Recall
+      </button>
+    </div>
+  ) : (
+    <button className="btn btn-sm btn-secondary disabled">
+      {item.status === "Reopened" ? "Already Reopened" : "Assign"}
+    </button>
+  )}
+</td>
                   </tr>
                 );
               })

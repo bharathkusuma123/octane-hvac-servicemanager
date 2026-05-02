@@ -31,6 +31,80 @@ const ServicePoolTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredData, setFilteredData] = useState([]);
 
+  // Handle recall service
+const handleRecallService = async (item) => {
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: 'Recall Assignment?',
+    text: `Are you sure you want to recall the assignment for request ${item.request_id}? The status will revert to Open.`,
+    showCancelButton: true,
+    confirmButtonText: 'Yes, Recall',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+  });
+
+  if (result.isConfirmed) {
+    try {
+      Swal.fire({
+        title: 'Recalling Assignment...',
+        text: 'Please wait...',
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); },
+      });
+
+      // Find the latest assignment history record for this request
+      const historyData = historyResponse.data || [];
+      const latestAssignment = Array.isArray(historyData)
+        ? historyData.find(h => h.request === item.request_id && h.status === 'Pending')
+        : null;
+
+      // PUT 1: Update assignment history status to "Recalled"
+      if (latestAssignment) {
+        await axios.put(`${baseURL}/assignment-history/${latestAssignment.assignment_id}/`, {
+          status: 'Recalled',
+          updated_by: userId,
+          user_id: userId,
+          company_id: selectedCompany,
+        });
+      }
+
+      // PUT 2: Revert service pool to Open with no engineer
+      await axios.put(`${baseURL}/service-pools/${item.request_id}/`, {
+        status: 'Open',
+        assigned_engineer: null,
+        est_start_datetime: null,
+        est_end_datetime: null,
+        estimated_completion_time: null,
+        estimated_price: null,
+        updated_by: userId,
+        user_id: userId,
+        company_id: selectedCompany,
+        dynamics_service_order_no: null,
+      });
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Recalled Successfully!',
+        text: `Request ${item.request_id} has been recalled and is now Open for reassignment.`,
+        confirmButtonColor: '#3085d6',
+      });
+
+      await fetchPoolData();
+      await fetchAssignmentHistory();
+
+    } catch (error) {
+      console.error('Error recalling assignment:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Recall Failed',
+        text: error.response?.data?.message || 'Failed to recall assignment. Please try again.',
+        confirmButtonColor: '#3085d6',
+      });
+    }
+  }
+};
+
   // Fetch customers
   const fetchCustomers = async () => {
     try {
@@ -123,28 +197,29 @@ const ServicePoolTable = () => {
   }, [userId, selectedCompany]);
 
   // Fetch assignment history
-  useEffect(() => {
-    const fetchAssignmentHistory = async () => {
-      try {
-        const response = await axios.get(`${baseURL}/assignment-history/`, {
-          params: {
-            user_id: userId,
-            company_id: selectedCompany
-          }
-        });
-        
-        const historyData = response.data?.data || response.data || [];
-        const sortedHistory = Array.isArray(historyData) 
-          ? historyData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-          : [];
-        
-        setHistoryResponse({ data: sortedHistory });
-      } catch (error) {
-        console.error("Error fetching assignment history:", error);
-        setHistoryResponse({ data: [] });
+    // Fetch assignment history - standalone so it can be called on demand
+const fetchAssignmentHistory = async () => {
+  try {
+    const response = await axios.get(`${baseURL}/assignment-history/`, {
+      params: {
+        user_id: userId,
+        company_id: selectedCompany
       }
-    };
+    });
+    
+    const historyData = response.data?.data || response.data || [];
+    const sortedHistory = Array.isArray(historyData) 
+      ? historyData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      : [];
+    
+    setHistoryResponse({ data: sortedHistory });
+  } catch (error) {
+    console.error("Error fetching assignment history:", error);
+    setHistoryResponse({ data: [] });
+  }
+};
 
+useEffect(() => {
     if (userId && selectedCompany) {
       fetchAssignmentHistory();
     }
@@ -317,6 +392,7 @@ const ServicePoolTable = () => {
           getCustomerName={getCustomerName}
           userId={userId}
           serviceItems={serviceItems}
+          handleRecallService={handleRecallService}
         />
       ) : (
         <AssignmentForm
@@ -330,6 +406,10 @@ const ServicePoolTable = () => {
           serviceItems={serviceItems}
           getCustomerDetails={getCustomerDetails}
           getServiceItemDetails={getServiceItemDetails}
+          onSuccess={() => {
+  fetchPoolData();
+  fetchAssignmentHistory();
+}}
         />
       )}
     </div>

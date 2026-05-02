@@ -16,14 +16,38 @@ const TopNavbar = () => {
   const [companiesData, setCompaniesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
-   const { logout } = useContext(AuthContext);
-  const [alertCount, setAlertCount] = useState(0);
+  const [pmBadgeCount, setPmBadgeCount] = useState(0);
+  const { logout } = useContext(AuthContext);
 
-   const handleLogout = () => {
-  logout();   // ✅ centralized logout
-  navigate("/");
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  // ─── Fetch PM badge count ────────────────────────────────────────────────
+  const fetchPmBadgeCount = async (companyId, uid) => {
+  if (!companyId || !uid) return;
+  try {
+    const response = await fetch(
+      `${baseURL}/service-item-pm-schedules/?user_id=${uid}&company_id=${companyId}`
+    );
+    const data = await response.json();
+    if (data.status === "success") {
+      // Count ONLY Factory + Pending + is_alert_sent true
+      const count = data.data.filter((schedule) =>
+        schedule.responsible?.toLowerCase() === "factory" &&
+        schedule.status === "Pending" &&
+        schedule.is_alert_sent === true
+      ).length;
+
+      setPmBadgeCount(count);
+    }
+  } catch (err) {
+    console.error("Failed to fetch PM badge count", err);
+  }
 };
 
+  // ─── Fetch companies ─────────────────────────────────────────────────────
   const fetchCompanies = async () => {
     try {
       const response = await fetch(`${baseURL}/companies/`);
@@ -39,84 +63,10 @@ const TopNavbar = () => {
   const getCompanyDisplayName = (companyId) => {
     if (!companiesData || companiesData.length === 0) return companyId;
     const company = companiesData.find((comp) => comp.company_id === companyId);
-    if (company) {
-      return `${company.company_name} (${company.company_id})`;
-    }
-    return companyId;
+    return company ? `${company.company_name} (${company.company_id})` : companyId;
   };
 
-  // Fetch PM alert count with date + frequency logic
-  const fetchAlertCount = async () => {
-    if (!userId || !selectedCompany) return;
-    try {
-      const [schedulesRes, chartsRes] = await Promise.all([
-        fetch(`${baseURL}/service-item-pm-schedules/?user_id=${userId}&company_id=${selectedCompany}`),
-        fetch(`${baseURL}/pm-charts/?company_id=${selectedCompany}`),
-      ]);
-
-      const schedulesData = await schedulesRes.json();
-      const chartsJson = await chartsRes.json();
-
-      // Build chart lookup map { chart_id: frequency_days }
-      const chartMap = {};
-      if (chartsJson.status === "success") {
-        chartsJson.data.forEach((chart) => {
-          chartMap[chart.chart_id] = chart.frequency_days;
-        });
-      }
-
-      if (schedulesData.status === "success") {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const count = schedulesData.data.filter((schedule) => {
-          if (!schedule.is_alert_sent || schedule.status !== "Pending") return false;
-
-          const overdueDate = new Date(schedule.overdue_alert_date);
-          overdueDate.setHours(0, 0, 0, 0);
-
-          // Within alert window — count it
-          if (today <= overdueDate) return true;
-
-          // Past overdue — check frequency cycle restart
-          const frequencyDays = chartMap[schedule.chart];
-          if (!frequencyDays) return false;
-
-          const nextEnableDate = new Date(overdueDate);
-          nextEnableDate.setDate(nextEnableDate.getDate() + frequencyDays);
-          nextEnableDate.setHours(0, 0, 0, 0);
-
-          return today >= nextEnableDate;
-        }).length;
-
-        setAlertCount(count);
-      }
-    } catch (error) {
-      console.error("Failed to fetch PM alert count", error);
-    }
-  };
-
-  // ✅ Listen for custom event fired from PM Schedule page after raise request
-  useEffect(() => {
-    const handlePMUpdate = () => {
-      fetchAlertCount();
-    };
-
-    window.addEventListener("pm-schedule-updated", handlePMUpdate);
-    return () => window.removeEventListener("pm-schedule-updated", handlePMUpdate);
-  }, [selectedCompany, userId]);
-
-  // ✅ Fetch on mount + company change + poll every 30 seconds
-  useEffect(() => {
-    fetchAlertCount();
-
-    const interval = setInterval(() => {
-      fetchAlertCount();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [selectedCompany, userId]);
-
+  // ─── Fetch user data on mount ────────────────────────────────────────────
   useEffect(() => {
     if (userRole === "service-manager" && userId) {
       setLoading(true);
@@ -127,6 +77,7 @@ const TopNavbar = () => {
             const matchedUser = Array.isArray(data)
               ? data.find((user) => user.user_id === userId)
               : null;
+
             if (matchedUser) {
               setUserData(matchedUser);
               setUsername(matchedUser.username || matchedUser.full_name);
@@ -145,12 +96,20 @@ const TopNavbar = () => {
     }
   }, [userRole, userId, updateCompany]);
 
+  // ─── Re-fetch badge whenever selectedCompany changes ────────────────────
+  useEffect(() => {
+    if (selectedCompany && userId) {
+      fetchPmBadgeCount(selectedCompany, userId);
+    }
+  }, [selectedCompany, userId]);
+
   if (userRole !== "service-manager") return null;
 
   const handleCompanyChange = (e) => {
     updateCompany(e.target.value);
   };
 
+  // ─── Nav items ────────────────────────────────────────────────────────────
   const navItems = [
     {
       label: "Preventive Maintenance",
@@ -165,30 +124,8 @@ const TopNavbar = () => {
         },
         {
           path: "/servicemanager/preventive-maintainance-schedule",
-          label: (
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              P M Schedule
-              {alertCount > 0 && (
-                <span
-                  style={{
-                    backgroundColor: "#e53e3e",
-                    color: "white",
-                    borderRadius: "50%",
-                    fontSize: "11px",
-                    fontWeight: "bold",
-                    minWidth: "18px",
-                    height: "18px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "0 4px",
-                  }}
-                >
-                  {alertCount}
-                </span>
-              )}
-            </span>
-          ),
+          label: "P M Schedule",
+          badge: pmBadgeCount, // ← badge count passed here
         },
       ],
     },
@@ -196,15 +133,24 @@ const TopNavbar = () => {
       label: "Service Pool",
       dropdown: [
         { path: "/servicemanager/service-pool", label: "Service Pool" },
-        { path: "/servicemanager/service-table-history", label: "Service Table History" },
+        {
+          path: "/servicemanager/service-table-history",
+          label: "Service Table History",
+        },
       ],
     },
     {
       label: "Customers",
       dropdown: [
         { path: "/servicemanager/new-customer", label: "Customer Details" },
-        { path: "/servicemanager/customer-complaints", label: "Customer Complaints" },
-        { path: "/servicemanager/customer-feedback", label: "Customer Feedbacks" },
+        {
+          path: "/servicemanager/customer-complaints",
+          label: "Customer Complaints",
+        },
+        {
+          path: "/servicemanager/customer-feedback",
+          label: "Customer Feedbacks",
+        },
       ],
     },
     {
@@ -215,18 +161,51 @@ const TopNavbar = () => {
     { path: "/servicemanager/error-logs", label: "Error Logs" },
   ];
 
+  // ─── Badge pill component ─────────────────────────────────────────────────
+  const Badge = ({ count }) => {
+    if (!count || count === 0) return null;
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#dc3545",
+          color: "white",
+          borderRadius: "50%",
+          minWidth: "18px",
+          height: "18px",
+          fontSize: "11px",
+          fontWeight: "700",
+          marginLeft: "6px",
+          padding: "0 4px",
+          lineHeight: 1,
+          verticalAlign: "middle",
+        }}
+      >
+        {count > 99 ? "99+" : count}
+      </span>
+    );
+  };
+
   if (loading) {
     return (
       <nav className="top-navbar">
         <div className="nav-container">
           <div className="nav-brand">
-            <img src={logo} alt="Company Logo" style={{ width: "100px", height: "50px" }} />
+            <img
+              src={logo}
+              alt="Company Logo"
+              style={{ width: "100px", height: "50px" }}
+            />
           </div>
           <div className="nav-links">
             <span style={{ color: "white" }}>Loading...</span>
           </div>
           <div className="nav-user">
-            <button onClick={handleLogout} className="logout-btn">Logout</button>
+            <button onClick={handleLogout} className="logout-btn">
+              Logout
+            </button>
           </div>
         </div>
       </nav>
@@ -236,22 +215,44 @@ const TopNavbar = () => {
   return (
     <nav className="top-navbar">
       <div className="nav-container">
+        {/* Logo */}
         <div className="nav-brand">
-          <img src={logo} alt="Company Logo" style={{ width: "100px", height: "50px" }} />
+          <img
+            src={logo}
+            alt="Company Logo"
+            style={{ width: "100px", height: "50px" }}
+          />
         </div>
+
+        {/* Nav Links */}
         <div className="nav-links">
           {navItems.map((item) =>
             item.dropdown ? (
               <div key={item.label} className="dropdown">
-                <button className="dropdown-toggle">{item.label}</button>
+                {/* Show badge on parent toggle if any child has a badge */}
+                <button className="dropdown-toggle">
+                  {item.label}
+                  {item.dropdown.some((s) => s.badge > 0) && (
+                    <Badge
+                      count={item.dropdown.reduce(
+                        (sum, s) => sum + (s.badge || 0),
+                        0
+                      )}
+                    />
+                  )}
+                </button>
                 <div className="dropdown-menu">
                   {item.dropdown.map((subItem) => (
                     <Link
                       key={subItem.path}
                       to={subItem.path}
-                      className={location.pathname === subItem.path ? "active" : ""}
+                      className={
+                        location.pathname === subItem.path ? "active" : ""
+                      }
+                      style={{ display: "flex", alignItems: "center" }}
                     >
                       {subItem.label}
+                      {subItem.badge > 0 && <Badge count={subItem.badge} />}
                     </Link>
                   ))}
                 </div>
@@ -260,13 +261,16 @@ const TopNavbar = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={location.pathname === item.path ? "active" : ""}
+                className={
+                  location.pathname === item.path ? "active" : ""
+                }
               >
                 {item.label}
               </Link>
             )
           )}
 
+          {/* Company selector */}
           {userData && (
             <select
               className="form-select ms-3"
@@ -289,13 +293,23 @@ const TopNavbar = () => {
             </select>
           )}
         </div>
+
+        {/* User info + Logout */}
         <div className="nav-user">
           {username && (
-            <span style={{ color: "white", marginRight: "15px", fontWeight: "500" }}>
+            <span
+              style={{
+                color: "white",
+                marginRight: "15px",
+                fontWeight: "500",
+              }}
+            >
               Hi, {username}
             </span>
           )}
-          <button onClick={handleLogout} className="logout-btn">Logout</button>
+          <button onClick={handleLogout} className="logout-btn">
+            Logout
+          </button>
         </div>
       </div>
     </nav>
