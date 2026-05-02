@@ -114,7 +114,142 @@
 // export default NewCustomer;
 
 
-import React, { useState } from 'react';
+// import React, { useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import './NewCustomer.css';
+// import CustomerTable from './CustomerTable';
+// import CustomerForm from './CustomerForm';
+
+// const NewCustomer = () => {
+//   const [showForm, setShowForm] = useState(false);
+//   const [editingCustomer, setEditingCustomer] = useState(null);
+//   const [customers, setCustomers] = useState([]);
+//   const navigate = useNavigate();
+
+//   const [formData, setFormData] = useState({
+//     customer_id: '',
+//     username: '',
+//     full_name: '',
+//     telephone: '',
+//     mobile: '',
+//     email: '',
+//     city: '',
+//     country_code: 'KSA',
+//     address: '',
+//     customer_type: 'Individual',
+//     status: 'Active',
+//     remarks: '',
+//     security_question1: '',
+//     security_question2: '',
+//     answer1: '',
+//     answer2: ''
+//   });
+
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData(prev => ({ ...prev, [name]: value }));
+//   };
+
+//   const handleSubmit = (e, submittedData) => {
+//     e.preventDefault();
+//     if (editingCustomer) {
+//       // Update existing customer
+//       setCustomers(customers.map(customer => 
+//         customer.customer_id === editingCustomer.customer_id 
+//           ? { ...submittedData }
+//           : customer
+//       ));
+//       setEditingCustomer(null);
+//     } else {
+//       // Add new customer
+//       setCustomers([...customers, submittedData]);
+//     }
+    
+//     // Reset form and hide it
+//     setFormData({
+//       customer_id: '',
+//       username: '',
+//       full_name: '',
+//       telephone: '',
+//       mobile: '',
+//       email: '',
+//       city: '',
+//       country_code: 'KSA',
+//       address: '',
+//       customer_type: 'Individual',
+//       status: 'Active',
+//       remarks: '',
+//       security_question1: '',
+//       security_question2: '',
+//       answer1: '',
+//       answer2: ''
+//     });
+//     setShowForm(false);
+//   };
+
+//   const handleEditCustomer = (customer) => {
+//     setFormData(customer);
+//     setEditingCustomer(customer);
+//     setShowForm(true);
+//   };
+
+//   const handleViewCustomer = (customer) => {
+//     // Navigate to customer view page with customer ID
+//     navigate(`/servicemanager/customers/${customer.customer_id}`);
+//   };
+
+//   const toggleForm = () => {
+//     setShowForm(!showForm);
+//     setEditingCustomer(null);
+//     // Reset form when toggling to add new customer
+//     if (!showForm) {
+//       setFormData({
+//         customer_id: '',
+//         username: '',
+//         full_name: '',
+//         telephone: '',
+//         mobile: '',
+//         email: '',
+//         city: '',
+//         country_code: 'KSA',
+//         address: '',
+//         customer_type: 'Individual',
+//         status: 'Active',
+//         remarks: '',
+//         security_question1: '',
+//         security_question2: '',
+//         answer1: '',
+//         answer2: ''
+//       });
+//     }
+//   };
+
+//   return (
+//     <div className="customer-form-container">
+//       {!showForm ? (
+//         <CustomerTable 
+//           customers={customers} 
+//           toggleForm={toggleForm}
+//           onEditCustomer={handleEditCustomer}
+//           onViewCustomer={handleViewCustomer}
+//         />
+//       ) : (
+//         <CustomerForm 
+//           formData={formData} 
+//           handleChange={handleChange} 
+//           handleSubmit={handleSubmit} 
+//           toggleForm={toggleForm}
+//           isEditing={!!editingCustomer}
+//         />
+//       )}
+//     </div>
+//   );
+// };
+
+// export default NewCustomer;
+
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './NewCustomer.css';
 import CustomerTable from './CustomerTable';
@@ -145,6 +280,52 @@ const NewCustomer = () => {
     answer2: ''
   });
 
+  // Handle browser back button and swipe gesture when form is open
+  useEffect(() => {
+    if (showForm) {
+      // Push a new history state to trap the back button
+      window.history.pushState({ formOpen: true }, '', window.location.pathname);
+      
+      const handlePopState = (event) => {
+        if (showForm) {
+          // Prevent default back navigation
+          event.preventDefault();
+          // Close the form instead of navigating away
+          setShowForm(false);
+          setEditingCustomer(null);
+          setFormData({
+            customer_id: '',
+            username: '',
+            full_name: '',
+            telephone: '',
+            mobile: '',
+            email: '',
+            city: '',
+            country_code: 'KSA',
+            address: '',
+            customer_type: 'Individual',
+            status: 'Active',
+            remarks: '',
+            security_question1: '',
+            security_question2: '',
+            answer1: '',
+            answer2: ''
+          });
+          // Push a new state to handle any further back attempts
+          window.history.pushState({ formOpen: true }, '', window.location.pathname);
+        }
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      
+      // Cleanup event listener when form closes
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        // Don't remove the history state, let it be natural
+      };
+    }
+  }, [showForm]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -153,7 +334,6 @@ const NewCustomer = () => {
   const handleSubmit = (e, submittedData) => {
     e.preventDefault();
     if (editingCustomer) {
-      // Update existing customer
       setCustomers(customers.map(customer => 
         customer.customer_id === editingCustomer.customer_id 
           ? { ...submittedData }
@@ -161,11 +341,9 @@ const NewCustomer = () => {
       ));
       setEditingCustomer(null);
     } else {
-      // Add new customer
       setCustomers([...customers, submittedData]);
     }
     
-    // Reset form and hide it
     setFormData({
       customer_id: '',
       username: '',
@@ -194,15 +372,13 @@ const NewCustomer = () => {
   };
 
   const handleViewCustomer = (customer) => {
-    // Navigate to customer view page with customer ID
     navigate(`/servicemanager/customers/${customer.customer_id}`);
   };
 
   const toggleForm = () => {
-    setShowForm(!showForm);
-    setEditingCustomer(null);
-    // Reset form when toggling to add new customer
     if (!showForm) {
+      setShowForm(true);
+      setEditingCustomer(null);
       setFormData({
         customer_id: '',
         username: '',
@@ -221,6 +397,8 @@ const NewCustomer = () => {
         answer1: '',
         answer2: ''
       });
+    } else {
+      setShowForm(false);
     }
   };
 
