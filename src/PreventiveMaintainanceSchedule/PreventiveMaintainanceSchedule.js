@@ -16,14 +16,46 @@ const PreventiveMaintenanceSchedule = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [processingId, setProcessingId] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+ const [searchTerm, setSearchTerm] = useState(() => {
+  return sessionStorage.getItem('pmSchedule_searchTerm') || '';
+});
 
-  // Filter state
+const [entriesPerPage, setEntriesPerPage] = useState(() => {
+  return Number(sessionStorage.getItem('pmSchedule_entriesPerPage')) || 10;
+});
+
+const [currentPage, setCurrentPage] = useState(() => {
+  return Number(sessionStorage.getItem('pmSchedule_currentPage')) || 1;
+});
+
+  // Filter state 
   const [filterType, setFilterType] = useState('all'); // 'all' | 'due_date' | 'alert_date' | 'overdue_date'
   const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState(''); 
+
+  useEffect(() => {
+  sessionStorage.setItem('pmSchedule_searchTerm', searchTerm);
+}, [searchTerm]);
+
+useEffect(() => {
+  sessionStorage.setItem('pmSchedule_entriesPerPage', entriesPerPage);
+}, [entriesPerPage]);
+
+useEffect(() => {
+  sessionStorage.setItem('pmSchedule_currentPage', currentPage);
+}, [currentPage]);
+
+const handleSearchChange = (value) => {
+  setSearchTerm(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('pmSchedule_currentPage', 1);
+};
+
+const handleEntriesPerPageChange = (value) => {
+  setEntriesPerPage(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('pmSchedule_currentPage', 1);
+};
 
   const blueColor = '#0096D6';
 
@@ -51,49 +83,54 @@ const PreventiveMaintenanceSchedule = () => {
     fetchData();
   }, [selectedCompany]);
 
-  // ─── Apply all filters whenever relevant state changes ────────────────────
-  useEffect(() => {
-    let result = pmSchedules.filter(s =>
-      activeTab === 'factory'
-        ? s.responsible.toLowerCase() === 'factory'
-        : s.responsible.toLowerCase() === 'customer'
+ useEffect(() => {
+  let result = pmSchedules.filter(s =>
+    activeTab === 'factory'
+      ? s.responsible.toLowerCase() === 'factory'
+      : s.responsible.toLowerCase() === 'customer'
+  );
+
+  if (filterType !== 'all') {
+    const fieldMap = {
+      due_date: 'due_date',
+      alert_date: 'alert_date',
+      overdue_date: 'overdue_alert_date',
+    };
+    const field = fieldMap[filterType];
+
+    if (filterDateFrom) {
+      result = result.filter(s => s[field] && s[field] >= filterDateFrom);
+    }
+    if (filterDateTo) {
+      result = result.filter(s => s[field] && s[field] <= filterDateTo);
+    }
+  }
+
+  if (searchTerm.trim()) {
+    const lower = searchTerm.toLowerCase();
+    result = result.filter(s =>
+      s.pm_schedule_id?.toString().toLowerCase().includes(lower) ||
+      s.service_item?.toString().toLowerCase().includes(lower) ||
+      s.description?.toLowerCase().includes(lower) ||
+      s.task_type?.toLowerCase().includes(lower) ||
+      s.status?.toLowerCase().includes(lower) ||
+      formatDate(s.due_date)?.toLowerCase().includes(lower) ||
+      formatDate(s.alert_date)?.toLowerCase().includes(lower) ||
+      formatDate(s.overdue_alert_date)?.toLowerCase().includes(lower)
     );
+  }
 
-    // Date range filter
-    if (filterType !== 'all') {
-      const fieldMap = {
-        due_date: 'due_date',
-        alert_date: 'alert_date',
-        overdue_date: 'overdue_alert_date',
-      };
-      const field = fieldMap[filterType];
+  setFilteredSchedules(result);
 
-      if (filterDateFrom) {
-        result = result.filter(s => s[field] && s[field] >= filterDateFrom);
-      }
-      if (filterDateTo) {
-        result = result.filter(s => s[field] && s[field] <= filterDateTo);
-      }
-    }
+  // ✅ CLAMP PAGE (instead of reset)
+  const totalPagesNow = Math.ceil(result.length / entriesPerPage);
+  const savedPage = Number(sessionStorage.getItem('pmSchedule_currentPage')) || 1;
 
-    // Search filter
-    if (searchTerm.trim()) {
-      const lower = searchTerm.toLowerCase();
-      result = result.filter(s =>
-        s.pm_schedule_id?.toString().toLowerCase().includes(lower) ||
-        s.service_item?.toString().toLowerCase().includes(lower) ||
-        s.description?.toLowerCase().includes(lower) ||
-        s.task_type?.toLowerCase().includes(lower) ||
-        s.status?.toLowerCase().includes(lower) ||
-        formatDate(s.due_date)?.toLowerCase().includes(lower) ||
-        formatDate(s.alert_date)?.toLowerCase().includes(lower) ||
-        formatDate(s.overdue_alert_date)?.toLowerCase().includes(lower)
-      );
-    }
+  if (savedPage > totalPagesNow && totalPagesNow > 0) {
+    setCurrentPage(totalPagesNow);
+  }
 
-    setFilteredSchedules(result);
-    setCurrentPage(1);
-  }, [activeTab, pmSchedules, searchTerm, filterType, filterDateFrom, filterDateTo]);
+}, [activeTab, pmSchedules, searchTerm, filterType, filterDateFrom, filterDateTo, entriesPerPage]);
 
   // ─── Pagination ───────────────────────────────────────────────────────────
   const indexOfLastEntry = currentPage * entriesPerPage;
@@ -412,7 +449,7 @@ const PreventiveMaintenanceSchedule = () => {
           Show
           <select
             value={entriesPerPage}
-            onChange={e => setEntriesPerPage(Number(e.target.value))}
+          onChange={e => handleEntriesPerPageChange(Number(e.target.value))}
             style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid #ccc', cursor: 'pointer' }}
           >
             {[5, 10, 25, 50, 100].map(n => (
@@ -426,7 +463,7 @@ const PreventiveMaintenanceSchedule = () => {
           type="text"
           placeholder="Search PM schedules..."
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+        onChange={e => handleSearchChange(e.target.value)}
           style={{
             padding: '8px 12px',
             borderRadius: '4px',
@@ -571,67 +608,125 @@ const PreventiveMaintenanceSchedule = () => {
         </table>
       </div>
 
-      {/* ── Pagination ── */}
-      {totalPages > 1 && (
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '20px',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: currentPage === 1 ? '#f1f1f1' : blueColor,
-              color: currentPage === 1 ? '#666' : 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Previous
-          </button>
+     {/* ── Pagination ── */}
+{totalPages > 1 && (
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'center',
+      marginTop: '20px',
+      alignItems: 'center',
+      overflowX: totalPages > 10 ? 'auto' : 'visible',
+      width: '100%',
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        flexWrap: 'nowrap',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {/* Previous */}
+      <button
+        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+        disabled={currentPage === 1}
+        style={{
+          padding: '6px 12px',
+          backgroundColor: currentPage === 1 ? '#f1f1f1' : blueColor,
+          color: currentPage === 1 ? '#666' : 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+          flexShrink: 0,
+        }}
+      >
+        Previous
+      </button>
 
-          <div style={{ display: 'flex', gap: '5px' }}>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                style={{
-                  padding: '6px 12px',
-                  backgroundColor: currentPage === page ? blueColor : '#f1f1f1',
-                  color: currentPage === page ? 'white' : 'black',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
+      {/* Page Numbers */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '5px',
+          flexWrap: 'nowrap',
+        }}
+      >
+        {(() => {
+          const maxVisiblePages = 5;
+          let pageNumbers = [];
 
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: currentPage === totalPages ? '#f1f1f1' : blueColor,
-              color: currentPage === totalPages ? '#666' : 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Next
-          </button>
-        </div>
-      )}
+          if (totalPages <= maxVisiblePages) {
+            for (let i = 1; i <= totalPages; i++) {
+              pageNumbers.push(i);
+            }
+          } else {
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(
+              totalPages,
+              startPage + maxVisiblePages - 1
+            );
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+              startPage = Math.max(
+                1,
+                endPage - maxVisiblePages + 1
+              );
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+              pageNumbers.push(i);
+            }
+          }
+
+          return pageNumbers.map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              style={{
+                padding: '6px 12px',
+                backgroundColor:
+                  currentPage === page ? blueColor : '#f1f1f1',
+                color: currentPage === page ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+            >
+              {page}
+            </button>
+          ));
+        })()}
+      </div>
+
+      {/* Next */}
+      <button
+        onClick={() =>
+          setCurrentPage(prev => Math.min(prev + 1, totalPages))
+        }
+        disabled={currentPage === totalPages}
+        style={{
+          padding: '6px 12px',
+          backgroundColor:
+            currentPage === totalPages ? '#f1f1f1' : blueColor,
+          color: currentPage === totalPages ? '#666' : 'white',
+          border: 'none',
+          borderRadius: '4px',
+          cursor:
+            currentPage === totalPages
+              ? 'not-allowed'
+              : 'pointer',
+          flexShrink: 0,
+        }}
+      >
+        Next
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };

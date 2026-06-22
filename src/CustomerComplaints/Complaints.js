@@ -1370,10 +1370,45 @@ const CustomerComplaints = () => {
     const [companiesData, setCompaniesData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [entriesPerPage, setEntriesPerPage] = useState(5);
-    const [currentPage, setCurrentPage] = useState(1);
+const [searchTerm, setSearchTerm] = useState(() => {
+  return sessionStorage.getItem('complaints_searchTerm') || '';
+});
+
+const [entriesPerPage, setEntriesPerPage] = useState(() => {
+  return Number(sessionStorage.getItem('complaints_entriesPerPage')) || 5;
+});
+
+const [currentPage, setCurrentPage] = useState(() => {
+  return Number(sessionStorage.getItem('complaints_currentPage')) || 1;
+});
     const [users, setUsers] = useState([]); // To store user data for search
+
+
+    useEffect(() => {
+  sessionStorage.setItem('complaints_searchTerm', searchTerm);
+}, [searchTerm]);
+
+useEffect(() => {
+  sessionStorage.setItem('complaints_entriesPerPage', entriesPerPage);
+}, [entriesPerPage]);
+
+useEffect(() => {
+  sessionStorage.setItem('complaints_currentPage', currentPage);
+}, [currentPage]);
+
+
+
+const handleSearchChange = (value) => {
+  setSearchTerm(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('complaints_currentPage', 1);
+};
+
+const handleEntriesPerPageChange = (value) => {
+  setEntriesPerPage(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('complaints_currentPage', 1);
+};
 
     // Fetch users data for username search
     const fetchUsers = async () => {
@@ -1764,16 +1799,20 @@ const CustomerComplaints = () => {
         });
     }, [searchTerm, complaints, users, companiesData, customersData]);
 
-    // Reset to first page when search term or entries per page changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, entriesPerPage]);
+  
 
     // Pagination logic
     const indexOfLastEntry = currentPage * entriesPerPage;
     const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
     const currentItems = filteredComplaints.slice(indexOfFirstEntry, indexOfLastEntry);
     const totalPages = Math.ceil(filteredComplaints.length / entriesPerPage);
+    useEffect(() => {
+  const savedPage = Number(sessionStorage.getItem('complaints_currentPage')) || 1;
+
+  if (savedPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages);
+  }
+}, [filteredComplaints, entriesPerPage]);
 
     if (loading) {
         return (
@@ -1809,7 +1848,7 @@ const CustomerComplaints = () => {
                     Show
                     <select
                         value={entriesPerPage}
-                        onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                       onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
                         className="form-select form-select-sm w-auto"
                     >
                         <option value={5}>5</option>
@@ -1825,13 +1864,13 @@ const CustomerComplaints = () => {
                         className="form-control"
                         placeholder="Search in all columns..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                       onChange={(e) => handleSearchChange(e.target.value)}
                         style={{ minWidth: '250px' }}
                     />
                     {searchTerm && (
                         <button 
                             className="btn btn-sm btn-outline-secondary"
-                            onClick={() => setSearchTerm('')}
+                            onClick={() => handleSearchChange('')}
                         >
                             Clear
                         </button>
@@ -2022,6 +2061,6 @@ const CustomerComplaints = () => {
             )}
         </div>
     );
-};
+}; 
 
 export default CustomerComplaints;

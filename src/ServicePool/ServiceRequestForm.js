@@ -6,6 +6,7 @@ import baseURL from "../ApiUrl/Apiurl";
 import Notification_Url from './../ApiUrl/PushNotificanURL';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import Select from "react-select";
 import { FaTimes, FaUpload, FaImage, FaVideo, FaEye, FaTrash } from 'react-icons/fa';
 
 const ServiceRequestForm = () => {
@@ -498,38 +499,55 @@ const ServiceRequestForm = () => {
         <div className="card-body">
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
-              <div className="col-md-6">
-                <label className="formlabel">Service Item ID *</label>
-                <select
-                  name="service_item"
-                  value={form.service_item}
-                  onChange={handleChange}
-                  className="form-control"
-                  required
-                  disabled={isEditMode || loadingServiceItems}
-                >
-                  <option value="">Select Service Item</option>
-                  {loadingServiceItems ? (
-                    <option value="" disabled>Loading service items...</option>
-                  ) : serviceItems.length === 0 ? (
-                    <option value="" disabled>No service items found</option>
-                  ) : (
-                    serviceItems.map((item) => (
-                      <option key={item.service_item_id} value={item.service_item_id}>
-                        {item.service_item_name} - {item.service_item_id} 
-                        {item.serial_number ? ` (SN: ${item.serial_number})` : ''}
-                        {item.location ? ` - ${item.location}` : ''}
-                      </option>
-                    ))
-                  )}
-                </select>
-                {isEditMode && (
-                  <small className="text-muted">Service item cannot be changed</small>
-                )}
-                {!loadingServiceItems && serviceItems.length === 0 && !isEditMode && (
-                  <small className="text-danger">No service items available. Please contact administrator.</small>
-                )}
-              </div>
+            <div className="col-md-6">
+  <label className="formlabel">Service Item ID *</label>
+
+  <Select
+    name="service_item"
+    value={
+      serviceItems
+        .map((item) => ({
+          value: item.service_item_id,
+          label: `${item.service_item_name} - ${item.service_item_id}${
+            item.serial_number ? ` (SN: ${item.serial_number})` : ""
+          }${item.location ? ` - ${item.location}` : ""}`,
+        }))
+        .find((option) => option.value === form.service_item)
+    }
+    onChange={(selectedOption) =>
+      handleChange({
+        target: {
+          name: "service_item",
+          value: selectedOption ? selectedOption.value : "",
+        },
+      })
+    }
+    options={serviceItems.map((item) => ({
+      value: item.service_item_id,
+      label: `${item.service_item_name} - ${item.service_item_id}${
+        item.serial_number ? ` (SN: ${item.serial_number})` : ""
+      }${item.location ? ` - ${item.location}` : ""}`,
+    }))}
+    isDisabled={isEditMode || loadingServiceItems}
+    isLoading={loadingServiceItems}
+    placeholder="Search Service Item..."
+    isClearable
+  />
+
+  {isEditMode && (
+    <small className="text-muted">
+      Service item cannot be changed
+    </small>
+  )}
+
+  {!loadingServiceItems &&
+    serviceItems.length === 0 &&
+    !isEditMode && (
+      <small className="text-danger">
+        No service items available. Please contact administrator.
+      </small>
+    )}
+</div>
 
               <div className="col-md-6">
                 <label className="formlabel">Preferred Service Date *</label>

@@ -295,12 +295,20 @@ import { AuthContext } from "../AuthContext/AuthContext";
 import { FaTrashAlt, FaEdit, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
-const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
+const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => { 
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
+ const [searchTerm, setSearchTerm] = useState(() => {
+  return sessionStorage.getItem('srItems_searchTerm') || '';
+});
+
+const [entriesPerPage, setEntriesPerPage] = useState(() => {
+  return Number(sessionStorage.getItem('srItems_entriesPerPage')) || 5;
+});
+
+const [currentPage, setCurrentPage] = useState(() => {
+  return Number(sessionStorage.getItem('srItems_currentPage')) || 1;
+});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { selectedCompany } = useCompany();
@@ -309,6 +317,30 @@ const ServiceRequestItemsTable = ({ toggleForm, onEditItem, onViewItem }) => {
   const [components, setComponents] = useState([]); // To store component data for search
   const [servicePools, setServicePools] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+  sessionStorage.setItem('srItems_searchTerm', searchTerm);
+}, [searchTerm]);
+
+useEffect(() => {
+  sessionStorage.setItem('srItems_entriesPerPage', entriesPerPage);
+}, [entriesPerPage]);
+
+useEffect(() => {
+  sessionStorage.setItem('srItems_currentPage', currentPage);
+}, [currentPage]);
+
+const handleSearchChange = (value) => {
+  setSearchTerm(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('srItems_currentPage', 1);
+};
+
+const handleEntriesPerPageChange = (value) => {
+  setEntriesPerPage(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('srItems_currentPage', 1);
+};
 
   // Fetch users data for username search
   const fetchUsers = async () => {
@@ -494,157 +526,48 @@ const getCustomer = (requestId) => {
     ].join(' ');
   };
 
-  // Enhanced global search functionality
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      let results = items;
-      if (selectedCompany) {
-        results = results.filter(item => item.company === selectedCompany);
-      }
-      setFilteredItems(results);
-      setCurrentPage(1);
-      return;
+ useEffect(() => {
+  let results = items;
+
+  if (!searchTerm.trim()) {
+    if (selectedCompany) {
+      results = results.filter(item => item.company === selectedCompany);
     }
 
-    const searchLower = searchTerm.toLowerCase().trim();
-    
-    const filtered = items.filter((item) => {
-      // Filter by company first
-      if (selectedCompany && item.company !== selectedCompany) {
-        return false;
-      }
+    setFilteredItems(results);
 
-      // Get user data for search
-      const createdBySearch = getUserSearchData(item.created_by);
-      const updatedBySearch = getUserSearchData(item.updated_by);
-      const servicedBySearch = getUserSearchData(item.serviced_by);
-      
-      // Get component data for search
-      const componentSearch = getComponentSearchData(item.component);
-      
-      // Get dates in multiple formats for search
-      const createdDateFormats = formatDateForSearch(item.created_at);
-      const updatedDateFormats = formatDateForSearch(item.updated_at);
-      const servicedDateFormats = formatDateForSearch(item.serviced_at);
-      const warrantyStartFormats = formatDateForSearch(item.warranty_start_date);
-      const warrantyEndFormats = formatDateForSearch(item.warranty_end_date);
-      
-      // Create a comprehensive search string
-      const searchableText = [
-        // Raw item data
-        item.sr_item_id || '',
-        item.service_request || '',
-        item.component_type || '',
-        item.component || '',
-        item.task_type || '',
-        item.old_comp_serial_no || '',
-        item.new_comp_serial_no || '',
-        item.warranty_start_date || '',
-        item.warranty_end_date || '',
-        item.action_taken || '',
-        item.serviced_by || '',
-        item.created_by || '',
-        item.updated_by || '',
-        item.created_at || '',
-        item.updated_at || '',
-        item.serviced_at || '',
-        item.company || '',
-        item.status || '',
-        item.remarks || '',
-        item.cost || '',
-        item.priority || '',
-        
-        // Formatted user data for search
-        createdBySearch,
-        updatedBySearch,
-        servicedBySearch,
-        
-        // Formatted component data for search
-        componentSearch,
-        
-        // Dates in multiple formats
-        createdDateFormats,
-        updatedDateFormats,
-        servicedDateFormats,
-        warrantyStartFormats,
-        warrantyEndFormats,
-        
-        // Display values (exactly as shown in table)
-        formatDate(item.warranty_start_date),
-        formatDate(item.warranty_end_date),
-        formatDateTime(item.created_at),
-        formatDateTime(item.serviced_at),
-        getUsernameById(item.serviced_by),
-        getComponentName(item.component),
-        
-        // Task type variations for better search
-        item.task_type === 'Repair' ? 'Repair fix mend' : '',
-        item.task_type === 'Replacement' ? 'Replacement replace change' : '',
-        item.task_type === 'Maintenance' ? 'Maintenance service' : '',
-        item.task_type === 'Inspection' ? 'Inspection check examine' : '',
-        item.task_type === 'Installation' ? 'Installation install setup' : '',
-        item.task_type === 'Calibration' ? 'Calibration calibrate adjust' : '',
-        
-        // Component type variations
-        item.component_type === 'Hardware' ? 'Hardware physical equipment' : '',
-        item.component_type === 'Software' ? 'Software program application' : '',
-        item.component_type === 'Electrical' ? 'Electrical electric wiring' : '',
-        item.component_type === 'Mechanical' ? 'Mechanical mechanical parts' : '',
-        
-        // Action taken variations
-        item.action_taken === 'Fixed' ? 'Fixed repaired resolved' : '',
-        item.action_taken === 'Replaced' ? 'Replaced changed swapped' : '',
-        item.action_taken === 'Adjusted' ? 'Adjusted tuned calibrated' : '',
-        item.action_taken === 'Cleaned' ? 'Cleaned cleaned maintenance' : '',
-        
-        // Status variations
-        item.status === 'Completed' ? 'Completed done finished' : '',
-        item.status === 'Pending' ? 'Pending waiting incomplete' : '',
-        item.status === 'In Progress' ? 'In Progress ongoing working' : '',
-        item.status === 'Cancelled' ? 'Cancelled canceled stopped' : '',
-        
-        // Priority variations
-        item.priority === 'High' ? 'High urgent critical' : '',
-        item.priority === 'Medium' ? 'Medium normal regular' : '',
-        item.priority === 'Low' ? 'Low minor trivial' : '',
-        
-        // Serial number variations
-        item.old_comp_serial_no ? `old serial ${item.old_comp_serial_no}` : '',
-        item.new_comp_serial_no ? `new serial ${item.new_comp_serial_no}` : '',
-        
-        // Company search
-        selectedCompany ? `company ${selectedCompany}` : '',
-        
-        // Add any other properties that might exist
-        ...Object.values(item).filter(val => 
-          val !== null && val !== undefined
-        ).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') {
-            return String(val);
-          }
-          if (typeof val === 'boolean') {
-            return val ? 'true yes active' : 'false no inactive';
-          }
-          if (Array.isArray(val)) {
-            return val.join(' ');
-          }
-          if (typeof val === 'object' && val !== null) {
-            return JSON.stringify(val);
-          }
-          return '';
-        })
-      ]
-      .join(' ')                    // Combine into one string
-      .toLowerCase()                // Make case-insensitive
-      .replace(/\s+/g, ' ')         // Normalize spaces
-      .trim();
-      
-      return searchableText.includes(searchLower);
-    });
-    
-    setFilteredItems(filtered);
-    setCurrentPage(1);
-  }, [searchTerm, items, users, components, selectedCompany]);
+    // ✅ Clamp page
+    const totalPagesNow = Math.ceil(results.length / entriesPerPage);
+    const savedPage = Number(sessionStorage.getItem('srItems_currentPage')) || 1;
+
+    if (savedPage > totalPagesNow && totalPagesNow > 0) {
+      setCurrentPage(totalPagesNow);
+    }
+
+    return;
+  }
+
+  const searchLower = searchTerm.toLowerCase().trim();
+
+  const filtered = items.filter((item) => {
+    if (selectedCompany && item.company !== selectedCompany) return false;
+
+    const searchableText = Object.values(item).join(' ').toLowerCase();
+
+    return searchableText.includes(searchLower);
+  });
+
+  setFilteredItems(filtered);
+
+  // ✅ Clamp page after filtering
+  const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
+  const savedPage = Number(sessionStorage.getItem('srItems_currentPage')) || 1;
+
+  if (savedPage > totalPagesNow && totalPagesNow > 0) {
+    setCurrentPage(totalPagesNow);
+  }
+
+}, [searchTerm, items, selectedCompany, entriesPerPage]);
 
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
@@ -686,7 +609,7 @@ const getCustomer = (requestId) => {
           Show
           <select
             value={entriesPerPage}
-            onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+            onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
             className="form-select form-select-sm w-auto"
           >
             <option value={5}>5</option>
@@ -702,13 +625,13 @@ const getCustomer = (requestId) => {
             placeholder="Search in all columns..."
             className="form-control"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+         onChange={(e) => handleSearchChange(e.target.value)}
             style={{ minWidth: '250px' }}
           />
           {searchTerm && (
             <button 
               className="btn btn-sm btn-outline-secondary"
-              onClick={() => setSearchTerm('')}
+             onClick={() => handleSearchChange('')}
             >
               Clear
             </button>

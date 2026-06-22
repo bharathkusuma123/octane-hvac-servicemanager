@@ -361,6 +361,8 @@ const ServiceItemDetails = () => {
   const { selectedCompany } = useCompany();
   const { userId } = useContext(AuthContext);
   
+  const [iotLiveStatus, setIotLiveStatus] = useState(null);
+  
   // New state to store fetched data for names
   const [companies, setCompanies] = useState([]);
   const [products, setProducts] = useState([]);
@@ -481,6 +483,29 @@ const ServiceItemDetails = () => {
   const handleBack = () => {
     navigate(-1);
   };
+
+  useEffect(() => {
+  const fetchIotStatus = async () => {
+    try {
+      if (!serviceItem?.pcb_serial_number) return;
+
+      const response = await axios.get(
+        `${baseURL}/get-latest-data/${serviceItem.pcb_serial_number}/?user_id=${userId}&company_id=${selectedCompany}`
+      );
+
+      if (response.data?.status === "success") {
+        setIotLiveStatus(response.data.data?.is_online);
+      }
+    } catch (error) {
+      console.error("Error fetching IoT status:", error);
+      setIotLiveStatus(null);
+    }
+  };
+
+  if (serviceItem?.pcb_serial_number && userId && selectedCompany) {
+    fetchIotStatus();
+  }
+}, [serviceItem, userId, selectedCompany]);
 
   if (loading) {
     return (
@@ -604,20 +629,24 @@ const ServiceItemDetails = () => {
                       </span>
                     </td>
                   </tr>
-                  <tr>
-                    <th>IOT Status</th>
-                    <td>
-                      <span
-                        className={`badge ${
-                          serviceItem.iot_status === "Online"
-                            ? "bg-success"
-                            : "bg-warning text-dark"
-                        }`}
-                      >
-                        {serviceItem.iot_status}
-                      </span>
-                    </td>
-                  </tr>
+                <tr>
+  <th>IOT Status</th>
+  <td>
+    <span
+      className={`badge ${
+        iotLiveStatus === true
+          ? "bg-success"
+          : "bg-danger"
+      }`}
+    >
+      {iotLiveStatus === true
+        ? "Online"
+        : iotLiveStatus === false
+        ? "Offline"
+        : "Loading..."}
+    </span>
+  </td>
+</tr>
                   <tr>
                     <th>Last Checked</th>
                     <td>{formatDateTime(serviceItem.last_checked)}</td>

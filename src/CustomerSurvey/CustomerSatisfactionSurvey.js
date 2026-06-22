@@ -1096,11 +1096,44 @@ const CustomerFeedbacks = () => {
     const [users, setUsers] = useState([]); // To store user data for search
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [entriesPerPage, setEntriesPerPage] = useState(5);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [questionsData, setQuestionsData] = useState([]); // To store survey questions
+   const [searchTerm, setSearchTerm] = useState(() => {
+  return sessionStorage.getItem('feedbacks_searchTerm') || '';
+});
 
+const [entriesPerPage, setEntriesPerPage] = useState(() => {
+  return Number(sessionStorage.getItem('feedbacks_entriesPerPage')) || 5;
+});
+
+const [currentPage, setCurrentPage] = useState(() => {
+  return Number(sessionStorage.getItem('feedbacks_currentPage')) || 1;
+});
+
+useEffect(() => {
+  sessionStorage.setItem('feedbacks_searchTerm', searchTerm);
+}, [searchTerm]);
+
+useEffect(() => {
+  sessionStorage.setItem('feedbacks_entriesPerPage', entriesPerPage);
+}, [entriesPerPage]);
+
+useEffect(() => {
+  sessionStorage.setItem('feedbacks_currentPage', currentPage);
+}, [currentPage]);
+
+
+const handleSearchChange = (value) => {
+  setSearchTerm(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('feedbacks_currentPage', 1);
+};
+
+const handleEntriesPerPageChange = (value) => {
+  setEntriesPerPage(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('feedbacks_currentPage', 1);
+};
+
+    const [questionsData, setQuestionsData] = useState([]); // To store survey questions
     // Function to handle customer click navigation
     const handleCustomerClick = (customerId) => {
         if (customerId) {
@@ -1572,11 +1605,14 @@ const CustomerFeedbacks = () => {
     const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
     const currentItems = filteredFeedbacks.slice(indexOfFirstEntry, indexOfLastEntry);
     const totalPages = Math.ceil(filteredFeedbacks.length / entriesPerPage);
+useEffect(() => {
+  const savedPage = Number(sessionStorage.getItem('feedbacks_currentPage')) || 1;
 
-    // Reset to first page when search term or entries per page changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, entriesPerPage]);
+  if (savedPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages);
+  }
+}, [filteredFeedbacks, entriesPerPage]);
+   
 
     if (loading) {
         return (
@@ -1612,7 +1648,7 @@ const CustomerFeedbacks = () => {
                     Show
                     <select
                         value={entriesPerPage}
-                        onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                        onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
                         className="form-select form-select-sm w-auto"
                     >
                         <option value={5}>5</option>
@@ -1628,13 +1664,13 @@ const CustomerFeedbacks = () => {
                         className="form-control"
                         placeholder="Search in all columns..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                       onChange={(e) => handleSearchChange(e.target.value)}
                         style={{ minWidth: '250px' }}
                     />
                     {searchTerm && (
                         <button 
                             className="btn btn-sm btn-outline-secondary"
-                            onClick={() => setSearchTerm('')}
+                            onClick={() => handleSearchChange('')}
                         >
                             Clear
                         </button>
@@ -1815,6 +1851,6 @@ const CustomerFeedbacks = () => {
             )}
         </div>
     );
-};
+}; 
 
 export default CustomerFeedbacks;

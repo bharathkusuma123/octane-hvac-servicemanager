@@ -3131,9 +3131,22 @@ import Swal from 'sweetalert2';
 const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCompany, userId, refreshContracts }) => { 
   const [filteredItems, setFilteredItems] = useState([]); 
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [entriesPerPage, setEntriesPerPage] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // ✅ CHANGED: Persist searchTerm in sessionStorage so it survives navigation
+  const [searchTerm, setSearchTerm] = useState(() => {
+    return sessionStorage.getItem('serviceItem_searchTerm') || '';
+  });
+
+  // ✅ CHANGED: Persist entriesPerPage in sessionStorage so it survives navigation
+  const [entriesPerPage, setEntriesPerPage] = useState(() => {
+    return Number(sessionStorage.getItem('serviceItem_entriesPerPage')) || 5;
+  });
+
+  // ✅ CHANGED: Persist currentPage in sessionStorage so it survives navigation
+  const [currentPage, setCurrentPage] = useState(() => {
+    return Number(sessionStorage.getItem('serviceItem_currentPage')) || 1;
+  });
+
   const navigate = useNavigate();
   const [contractData, setContractData] = useState([]);
   const [companiesData, setCompaniesData] = useState([]);
@@ -3141,7 +3154,22 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const [pmGroupsData, setPmGroupsData] = useState([]);
   const [customersData, setCustomersData] = useState([]);
   const [machineData, setMachineData] = useState([]);
-  const [usersData, setUsersData] = useState([]); // For created_by/updated_by user names
+  const [usersData, setUsersData] = useState([]);
+
+  // ✅ NEW: Save entriesPerPage to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('serviceItem_entriesPerPage', entriesPerPage);
+  }, [entriesPerPage]);
+
+  // ✅ NEW: Save currentPage to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('serviceItem_currentPage', currentPage);
+  }, [currentPage]);
+
+  // ✅ NEW: Save searchTerm to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('serviceItem_searchTerm', searchTerm);
+  }, [searchTerm]);
 
   // Fetch users data for created_by/updated_by search
   const fetchUsers = async () => {
@@ -3158,9 +3186,12 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Fetch machine data for all service items
   const fetchMachineData = async () => {
     try {
-      const response = await axios.get(`${baseURL}/get-latest-data/?user_id=${userId}&company_id=${selectedCompany}`);
-      if (response.data && Array.isArray(response.data)) {
-        setMachineData(response.data);
+      const response = await axios.get(
+        `${baseURL}/get-latest-data/?user_id=${userId}&company_id=${selectedCompany}`
+      );
+
+      if (response.data && Array.isArray(response.data.data)) {
+        setMachineData(response.data.data);
       } else {
         console.error("Invalid machine data format:", response.data);
         setMachineData([]);
@@ -3227,7 +3258,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Function to get username from user ID
   const getUsernameById = (userId) => {
     if (!userId || usersData.length === 0) return userId;
-    
     const user = usersData.find(user => user.user_id === userId);
     return user ? user.username : userId;
   };
@@ -3239,26 +3269,15 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
     return user ? `${userId} ${user.username} ${user.email || ''}` : userId;
   };
 
-  // Function to get IoT status based on PCB serial number
   const getIoTStatus = (pcbSerialNumber) => {
-    if (!machineData || machineData.length === 0) {
-      return "Offline";
-    }
-    
+    if (!machineData || machineData.length === 0) return "Offline";
     const machine = machineData.find(item => item.pcb_serial_number === pcbSerialNumber);
-    
-    if (!machine || !machine.hvac_on) {
-      return "Offline";
-    }
-    
-    const hvacValue = machine.hvac_on.value;
-    return (hvacValue === "1" || hvacValue === 1) ? "Online" : "Offline";
+    return machine?.is_online === true ? "Online" : "Offline";
   };
 
   // Function to get product name by product ID
   const getProductName = (productId) => {
     if (!productsData || productsData.length === 0) return productId;
-    
     const product = productsData.find(prod => prod.product_id === productId);
     return product ? product.product_name : productId;
   };
@@ -3273,7 +3292,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Function to get PM group name by PM group ID
   const getPmGroupName = (pmGroupId) => {
     if (!pmGroupsData || pmGroupsData.length === 0) return pmGroupId;
-    
     const pmGroup = pmGroupsData.find(pm => pm.pm_group_id === pmGroupId);
     return pmGroup ? pmGroup.pm_group_name : pmGroupId;
   };
@@ -3288,7 +3306,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Function to get customer username by customer ID
   const getCustomerUsername = (customerId) => {
     if (!customersData || customersData.length === 0) return customerId;
-    
     const customer = customersData.find(cust => cust.customer_id === customerId);
     return customer ? customer.username : customerId;
   };
@@ -3303,7 +3320,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Function to get customer details by customer ID
   const getCustomerDetails = (customerId) => {
     if (!customersData || customersData.length === 0) return null;
-    
     const customer = customersData.find(cust => cust.customer_id === customerId);
     return customer;
   };
@@ -3311,7 +3327,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Function to get company display name in compact format: "COMP1 (TCS)"
   const getCompanyDisplayName = (companyId) => {
     if (!companiesData || companiesData.length === 0) return companyId;
-    
     const company = companiesData.find(comp => comp.company_id === companyId);
     if (company) {
       return `${company.company_name} (${company.company_id})`;
@@ -3362,44 +3377,37 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   const formatDateForSearch = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    
     if (isNaN(date.getTime())) return '';
-    
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear();
     const monthName = date.toLocaleString('en-IN', { month: 'long' });
     const monthShort = date.toLocaleString('en-IN', { month: 'short' });
-    
     return [
-      `${day}/${month}/${year}`,                    // DD/MM/YYYY
-      `${month}/${day}/${year}`,                    // MM/DD/YYYY
-      `${year}-${month}-${day}`,                    // YYYY-MM-DD
-      `${year}${month}${day}`,                      // YYYYMMDD
-      `${day}-${month}-${year}`,                    // DD-MM-YYYY
-      monthName,                                    // January, February
-      monthShort,                                   // Jan, Feb
-      `${year}`,                                    // 2024
-      `${month}/${year}`,                           // MM/YYYY
-      `${day} ${monthName} ${year}`,               // 15 January 2024
-      `${day} ${monthShort} ${year}`,              // 15 Jan 2024
+      `${day}/${month}/${year}`,
+      `${month}/${day}/${year}`,
+      `${year}-${month}-${day}`,
+      `${year}${month}${day}`,
+      `${day}-${month}-${year}`,
+      monthName,
+      monthShort,
+      `${year}`,
+      `${month}/${year}`,
+      `${day} ${monthName} ${year}`,
+      `${day} ${monthShort} ${year}`,
     ].join(' ');
   };
 
   // Function to extract machine data for search
   const getMachineSearchData = (pcbSerialNumber) => {
     if (!pcbSerialNumber || !machineData || machineData.length === 0) return '';
-    
     const machine = machineData.find(item => item.pcb_serial_number === pcbSerialNumber);
     if (!machine) return pcbSerialNumber;
-    
     return [
       pcbSerialNumber,
       machine.ec || '',
       machine.erp_number || '',
-      machine.hvac_on ? 'online' : 'offline',
-      machine.hvac_on ? String(machine.hvac_on.value) : '',
-      machine.hvac_on ? machine.hvac_on.ts || '' : '',
+      machine.is_online === true ? 'online' : 'offline',
       machine.cycle_status || '',
       machine.hum || '',
       machine.t1 || '',
@@ -3422,11 +3430,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       );
 
       console.log("Contract response:", response.data);
-
-      const contracts = Array.isArray(response.data.data)
-        ? response.data.data
-        : [];
-
+      const contracts = Array.isArray(response.data.data) ? response.data.data : [];
       setContractData(contracts);
     } catch (error) {
       console.error("Failed to fetch contracts", error);
@@ -3437,26 +3441,20 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Function to get the latest contract for a service item
   const getLatestContract = (serviceItemId) => {
     if (!Array.isArray(contractData)) return null;
-    
     const serviceItemContracts = contractData.filter(
       contract => contract.service_item === serviceItemId
     );
-    
     if (serviceItemContracts.length === 0) return null;
-    
     const sortedContracts = serviceItemContracts.sort(
       (a, b) => new Date(b.created_at || b.contract_create_date) - new Date(a.created_at || a.contract_create_date)
     );
-    
     return sortedContracts[0];
   };
 
   // Function to handle view contract click
   const handleViewContract = (item) => {
     const latestContract = getLatestContract(item.service_item_id);
-    
     if (!latestContract) {
-      // Show a message if no contract exists
       Swal.fire({
         icon: 'info',
         title: 'No Contract Found',
@@ -3464,8 +3462,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       });
       return;
     }
-    
-    // Navigate to contract view page with contract details
     navigate('/servicemanager/view-contract', {
       state: {
         contract_id: latestContract.contract_id || latestContract.id || latestContract.service_contract_id,
@@ -3481,22 +3477,17 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
 
   const isContractButtonDisabled = (serviceItemId) => {
     const latestContract = getLatestContract(serviceItemId);
-    
     if (!latestContract) return false;
-    
     return latestContract.is_alert_sent === false;
   };
 
   const shouldShowRenewalButton = (serviceItemId) => {
     const latestContract = getLatestContract(serviceItemId);
-    
     if (!latestContract) return false;
-    
     return latestContract.is_alert_sent === true;
   };
 
   useEffect(() => {
-    // Fetch all data in sequence
     const fetchAllData = async () => {
       setLoading(true);
       try {
@@ -3524,20 +3515,15 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
     }
 
     const searchLower = searchTerm.toLowerCase().trim();
-    
+
     return serviceItems.filter((item) => {
-      // Get user data for search
       const createdBySearch = getUserSearchData(item.created_by);
       const updatedBySearch = getUserSearchData(item.updated_by);
-      
-      // Get other relational data for search
       const customerSearch = getCustomerSearchData(item.customer);
       const productSearch = getProductSearchData(item.product);
       const pmGroupSearch = getPmGroupSearchData(item.pm_group);
       const companySearchData = getCompanySearchData(item.company);
       const machineSearchData = getMachineSearchData(item.pcb_serial_number);
-      
-      // Get dates in multiple formats for search
       const installationDateFormats = formatDateForSearch(item.installation_date);
       const warrantyStartFormats = formatDateForSearch(item.warranty_start_date);
       const warrantyEndFormats = formatDateForSearch(item.warranty_end_date);
@@ -3545,10 +3531,8 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       const lastServiceFormats = formatDateForSearch(item.last_service);
       const createdDateFormats = formatDateForSearch(item.created_at);
       const updatedDateFormats = formatDateForSearch(item.updated_at);
-      
-      // Create a comprehensive search string
+
       const searchableText = [
-        // Raw item data
         item.service_item_id || '',
         item.serial_number || '',
         item.service_item_name || '',
@@ -3574,8 +3558,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         item.last_service || '',
         item.created_at || '',
         item.updated_at || '',
-        
-        // Formatted relational data
         createdBySearch,
         updatedBySearch,
         customerSearch,
@@ -3583,8 +3565,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         pmGroupSearch,
         companySearchData,
         machineSearchData,
-        
-        // Dates in multiple formats
         installationDateFormats,
         warrantyStartFormats,
         warrantyEndFormats,
@@ -3592,8 +3572,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         lastServiceFormats,
         createdDateFormats,
         updatedDateFormats,
-        
-        // Display values (exactly as shown in table)
         formatDate(item.installation_date),
         formatDate(item.warranty_end_date),
         formatDate(item.last_service),
@@ -3606,74 +3584,57 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         getPmGroupName(item.pm_group),
         getCompanyDisplayName(item.company),
         getIoTStatus(item.pcb_serial_number),
-        
-        // Status variations for search
         item.status === 'Active' ? 'active working operational' : '',
         item.status === 'Service Due' ? 'service due maintenance pending overdue' : '',
         item.status === 'Inactive' ? 'inactive disabled stopped' : '',
-        
-        // IoT status variations
         getIoTStatus(item.pcb_serial_number) === 'Online' ? 'online connected live' : '',
         getIoTStatus(item.pcb_serial_number) === 'Offline' ? 'offline disconnected dead' : '',
-        
-        // Product variations
         getProductName(item.product) ? `product ${getProductName(item.product)}` : '',
-        
-        // PM Group variations
         getPmGroupName(item.pm_group) ? `pm group preventive maintenance ${getPmGroupName(item.pm_group)}` : '',
-        
-        // Company variations
         getCompanyDisplayName(item.company) ? `company ${getCompanyDisplayName(item.company)}` : '',
-        
-        // Location variations
         item.location ? `location ${item.location} address` : '',
-        
-        // Description variations
         item.product_description ? `description ${item.product_description}` : '',
-        
-        // Add any other properties that might exist
-        ...Object.values(item).filter(val => 
+        ...Object.values(item).filter(val =>
           val !== null && val !== undefined
         ).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') {
-            return String(val);
-          }
-          if (typeof val === 'boolean') {
-            return val ? 'true yes active' : 'false no inactive';
-          }
-          if (Array.isArray(val)) {
-            return val.join(' ');
-          }
-          if (typeof val === 'object' && val !== null) {
-            return JSON.stringify(val);
-          }
+          if (typeof val === 'string' || typeof val === 'number') return String(val);
+          if (typeof val === 'boolean') return val ? 'true yes active' : 'false no inactive';
+          if (Array.isArray(val)) return val.join(' ');
+          if (typeof val === 'object' && val !== null) return JSON.stringify(val);
           return '';
         })
       ]
-      .join(' ')                    // Combine into one string
-      .toLowerCase()                // Make case-insensitive
-      .replace(/\s+/g, ' ')         // Normalize spaces
-      .trim();
-      
+        .join(' ')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+
       return searchableText.includes(searchLower);
     });
   }, [searchTerm, serviceItems, usersData, companiesData, productsData, pmGroupsData, customersData, machineData]);
 
-  // Update filteredItems based on selectedCompany and search
+  // ✅ CHANGED: Removed setCurrentPage(1) from here so page is preserved on navigation back.
+  // Page only resets when user explicitly changes search or entries per page (handled separately below).
   useEffect(() => {
     let filteredByCompany = filteredFeedbacks;
-    
+
     if (selectedCompany) {
-      filteredByCompany = filteredFeedbacks.filter(item => 
+      filteredByCompany = filteredFeedbacks.filter(item =>
         item.company === selectedCompany
       );
     }
-    
+
     const sortedData = [...filteredByCompany].sort(
       (a, b) => new Date(b.created_at) - new Date(a.created_at)
     );
     setFilteredItems(sortedData);
-    setCurrentPage(1);
+
+    // ✅ Only clamp the page if the saved page is now out of range (e.g. data got shorter)
+    const totalPagesNow = Math.ceil(sortedData.length / entriesPerPage);
+    const savedPage = Number(sessionStorage.getItem('serviceItem_currentPage')) || 1;
+    if (savedPage > totalPagesNow && totalPagesNow > 0) {
+      setCurrentPage(totalPagesNow);
+    }
   }, [filteredFeedbacks, selectedCompany]);
 
   // Handle Add Component button click
@@ -3712,7 +3673,7 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
   // Handle Customer ID click - navigate to customer page
   const handleCustomerIdClick = (customerId) => {
     navigate(`/servicemanager/customers/${customerId}`, {
-      state: { 
+      state: {
         customerId: customerId,
         companyId: selectedCompany
       }
@@ -3721,7 +3682,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
 
   const handleRenewalClick = (item) => {
     const latestContract = getLatestContract(item.service_item_id);
-    
     navigate('/servicemanager/service-renewal', {
       state: {
         service_item_id: item.service_item_id,
@@ -3730,6 +3690,27 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         existing_contract: latestContract
       }
     });
+  };
+
+  // ✅ CHANGED: Reset page to 1 when user manually changes entries per page
+  const handleEntriesPerPageChange = (e) => {
+    setEntriesPerPage(Number(e.target.value));
+    setCurrentPage(1);
+    sessionStorage.setItem('serviceItem_currentPage', 1);
+  };
+
+  // ✅ CHANGED: Reset page to 1 when user manually changes search term
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+    sessionStorage.setItem('serviceItem_currentPage', 1);
+  };
+
+  // ✅ CHANGED: Also reset page on clear
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
+    sessionStorage.setItem('serviceItem_currentPage', 1);
   };
 
   const indexOfLastEntry = currentPage * entriesPerPage;
@@ -3762,9 +3743,10 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
         <div className="d-flex align-items-center gap-2">
           Show
+          {/* ✅ CHANGED: Uses handleEntriesPerPageChange instead of inline setState */}
           <select
             value={entriesPerPage}
-            onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+            onChange={handleEntriesPerPageChange}
             className="form-select form-select-sm w-auto"
           >
             <option value={5}>5</option>
@@ -3775,18 +3757,19 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         </div>
 
         <div className="d-flex align-items-center gap-2">
+          {/* ✅ CHANGED: Uses handleSearchChange and handleClearSearch */}
           <input
             type="text"
             className="form-control"
             placeholder="Search in all columns..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
             style={{ minWidth: '250px' }}
           />
           {searchTerm && (
-            <button 
+            <button
               className="btn btn-sm btn-outline-secondary"
-              onClick={() => setSearchTerm('')}
+              onClick={handleClearSearch}
             >
               Clear
             </button>
@@ -3842,7 +3825,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                   const iotStatus = getIoTStatus(item.pcb_serial_number);
                   const latestContract = getLatestContract(item.service_item_id);
                   const hasContract = latestContract !== null;
-                  
                   return (
                     <tr key={item.service_item_id}>
                       <td>{indexOfFirstEntry + index + 1}</td>
@@ -3961,7 +3943,6 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
                               Contract
                             </button>
                           )}
-                          
                           {/* Eye Icon for Viewing Contract */}
                           <button
                             className="btn btn-sm btn-info"
@@ -4015,40 +3996,75 @@ const ServiceItemTable = ({ serviceItems, onAddNew, onEdit, onDelete, selectedCo
         </div>
       )}
 
-      {totalPages > 1 && (
-        <nav aria-label="Page navigation">
-          <ul className="pagination justify-content-center">
-            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+     {totalPages > 1 && (
+  <nav aria-label="Page navigation">
+    <div
+      style={{
+        overflowX: totalPages > 10 ? "auto" : "visible",
+        whiteSpace: "nowrap",
+        width: "100%",
+      }}
+    >
+      <ul className="pagination justify-content-center flex-nowrap">
+        <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+          <button
+            className="page-link"
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+        </li>
+
+        {(() => {
+          const maxVisiblePages = 5;
+          let pageNumbers = [];
+
+          if (totalPages <= maxVisiblePages) {
+            for (let i = 1; i <= totalPages; i++) {
+              pageNumbers.push(i);
+            }
+          } else {
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+              startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+              pageNumbers.push(i);
+            }
+          }
+
+          return pageNumbers.map((page) => (
+            <li
+              key={page}
+              className={`page-item ${currentPage === page ? "active" : ""}`}
+            >
               <button
                 className="page-link"
-                onClick={() => setCurrentPage(currentPage - 1)}
+                onClick={() => setCurrentPage(page)}
               >
-                Previous
+                {page}
               </button>
             </li>
+          ));
+        })()}
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <li
-                key={page}
-                className={`page-item ${currentPage === page ? "active" : ""}`}
-              >
-                <button className="page-link" onClick={() => setCurrentPage(page)}>
-                  {page}
-                </button>
-              </li>
-            ))}
-
-            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-              <button
-                className="page-link"
-                onClick={() => setCurrentPage(currentPage + 1)}
-              >
-                Next
-              </button>
-            </li>
-          </ul>
-        </nav>
-      )}
+        <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+          <button
+            className="page-link"
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </li>
+      </ul>
+    </div>
+  </nav>
+)}
     </div>
   );
 };

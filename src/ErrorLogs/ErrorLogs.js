@@ -322,10 +322,44 @@ import { FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
 
 const ErrorLogs = () => { 
   const [errorData, setErrorData] = useState([]);
-  const [filteredErrors, setFilteredErrors] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredErrors, setFilteredErrors] = useState([]); 
+ const [searchTerm, setSearchTerm] = useState(() => {
+  return sessionStorage.getItem('errorLogs_searchTerm') || '';
+});
+
+const [entriesPerPage, setEntriesPerPage] = useState(() => {
+  return Number(sessionStorage.getItem('errorLogs_entriesPerPage')) || 10;
+});
+
+const [currentPage, setCurrentPage] = useState(() => {
+  return Number(sessionStorage.getItem('errorLogs_currentPage')) || 1;
+});
+
+useEffect(() => {
+  sessionStorage.setItem('errorLogs_searchTerm', searchTerm);
+}, [searchTerm]);
+
+useEffect(() => {
+  sessionStorage.setItem('errorLogs_entriesPerPage', entriesPerPage);
+}, [entriesPerPage]);
+
+useEffect(() => {
+  sessionStorage.setItem('errorLogs_currentPage', currentPage);
+}, [currentPage]);
+
+const handleSearchChange = (value) => {
+  setSearchTerm(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('errorLogs_currentPage', 1);
+};
+
+const handleEntriesPerPageChange = (value) => {
+  setEntriesPerPage(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('errorLogs_currentPage', 1);
+};
+
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [usersData, setUsersData] = useState([]);
@@ -375,14 +409,19 @@ const ErrorLogs = () => {
       if (response.data.status === "success") {
         setErrorData(response.data.data);
       } else {
-        setError('Failed to load error logs');
+       setError(response.data.error || response.data.message || 'Failed to load error logs');
       }
-    } catch (error) {
-      console.error('Error fetching error logs:', error);
-      setError('Failed to load error logs. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+   } catch (err) {
+  console.error('Error fetching error logs:', err);
+
+  const apiError =
+    err?.response?.data?.error ||
+    err?.response?.data?.message ||
+    err.message ||
+    "Something went wrong";
+
+  setError(apiError);
+}
   };
 
   useEffect(() => {
@@ -664,16 +703,22 @@ const ErrorLogs = () => {
     });
   }, [searchTerm, errorData, usersData, serviceItemsData]);
 
-  // Update filteredErrors based on search
-  useEffect(() => {
-    // Sort by timestamp descending (newest first)
-    const sortedErrors = [...enhancedFilteredErrors].sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-    );
-    
-    setFilteredErrors(sortedErrors);
-    setCurrentPage(1);
-  }, [enhancedFilteredErrors]);
+useEffect(() => {
+  const sortedErrors = [...enhancedFilteredErrors].sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
+  setFilteredErrors(sortedErrors);
+
+  // ✅ Clamp page instead of reset
+  const totalPagesNow = Math.ceil(sortedErrors.length / entriesPerPage);
+  const savedPage = Number(sessionStorage.getItem('errorLogs_currentPage')) || 1;
+
+  if (savedPage > totalPagesNow && totalPagesNow > 0) {
+    setCurrentPage(totalPagesNow);
+  }
+
+}, [enhancedFilteredErrors, entriesPerPage]);
 
   const handleRaiseRequest = (error) => {
     navigate('/servicemanager/error-logs/request-form', { 
@@ -769,7 +814,7 @@ const ErrorLogs = () => {
               Show
               <select
                 value={entriesPerPage}
-                onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+               onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
                 className="form-select form-select-sm w-auto"
               >
                 <option value={10}>10</option>
@@ -786,13 +831,13 @@ const ErrorLogs = () => {
                 className="form-control"
                 placeholder="Search in all columns..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+               onChange={(e) => handleSearchChange(e.target.value)}
                 style={{ minWidth: '250px' }}
               />
               {searchTerm && (
                 <button 
                   className="btn btn-sm btn-outline-secondary"
-                  onClick={() => setSearchTerm('')}
+                onClick={() => handleSearchChange('')}
                 >
                   Clear
                 </button>

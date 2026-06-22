@@ -33,6 +33,8 @@ const PMGroupTable = ({
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
         <div className="d-flex align-items-center gap-2">
           Show
+          {/* ✅ CHANGED: Calls setEntriesPerPage (which is now handleEntriesPerPageChange in parent)
+              so page resets to 1 when user changes entries count */}
           <select
             value={entriesPerPage}
             onChange={(e) => setEntriesPerPage(Number(e.target.value))}
@@ -45,6 +47,8 @@ const PMGroupTable = ({
           entries
         </div>
         <div className="d-flex align-items-center gap-2">
+          {/* ✅ CHANGED: Calls setSearchTerm (which is now handleSearchChange in parent)
+              so page resets to 1 when user types a new search */}
           <input
             type="text"
             className="form-control"

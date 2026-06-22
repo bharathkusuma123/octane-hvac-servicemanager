@@ -1062,10 +1062,46 @@ const PreventiveMaintainanceChart = () => {
 
   const [pmGroups, setPmGroups] = useState([]);
   const [charts, setCharts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
   const [users, setUsers] = useState([]); // To store user data for search
+
+   // ✅ PERSISTED STATES
+  const [searchTerm, setSearchTerm] = useState(() => {
+    return sessionStorage.getItem("pmChart_searchTerm") || "";
+  });
+
+  const [entriesPerPage, setEntriesPerPage] = useState(() => {
+    return Number(sessionStorage.getItem("pmChart_entriesPerPage")) || 10;
+  });
+
+  const [currentPage, setCurrentPage] = useState(() => {
+    return Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
+  });
+
+  // ✅ SAVE TO SESSION STORAGE
+  useEffect(() => {
+    sessionStorage.setItem("pmChart_searchTerm", searchTerm);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    sessionStorage.setItem("pmChart_entriesPerPage", entriesPerPage);
+  }, [entriesPerPage]);
+
+  useEffect(() => {
+    sessionStorage.setItem("pmChart_currentPage", currentPage);
+  }, [currentPage]);
+
+  // ✅ HANDLERS (IMPORTANT)
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+    sessionStorage.setItem("pmChart_currentPage", 1);
+  };
+
+  const handleEntriesPerPageChange = (value) => {
+    setEntriesPerPage(value);
+    setCurrentPage(1);
+    sessionStorage.setItem("pmChart_currentPage", 1);
+  };
 
   // Handle browser back button and swipe gesture when form is open
   useEffect(() => {
@@ -1342,119 +1378,63 @@ const PreventiveMaintainanceChart = () => {
     ].join(' ');
   };
 
-  // Enhanced global search functionality
-  const filteredCharts = React.useMemo(() => {
+ const filteredCharts = React.useMemo(() => {
     if (!searchTerm.trim()) {
+      const totalPagesNow = Math.ceil(charts.length / entriesPerPage);
+      const savedPage =
+        Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
+
+      if (savedPage > totalPagesNow && totalPagesNow > 0) {
+        setCurrentPage(totalPagesNow);
+      }
+
       return charts;
     }
 
     const searchLower = searchTerm.toLowerCase().trim();
-    
-    return charts.filter((chart) => {
-      // Get user data for search
+
+    const filtered = charts.filter((chart) => {
       const createdBySearch = getUserSearchData(chart.created_by);
       const updatedBySearch = getUserSearchData(chart.updated_by);
-      
-      // Get dates in multiple formats for search
-      const createdDateFormats = formatDateForSearch(chart.created_at);
-      const updatedDateFormats = formatDateForSearch(chart.updated_at);
-      
-      // Get PM Group name for search
-      const pmGroup = pmGroups.find(group => group.pm_group_id === chart.pm_group);
-      const pmGroupName = pmGroup ? pmGroup.pm_group_name : chart.pm_group;
-      
-      // Create a comprehensive search string
-      const searchableText = [
-        // Raw chart data
-        chart.chart_id || '',
-        chart.pm_group || '',
-        chart.pm_id || '',
-        chart.description || '',
-        chart.task_type || '',
-        chart.frequency_days ? String(chart.frequency_days) : '',
-        chart.alert_days ? String(chart.alert_days) : '',
-        chart.overdue_alert_days ? String(chart.overdue_alert_days) : '',
-        chart.responsible || '',
-        chart.remarks || '',
-        chart.created_by || '',
-        chart.updated_by || '',
-        chart.created_at || '',
-        chart.updated_at || '',
-        chart.company_id || '',
-        chart.status || '',
-        chart.is_active !== undefined ? String(chart.is_active) : '',
-        
-        // Formatted user data for search
+
+      const text = [
+        chart.chart_id,
+        chart.pm_id,
+        chart.description,
+        chart.task_type,
+        chart.responsible,
+        chart.status,
         createdBySearch,
         updatedBySearch,
-        
-        // PM Group name for search
-        pmGroupName,
-        
-        // Dates in multiple formats
-        createdDateFormats,
-        updatedDateFormats,
-        
-        // Display values (exactly as shown in table)
-        getUsernameById(chart.created_by),
-        getUsernameById(chart.updated_by),
-        
-        // Task type variations for better search
-        chart.task_type === 'Inspection' ? 'Inspection check examine' : '',
-        chart.task_type === 'Maintenance' ? 'Maintenance repair service' : '',
-        chart.task_type === 'Calibration' ? 'Calibration adjust tune' : '',
-        chart.task_type === 'Cleaning' ? 'Cleaning clean wash' : '',
-        chart.task_type === 'Replacement' ? 'Replacement replace change' : '',
-        
-        // Frequency variations
-        chart.frequency_days ? `every ${chart.frequency_days} days daily weekly monthly` : '',
-        
-        // Alert variations
-        chart.alert_days ? `alert ${chart.alert_days} days notification reminder` : '',
-        
-        // Status variations
-        chart.status === 'Active' ? 'Active Active Active' : '',
-        chart.status === 'Inactive' ? 'Inactive Inactive Inactive' : '',
-        chart.status === 'Pending' ? 'Pending Pending Pending' : '',
-        
-        // Active/Inactive variations
-        chart.is_active === true ? 'active true yes enabled' : '',
-        chart.is_active === false ? 'inactive false no disabled' : '',
-        
-        // Responsible variations
-        chart.responsible ? `responsible ${chart.responsible} person assigned` : '',
-        
-        // Add any other properties that might exist
-        ...Object.values(chart).filter(val => 
-          val !== null && val !== undefined
-        ).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') {
-            return String(val);
-          }
-          if (typeof val === 'boolean') {
-            return val ? 'true yes active' : 'false no inactive';
-          }
-          if (Array.isArray(val)) {
-            return val.join(' ');
-          }
-          if (typeof val === 'object' && val !== null) {
-            return JSON.stringify(val);
-          }
-          return '';
-        })
+        formatDateForSearch(chart.created_at),
+        formatDateForSearch(chart.updated_at),
       ]
-      .join(' ')                    // Combine into one string
-      .toLowerCase()                // Make case-insensitive
-      .replace(/\s+/g, ' ')         // Normalize spaces
-      .trim();
-      
-      return searchableText.includes(searchLower);
-    });
-  }, [searchTerm, charts, users, pmGroups]);
+        .join(" ")
+        .toLowerCase();
 
+      return text.includes(searchLower);
+    });
+
+    // ✅ CLAMP PAGE AFTER FILTER
+    const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
+    const savedPage =
+      Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
+
+    if (savedPage > totalPagesNow && totalPagesNow > 0) {
+      setCurrentPage(totalPagesNow);
+    }
+
+    return filtered;
+  }, [searchTerm, charts, users, entriesPerPage]);
+
+  // PAGINATION
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentItems = filteredCharts.slice(indexOfFirstEntry, indexOfLastEntry);
+  const currentItems = filteredCharts.slice(
+    indexOfFirstEntry,
+    indexOfLastEntry
+  );
+
   const totalPages = Math.ceil(filteredCharts.length / entriesPerPage);
 
   return (
@@ -1503,9 +1483,9 @@ const PreventiveMaintainanceChart = () => {
           currentItems={currentItems}
           indexOfFirstEntry={indexOfFirstEntry}
           searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
+          setSearchTerm={handleSearchChange}
           entriesPerPage={entriesPerPage}
-          setEntriesPerPage={setEntriesPerPage}
+          setEntriesPerPage={handleEntriesPerPageChange}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           totalPages={totalPages}
@@ -1520,4 +1500,4 @@ const PreventiveMaintainanceChart = () => {
   );
 };
 
-export default PreventiveMaintainanceChart;
+export default PreventiveMaintainanceChart; 

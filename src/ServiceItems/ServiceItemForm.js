@@ -447,6 +447,7 @@ import './NewServiceItem.css';
 import baseURL from '../ApiUrl/Apiurl';
 import { useCompany } from "../AuthContext/CompanyContext";
 import Swal from 'sweetalert2';
+import Select from "react-select";
 
 const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, userId }) => {
   const [customers, setCustomers] = useState([]);
@@ -459,26 +460,25 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
   const [availableComponents, setAvailableComponents] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [addComponents, setAddComponents] = useState(false);
-  const [componentOption, setComponentOption] = useState(''); // 'yes' or 'no'
-
+  const [componentOption, setComponentOption] = useState('');
+ 
   const generatePCBSerialNumber = () => {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return `pcb-${timestamp}${random}`;
   };
-
+ 
   const generateComponentId = () => {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return `CMP${timestamp}${random}`;
   };
-
+ 
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
         const response = await fetch(`${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`);
         const result = await response.json();
-
         if (result.status === 'success' && Array.isArray(result.data)) {
           setCustomers(result.data);
         } else {
@@ -488,10 +488,9 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
         console.error('Error fetching customers:', error);
       }
     };
-
     fetchCustomers();
   }, [userId, selectedCompany]);
-
+ 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -502,10 +501,9 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
         console.error('Error fetching products:', error);
       }
     };
-
     fetchProducts();
   }, []);
-
+ 
   useEffect(() => {
     const fetchPmGroups = async () => {
       try {
@@ -520,10 +518,9 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
         console.error('Error fetching PM groups:', error);
       }
     };
-
     fetchPmGroups();
   }, []);
-
+ 
   useEffect(() => {
     const fetchAvailableComponents = async () => {
       try {
@@ -538,36 +535,29 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
         console.error('Error fetching components:', error);
       }
     };
-
+ 
     if (addComponents) {
       fetchAvailableComponents();
-      // Clear any existing components when option changes to 'yes'
       setComponents([]);
     } else {
-      // Clear components when option changes to 'no'
       setComponents([]);
     }
   }, [addComponents]);
-
-  // Update addComponents based on componentOption
+ 
   useEffect(() => {
     setAddComponents(componentOption === 'yes');
   }, [componentOption]);
-
+ 
   const handleCustomerChange = (e) => {
-    const { name, value } = e.target;
     onChange(e);
   };
-
+ 
   const handleComponentChange = (index, field, value) => {
     const updatedComponents = [...components];
-    updatedComponents[index] = {
-      ...updatedComponents[index],
-      [field]: value
-    };
+    updatedComponents[index] = { ...updatedComponents[index], [field]: value };
     setComponents(updatedComponents);
   };
-
+ 
   const addNewComponent = () => {
     setComponents([
       ...components,
@@ -584,84 +574,133 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
       }
     ]);
   };
-
+ 
   const removeComponent = (index) => {
-    const updatedComponents = components.filter((_, i) => i !== index);
-    setComponents(updatedComponents);
+    setComponents(components.filter((_, i) => i !== index));
   };
-
+ 
+  // ✅ FIX: Safe date formatter — keeps YYYY-MM-DD as-is without UTC shift
+  const formatDateForAPI = (dateString) => {
+    if (!dateString) return null;
+    // If already in YYYY-MM-DD format, return as-is (no UTC conversion)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return dateString;
+    // If it's a full ISO string, extract just the date part
+    try {
+      return new Date(dateString).toISOString();
+    } catch {
+      return null;
+    }
+  };
+ 
+  // ✅ FIX: Safe latitude/longitude parser — returns number or null (not string)
+  const parseCoordinate = (value) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? null : parsed;
+  };
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
-     // ✅ SHOW CONFIRMATION ONLY IN EDIT MODE
-  if (isEditMode) {
-    const confirmResult = await Swal.fire({
-      title: "Are you sure?",
-      text: "Do you want to update this Service Item?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, Update",
-      cancelButtonText: "Cancel",
-    });
-
-    // ❌ If user clicks Cancel → stop here
-    if (!confirmResult.isConfirmed) return;
-  }
+ 
+    // ✅ Confirmation for Edit Mode
+    if (isEditMode) {
+      const confirmResult = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you want to update this Service Item?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Update",
+        cancelButtonText: "Cancel",
+      });
+      if (!confirmResult.isConfirmed) return;
+    }
+ 
     setIsSubmitting(true);
     setError(null);
-
+ 
     const nowISOString = new Date().toISOString();
-
+ 
+    // ✅ FIX: Coordinates are numbers (or null), NOT strings
+    const latitude = parseCoordinate(formData.location_latitude);
+    const longitude = parseCoordinate(formData.location_longitude);
+ 
+    // ✅ FIX: Capture service_item_id at submit time so it can't be lost
+    const serviceItemId = formData.service_item_id;
+ 
     const serviceItemData = {
-      service_item_id: isEditMode ? formData.service_item_id : `TEMP${Date.now()}`,
+      // ✅ FIX: Only include service_item_id in POST (create), not in PUT (update)
+      // Many REST APIs reject ID in the PUT body — it's in the URL already
+      ...(isEditMode ? {} : { service_item_id: serviceItemId }),
+ 
       serial_number: formData.serial_number || `TEMP${Date.now()}`,
       location: formData.location,
-      location_latitude: parseFloat(formData.location_latitude).toFixed(6),
-      location_longitude: parseFloat(formData.location_longitude).toFixed(6),
-      installation_date: formData.installation_date,
-      warranty_start_date: formData.warranty_start_date,
-      warranty_end_date: formData.warranty_end_date,
-      contract_end_date: formData.contract_end_date,
+ 
+      // ✅ FIX: Send as number or null — not as a string from .toFixed()
+      location_latitude: latitude,
+      location_longitude: longitude,
+ 
+      // ✅ FIX: Date fields stay as YYYY-MM-DD — no UTC ISO conversion that shifts the day
+      installation_date: formData.installation_date || null,
+      warranty_start_date: formData.warranty_start_date || null,
+      warranty_end_date: formData.warranty_end_date || null,
+      contract_end_date: formData.contract_end_date || null,
+ 
       status: formData.status,
       iot_status: formData.iot_status,
+ 
       last_checked: nowISOString,
-      last_service: formData.last_service
-        ? new Date(formData.last_service).toISOString()
-        : null,
+ 
+      // ✅ FIX: last_service stays as YYYY-MM-DD too — no toISOString() shift
+      last_service: formData.last_service || null,
+ 
       product_description: formData.product_description || "",
       bc_number: formData.bc_number || "",
       ship_to_code: formData.ship_to_code || "",
+ 
       created_at: isEditMode ? formData.created_at : nowISOString,
       updated_at: nowISOString,
+ 
       created_by: isEditMode ? formData.created_by : "Service Manager",
       updated_by: "Service Manager",
+ 
       company: selectedCompany,
       product: formData.product,
       customer: formData.customer,
-      pm_group: formData.pm_group,
+      pm_group: formData.pm_group || null,
+ 
       user_id: userId,
       company_id: selectedCompany,
+ 
       pcb_serial_number: formData.pcb_serial_number || generatePCBSerialNumber(),
-      service_item_name: formData.service_item_name || 'somename'
+      service_item_name: formData.service_item_name || "somename",
     };
-
-    // Add components if the option is 'yes'
-    if (addComponents && components.length > 0) {
-      serviceItemData.components = components.map(component => ({
+ 
+    // ✅ Add components only on create (POST), not on edit (PUT)
+    if (!isEditMode && addComponents && components.length > 0) {
+      serviceItemData.components = components.map((component) => ({
         ...component,
-        service_item: serviceItemData.service_item_id,
+        service_item: serviceItemId,
         warranty_start_date: component.warranty_start_date || formData.warranty_start_date,
-        warranty_end_date: component.warranty_end_date || formData.warranty_end_date
+        warranty_end_date: component.warranty_end_date || formData.warranty_end_date,
       }));
     }
-
-    console.log('Submitting:', JSON.stringify(serviceItemData, null, 2));
-
+ 
+    console.log("Submitting payload:", JSON.stringify(serviceItemData, null, 2));
+    console.log("Mode:", isEditMode ? "PUT (edit)" : "POST (create)");
+    console.log("URL:", isEditMode
+      ? `${baseURL}/service-items/${serviceItemId}/`
+      : `${baseURL}/service-items/`
+    );
+ 
     const token = localStorage.getItem("authToken");
-    const url = isEditMode 
-      ? `${baseURL}/service-items/${formData.service_item_id}/`
+ 
+    // ✅ FIX: Explicitly use the captured serviceItemId — not from formData which may drift
+    const url = isEditMode
+      ? `${baseURL}/service-items/${serviceItemId}/`
       : `${baseURL}/service-items/`;
+ 
     const method = isEditMode ? "PUT" : "POST";
-
+ 
     try {
       const response = await fetch(url, {
         method: method,
@@ -671,33 +710,53 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
         },
         body: JSON.stringify(serviceItemData),
       });
-
+ 
+      const data = await response.json();
+      console.log("API response:", data);
+ 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Server error:", errorData);
-        throw new Error("Failed to submit service item");
+        console.error("Server error response:", data);
+ 
+        let errorHtml = "";
+        if (data.errors) {
+          Object.entries(data.errors).forEach(([field, messages]) => {
+            const msgs = Array.isArray(messages) ? messages : [messages];
+            msgs.forEach((msg) => {
+              errorHtml += `• <b>${field}</b>: ${msg}<br>`;
+            });
+          });
+        }
+ 
+        throw new Error(
+          errorHtml || data.message || data.detail || `Failed to ${isEditMode ? "update" : "submit"} service item`
+        );
       }
-
-      const result = await response.json();
-      onSubmit(result.data);
-      
+ 
+      // ✅ SUCCESS
+      // ✅ FIX: Some APIs return the object directly, others wrap in data.data — handle both
+      const updatedItem = data.data || data;
+      onSubmit(updatedItem);
+ 
       Swal.fire({
         icon: "success",
         title: isEditMode ? "Updated!" : "Added!",
         text: `Service Item ${isEditMode ? "updated" : "added"} successfully!`,
       });
+ 
     } catch (err) {
+      console.error("Submit error:", err);
       setError(err.message);
+ 
       Swal.fire({
         icon: "error",
         title: "Submission Failed",
-        text: err.message || "Something went wrong while submitting.",
+        html: err.message || "Something went wrong while submitting.",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-
+ 
   return (
     <div className="container mt-4 service-request-form">
       <div className="card">
@@ -706,50 +765,87 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
           <h6 className="text" style={{ color: 'white' }}>Fill in the service item details below</h6>
         </div>
         <div className="card-body">
-          {error && <div className="alert alert-danger">{error}</div>}
-
+          {error && <div className="alert alert-danger" dangerouslySetInnerHTML={{ __html: error }} />}
+ 
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
+ 
+              {/* Service Item ID - only shown in create mode */}
+              {!isEditMode && (
+                <div className="col-md-4">
+                  <label className="form-label">Service Item ID</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    name="service_item_id"
+                    value={formData.service_item_id || ''}
+                    onChange={onChange}
+                    placeholder="e.g. SER00001"
+                    required
+                  />
+                </div>
+              )}
+ 
+              {/* ✅ FIX: Show service_item_id as read-only in edit mode so user can see which item they're editing */}
+              {isEditMode && (
+                <div className="col-md-4">
+                  <label className="form-label">Service Item ID</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formData.service_item_id || ''}
+                    readOnly
+                    style={{ backgroundColor: '#f8f9fa', cursor: 'not-allowed' }}
+                  />
+                </div>
+              )}
+ 
               {/* Service S.No. */}
               <div className="col-md-4">
                 <label className="form-label">Service S.No.</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
+                <input
+                  type="text"
+                  className="form-control"
                   name="serial_number"
                   value={formData.serial_number || ''}
                   onChange={onChange}
-                  placeholder="Enter Service S.No." 
+                  placeholder="Enter Service S.No."
                   required
                 />
               </div>
-
+ 
               <div className="col-md-4">
                 <label className="form-label">PCB Serial Number</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
+                <input
+                  type="text"
+                  className="form-control"
                   name="pcb_serial_number"
                   value={formData.pcb_serial_number || ''}
                   onChange={onChange}
-                  placeholder="Enter PCB Serial Number" 
+                  placeholder="Enter PCB Serial Number"
                   required
                 />
               </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Service Item Name</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  name="service_item_name"
-                  value={formData.service_item_name || ''}
-                  onChange={onChange}
-                  placeholder="Enter Service Name" 
-                  required
-                />
-              </div>
-
+ 
+<div className="col-md-4">
+  <label className="form-label">Service Item Name</label>
+  <input
+    type="text"
+    className="form-control"
+    name="service_item_name"
+    value={formData.service_item_name || ''}
+    onChange={onChange}
+    placeholder="Enter Service Name"
+    required
+    readOnly={isEditMode}
+    style={
+      isEditMode
+        ? { backgroundColor: '#f8f9fa', cursor: 'not-allowed' }
+        : {}
+    }
+  />
+</div>
+ 
               {/* Product */}
               <div className="col-md-4">
                 <label className="form-label">Product</label>
@@ -762,17 +858,13 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                 >
                   <option value="">Select Product</option>
                   {products.map((product) => (
-                    // <option key={product.product_id} value={product.product_id}>
-                    //   {product.product_id}
-                    // </option>
-
-                     <option key={product.product_id} value={product.product_id}>
-        {product.product_name} ({product.product_id})
-      </option>
+                    <option key={product.product_id} value={product.product_id}>
+                      {product.product_name} ({product.product_id})
+                    </option>
                   ))}
                 </select>
               </div>
-
+ 
               {/* PM Group */}
               <div className="col-md-4">
                 <label className="form-label">PM Group ID</label>
@@ -790,31 +882,42 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                   ))}
                 </select>
               </div>
+ 
+             <div className="col-md-4">
+  <label className="form-label">Customer</label>
 
-              {/* Customer */}
-              <div className="col-md-4">
-                <label className="form-label">Customer</label>
-                <select
-                  className="form-control"
-                  name="customer"
-                  value={formData.customer || ''}
-                  onChange={handleCustomerChange}
-                  required
-                >
-                  <option value="">Select Customer</option>
-                  {customers.map(customer => (
-                    <option key={customer.customer_id} value={customer.customer_id}>
-                      {customer.full_name} ({customer.customer_id})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
+  <Select
+    name="customer"
+    value={
+      customers
+        .map((customer) => ({
+          value: customer.customer_id,
+          label: `${customer.full_name} (${customer.customer_id})`,
+        }))
+        .find((option) => option.value === formData.customer)
+    }
+    onChange={(selectedOption) =>
+      handleCustomerChange({
+        target: {
+          name: "customer",
+          value: selectedOption ? selectedOption.value : "",
+        },
+      })
+    }
+    options={customers.map((customer) => ({
+      value: customer.customer_id,
+      label: `${customer.full_name} (${customer.customer_id})`,
+    }))}
+    placeholder="Search Customer..."
+    isClearable
+  />
+</div>
+ 
               {/* Product Description */}
-              <div className="col-12">
+              <div className="col-8">
                 <label className="form-label">Product Description</label>
-                <textarea 
-                  className="form-control" 
+                <textarea
+                  className="form-control"
                   name="product_description"
                   value={formData.product_description || ''}
                   onChange={onChange}
@@ -822,112 +925,112 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                   rows={3}
                 ></textarea>
               </div>
-
+ 
               {/* Location */}
               <div className="col-md-4">
                 <label className="form-label">Installation Location</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
+                <input
+                  type="text"
+                  className="form-control"
                   name="location"
                   value={formData.location || ''}
                   onChange={onChange}
-                  placeholder="Address" 
+                  placeholder="Address"
                   required
                 />
               </div>
-
+ 
               {/* Latitude */}
               <div className="col-md-2">
                 <label className="form-label">Latitude</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   step="0.000001"
-                  className="form-control" 
+                  className="form-control"
                   name="location_latitude"
                   value={formData.location_latitude || ''}
                   onChange={onChange}
-                  placeholder="e.g. 12.971599" 
+                  placeholder="e.g. 12.971599"
                 />
               </div>
-
+ 
               {/* Longitude */}
               <div className="col-md-2">
                 <label className="form-label">Longitude</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   step="0.000001"
-                  className="form-control" 
+                  className="form-control"
                   name="location_longitude"
                   value={formData.location_longitude || ''}
                   onChange={onChange}
-                  placeholder="e.g. 77.594566" 
+                  placeholder="e.g. 77.594566"
                 />
               </div>
-
+ 
               {/* Dates */}
               <div className="col-md-4">
                 <label className="form-label">Installation Date</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
+                <input
+                  type="date"
+                  className="form-control"
                   name="installation_date"
                   value={formData.installation_date || ''}
                   onChange={onChange}
                   required
                 />
               </div>
-
+ 
               <div className="col-md-4">
                 <label className="form-label">Warranty Start Date</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
+                <input
+                  type="date"
+                  className="form-control"
                   name="warranty_start_date"
                   value={formData.warranty_start_date || ''}
                   onChange={onChange}
                   required
                 />
               </div>
-
+ 
               <div className="col-md-4">
                 <label className="form-label">Warranty End Date</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
+                <input
+                  type="date"
+                  className="form-control"
                   name="warranty_end_date"
                   value={formData.warranty_end_date || ''}
                   onChange={onChange}
                   required
                 />
               </div>
-
+ 
               <div className="col-md-4">
                 <label className="form-label">Contract End Date</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
+                <input
+                  type="date"
+                  className="form-control"
                   name="contract_end_date"
                   value={formData.contract_end_date || ''}
                   onChange={onChange}
                 />
               </div>
-
+ 
               <div className="col-md-4">
                 <label className="form-label">Last Service</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
+                <input
+                  type="date"
+                  className="form-control"
                   name="last_service"
                   value={formData.last_service || ''}
                   onChange={onChange}
                 />
               </div>
-
+ 
               {/* Status */}
               <div className="col-md-4">
                 <label className="form-label">Operational Status</label>
-                <select 
+                <select
                   className="form-control"
                   name="status"
                   value={formData.status || ''}
@@ -940,51 +1043,48 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                   <option value="Service Due">Service Due</option>
                 </select>
               </div>
-
-              {/* Add Components Section with Two Checkboxes */}
-              <div className="col-4">
-                <label className="form-label">Do you want to add service item components?</label>
-                <div className="d-flex gap-4 mt-2">
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="radio"
-                      name="componentOption"
-                      id="componentYes"
-                      value="yes"
-                      checked={componentOption === 'yes'}
-                      onChange={(e) => setComponentOption(e.target.value)}
-                    />
-                    <label className="form-check-label" htmlFor="componentYes">
-                      Yes
-                    </label>
-                  </div>
-                  <div className="form-check">
-                    <input
-                      className="form-check-input"
-                      type="radio"
-                      name="componentOption"
-                      id="componentNo"
-                      value="no"
-                      checked={componentOption === 'no'}
-                      onChange={(e) => setComponentOption(e.target.value)}
-                    />
-                    <label className="form-check-label" htmlFor="componentNo">
-                      No
-                    </label>
+ 
+              {/* Add Components Section — only show on create mode */}
+              {!isEditMode && (
+                <div className="col-4">
+                  <label className="form-label">Do you want to add service item components?</label>
+                  <div className="d-flex gap-4 mt-2">
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="componentOption"
+                        id="componentYes"
+                        value="yes"
+                        checked={componentOption === 'yes'}
+                        onChange={(e) => setComponentOption(e.target.value)}
+                      />
+                      <label className="form-check-label" htmlFor="componentYes">Yes</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        className="form-check-input"
+                        type="radio"
+                        name="componentOption"
+                        id="componentNo"
+                        value="no"
+                        checked={componentOption === 'no'}
+                        onChange={(e) => setComponentOption(e.target.value)}
+                      />
+                      <label className="form-check-label" htmlFor="componentNo">No</label>
+                    </div>
                   </div>
                 </div>
-              </div>
-
+              )}
+ 
               {/* Components Section */}
-              {addComponents && (
+              {addComponents && !isEditMode && (
                 <div className="col-12">
                   <div className="card">
                     <div className="card-header bg-light">
                       <h6 className="mb-0">Service Item Components</h6>
                     </div>
                     <div className="card-body">
-                      {/* Show components if any exist */}
                       {components.map((component, index) => (
                         <div key={index} className="component-form mb-4 p-3 border rounded">
                           <div className="row g-3">
@@ -1004,7 +1104,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                                 ))}
                               </select>
                             </div>
-
+ 
                             <div className="col-md-6">
                               <label className="form-label">Component Serial Number</label>
                               <input
@@ -1016,7 +1116,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                                 required
                               />
                             </div>
-
+ 
                             <div className="col-md-4">
                               <label className="form-label">Warranty Start Date</label>
                               <input
@@ -1027,7 +1127,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                                 required
                               />
                             </div>
-
+ 
                             <div className="col-md-4">
                               <label className="form-label">Warranty End Date</label>
                               <input
@@ -1038,7 +1138,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                                 required
                               />
                             </div>
-
+ 
                             <div className="col-md-4">
                               <label className="form-label">Vendor</label>
                               <input
@@ -1049,7 +1149,7 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                                 placeholder="Enter vendor name or ID"
                               />
                             </div>
-
+ 
                             <div className="col-12">
                               <button
                                 type="button"
@@ -1062,39 +1162,31 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
                           </div>
                         </div>
                       ))}
-
-                      {/* Show appropriate button based on whether components exist */}
-                      {components.length === 0 ? (
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          onClick={addNewComponent}
-                        >
-                          + Add Component
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn btn-primary btn-sm"
-                          onClick={addNewComponent}
-                        >
-                          + Add Another Component
-                        </button>
-                      )}
+ 
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={addNewComponent}
+                      >
+                        {components.length === 0 ? '+ Add Component' : '+ Add Another Component'}
+                      </button>
                     </div>
                   </div>
                 </div>
               )}
-
+ 
               {/* Submit and Cancel Buttons */}
               <div className="d-flex justify-content-center mt-3 gap-3">
                 <button type="submit" className="submit-btn" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : isEditMode ? "Update" : "Submit"}
+                  {isSubmitting
+                    ? (isEditMode ? "Updating..." : "Submitting...")
+                    : (isEditMode ? "Update" : "Submit")}
                 </button>
                 <button type="button" className="btn btn-secondary" onClick={onCancel}>
                   Cancel
                 </button>
               </div>
+ 
             </div>
           </form>
         </div>
@@ -1103,4 +1195,4 @@ const ServiceItemForm = ({ formData, onChange, onSubmit, onCancel, isEditMode, u
   );
 };
 
-export default ServiceItemForm;
+export default ServiceItemForm; 

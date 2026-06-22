@@ -446,11 +446,42 @@ const ServicePoolTable = () => {
   const [customers, setCustomers] = useState([]);
   const [serviceItems, setServiceItems] = useState([]);
   
-  // Search and pagination states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [entriesPerPage, setEntriesPerPage] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
+const [searchTerm, setSearchTerm] = useState(() => {
+  return sessionStorage.getItem('servicePool_searchTerm') || '';
+});
+
+const [entriesPerPage, setEntriesPerPage] = useState(() => {
+  return Number(sessionStorage.getItem('servicePool_entriesPerPage')) || 5;
+});
+
+const [currentPage, setCurrentPage] = useState(() => {
+  return Number(sessionStorage.getItem('servicePool_currentPage')) || 1;
+});
   const [filteredData, setFilteredData] = useState([]);
+
+  useEffect(() => {
+  sessionStorage.setItem('servicePool_searchTerm', searchTerm);
+}, [searchTerm]);
+
+useEffect(() => {
+  sessionStorage.setItem('servicePool_entriesPerPage', entriesPerPage);
+}, [entriesPerPage]);
+
+useEffect(() => {
+  sessionStorage.setItem('servicePool_currentPage', currentPage);
+}, [currentPage]);
+
+const handleSearchChange = (value) => {
+  setSearchTerm(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('servicePool_currentPage', 1);
+};
+
+const handleEntriesPerPageChange = (value) => {
+  setEntriesPerPage(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('servicePool_currentPage', 1);
+};
 
   // Handle browser back button and swipe gesture when assignment form is open
   useEffect(() => {
@@ -673,23 +704,30 @@ useEffect(() => {
     }
   }, [userId, selectedCompany]);
 
-  // Apply search filter
-  useEffect(() => {
-    let results = data;
-    
-    if (selectedCompany) {
-      results = results.filter(item => item.company === selectedCompany);
-    }
-    
-    if (searchTerm) {
-      results = results.filter(item =>
-        Object.values(item).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    setFilteredData(results);
-    setCurrentPage(1);
-  }, [selectedCompany, searchTerm, data]);
+useEffect(() => {
+  let results = data;
+
+  if (selectedCompany) {
+    results = results.filter(item => item.company === selectedCompany);
+  }
+
+  if (searchTerm) {
+    results = results.filter(item =>
+      Object.values(item).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  setFilteredData(results);
+
+  // ✅ CLAMP PAGE instead of reset
+  const totalPagesNow = Math.ceil(results.length / entriesPerPage);
+  const savedPage = Number(sessionStorage.getItem('servicePool_currentPage')) || 1;
+
+  if (savedPage > totalPagesNow && totalPagesNow > 0) {
+    setCurrentPage(totalPagesNow);
+  }
+
+}, [selectedCompany, searchTerm, data, entriesPerPage]);
 
   // Get customer name by ID
   const getCustomerName = (customerId) => {
@@ -827,9 +865,9 @@ useEffect(() => {
         <ServiceTableContent
           selectedCompany={selectedCompany}
           searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
           entriesPerPage={entriesPerPage}
-          setEntriesPerPage={setEntriesPerPage}
+         setSearchTerm={handleSearchChange}
+setEntriesPerPage={handleEntriesPerPageChange}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           filteredData={filteredData}

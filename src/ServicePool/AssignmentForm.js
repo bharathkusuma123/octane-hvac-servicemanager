@@ -181,61 +181,129 @@ const AssignmentForm = ({
     ? resources.filter(resource => resource.status === "Active")
     : [];
 
-  // Check engineer availability
-  const checkEngineerAvailability = async (startDateTime, endDateTime) => {
-    if (!startDateTime || !endDateTime) return;
+// All statuses where engineer is considered busy
+const BUSY_STATUSES = ["Assigned", "Under Process", "Waiting for Spares", "Waiting for Quote", "Waiting for Client Approval", "Reopened"];
 
-    setCheckingAvailability(true);
-    try {
-      const response = await axios.get(`${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`);
-      const allAssignments = response.data.data || response.data;
-      const assignmentsArray = Array.isArray(allAssignments) ? allAssignments : [allAssignments];
+// ✅ FIX 1: Normalize any datetime string to UTC ms for comparison
+const toUTCMs = (dateTimeStr) => {
+  if (!dateTimeStr) return null;
+  // If it has timezone info (+03:00 or Z), Date.parse handles it correctly
+  // If it's a naive datetime-local string (no tz), we need to treat it as UTC+3 (Saudi time)
+  // to match the server's timezone
+  if (/[+-]\d{2}:\d{2}$|Z$/.test(dateTimeStr)) {
+    return new Date(dateTimeStr).getTime(); // has timezone, parse directly
+  }
+  // naive string from datetime-local input — treat as Saudi time (UTC+3)
+  return new Date(dateTimeStr + '+03:00').getTime();
+};
 
-      const startDate = new Date(startDateTime);
-      const endDate = new Date(endDateTime);
+const checkEngineerAvailability = async (startDateTime, endDateTime) => {
+  if (!startDateTime || !endDateTime) return;
 
-      const overlappingAssignments = assignmentsArray.filter((assignment) => {
-        if (
-          !assignment.est_start_datetime ||
-          !assignment.est_end_datetime ||
-          assignment.status !== "Assigned"
-        )
-          return false;
+  setCheckingAvailability(true);
+  try {
+    const response = await axios.get(
+      `${baseURL}/service-pools/?user_id=${userId}&company_id=${selectedCompany}`
+    );
+    const allAssignments = response.data.data || response.data;
+    const assignmentsArray = Array.isArray(allAssignments)
+      ? allAssignments
+      : allAssignments?.results || [];
 
-        const assignmentStart = new Date(assignment.est_start_datetime);
-        const assignmentEnd = new Date(assignment.est_end_datetime);
+    // ✅ Normalize the new slot times treating input as UTC+3
+    const newStart = toUTCMs(startDateTime);
+    const newEnd = toUTCMs(endDateTime);
 
-        return (
-          (assignmentStart >= startDate && assignmentStart <= endDate) ||
-          (assignmentEnd >= startDate && assignmentEnd <= endDate) ||
-          (assignmentStart <= startDate && assignmentEnd >= endDate)
-        );
-      });
+    const overlappingAssignments = assignmentsArray.filter((assignment) => {
+      if (
+        !assignment.est_start_datetime ||
+        !assignment.est_end_datetime ||
+        !assignment.assigned_engineer
+      ) return false;
 
-      const busyResourceIds = [
-        ...new Set(
-          overlappingAssignments
-            .map((assignment) => assignment.assigned_engineer)
-            .filter(Boolean)
-        ),
-      ];
+      if (!BUSY_STATUSES.includes(assignment.status)) return false;
 
-      const busyUserIds = resources
-        .filter((r) => busyResourceIds.includes(r.resource_id))
-        .map((r) => r.user);
+      if (assignment.request_id === currentRequest?.request_id) return false;
 
-      setBusyEngineers(busyUserIds);
+      // ✅ Both sides now in UTC ms — comparison is apples-to-apples
+      const assignStart = toUTCMs(assignment.est_start_datetime);
+      const assignEnd = toUTCMs(assignment.est_end_datetime);
 
-      if (busyUserIds.includes(formData.engineerId)) {
-        setFormData((prev) => ({ ...prev, engineerId: "" }));
-        setSelectedEngineerHourlyRate(0);
-      }
-    } catch (error) {
-      console.error("Error checking engineer availability:", error);
-    } finally {
-      setCheckingAvailability(false);
+      return newStart < assignEnd && newEnd > assignStart;
+    });
+
+    const busyResourceIds = [
+      ...new Set(
+        overlappingAssignments
+          .map((a) => a.assigned_engineer)
+          .filter(Boolean)
+      ),
+    ];
+
+    const busyUserIds = resources
+      .filter((r) => busyResourceIds.includes(r.resource_id))
+      .map((r) => r.user);
+
+    setBusyEngineers(busyUserIds);
+
+    if (busyUserIds.includes(formData.engineerId)) {
+      setFormData((prev) => ({ ...prev, engineerId: "", estimatedPrice: "" }));
+      setSelectedEngineerHourlyRate(0);
     }
-  };
+  } catch (error) {
+    console.error("Error checking engineer availability:", error);
+  } finally {
+    setCheckingAvailability(false);
+  }
+};
+
+
+// ✅ Auto-calculates completion time whenever start or end date changes
+const handleDateChange = (e) => {
+  const { name, value } = e.target;
+  const newFormData = { ...formData, [name]: value };
+
+  const start = name === "startDateTime" ? value : formData.startDateTime;
+  const end = name === "endDateTime" ? value : formData.endDateTime;
+
+  if (start && end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (endDate <= startDate) {
+      setDateError("End date/time must be after start date/time");
+      setFormData(newFormData);
+      return;
+    }
+
+    setDateError("");
+
+    // ✅ Auto-calculate completion time (HH:MM)
+    const diffMs = endDate - startDate;
+    const totalMinutes = Math.floor(diffMs / (1000 * 60));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const completionTime = `${hours}:${minutes.toString().padStart(2, "0")}`;
+
+    newFormData.completionTime = completionTime;
+
+    // ✅ Auto-calculate estimated price if engineer already selected
+    if (newFormData.engineerId) {
+      const calculatedPrice = calculateEstimatedPrice(newFormData.engineerId, completionTime);
+      newFormData.estimatedPrice = calculatedPrice;
+    }
+
+    // Check availability with updated dates
+    checkEngineerAvailability(start, end);
+  } else {
+    // One of the dates is missing, clear completion time
+    newFormData.completionTime = "";
+    newFormData.estimatedPrice = "";
+    setDateError("");
+  }
+
+  setFormData(newFormData);
+};
 
   const toDecimalHours = (start, end) => {
     const startTime = new Date(start);
@@ -299,126 +367,139 @@ const AssignmentForm = ({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
- const handleDateChange = (e) => {
-    const { name, value } = e.target;
-    const newFormData = { ...formData, [name]: value };
+//  const handleDateChange = (e) => {
+//     const { name, value } = e.target;
+//     const newFormData = { ...formData, [name]: value };
     
-    if (name === "endDateTime" && newFormData.startDateTime) {
-      const startDate = new Date(newFormData.startDateTime);
-      const endDate = new Date(value);
+//     if (name === "endDateTime" && newFormData.startDateTime) {
+//       const startDate = new Date(newFormData.startDateTime);
+//       const endDate = new Date(value);
       
-      if (endDate <= startDate) {
-        setDateError("End date must be after start date");
-      } else {
-        setDateError("");
-        const diffInHours = Math.abs(endDate - startDate) / 36e5;
-        const hours = Math.floor(diffInHours);
-        const minutes = Math.floor((diffInHours % 1) * 60);
-        const completionTime = `${hours}:${minutes.toString().padStart(2, '0')}`;
+//       if (endDate <= startDate) {
+//         setDateError("End date must be after start date");
+//       } else {
+//         setDateError("");
+//         const diffInHours = Math.abs(endDate - startDate) / 36e5;
+//         const hours = Math.floor(diffInHours);
+//         const minutes = Math.floor((diffInHours % 1) * 60);
+//         const completionTime = `${hours}:${minutes.toString().padStart(2, '0')}`;
         
-        newFormData.completionTime = completionTime;
+//         newFormData.completionTime = completionTime;
 
-        // Calculate estimated price if engineer is selected
-        if (newFormData.engineerId) {
-          const calculatedPrice = calculateEstimatedPrice(newFormData.engineerId, completionTime);
-          newFormData.estimatedPrice = calculatedPrice;
-        }
+//         // Calculate estimated price if engineer is selected
+//         if (newFormData.engineerId) {
+//           const calculatedPrice = calculateEstimatedPrice(newFormData.engineerId, completionTime);
+//           newFormData.estimatedPrice = calculatedPrice;
+//         }
 
-        checkEngineerAvailability(newFormData.startDateTime, value);
-      }
-    }
+//         checkEngineerAvailability(newFormData.startDateTime, value);
+//       }
+//     }
     
-    if (name === "startDateTime" && newFormData.endDateTime) {
-      checkEngineerAvailability(value, newFormData.endDateTime);
-    }
+//     if (name === "startDateTime" && newFormData.endDateTime) {
+//       checkEngineerAvailability(value, newFormData.endDateTime);
+//     }
     
-    setFormData(newFormData);
-  };
+//     setFormData(newFormData);
+//   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (formData.endDateTime && formData.startDateTime) {
-      const startDate = new Date(formData.startDateTime);
-      const endDate = new Date(formData.endDateTime);
-      if (endDate <= startDate) {
-        setDateError("End date must be after start date");
-        return;
-      }
-    }
-
-    const selectedEngineerResource = Array.isArray(resources)
-      ? resources.find((resource) => resource.user === formData.engineerId)
-      : null;
-
-    if (!selectedEngineerResource) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Error!',
-        text: 'Engineer resource not found. Please verify the selection.',
-        confirmButtonColor: '#3085d6',
-      });
+  if (formData.endDateTime && formData.startDateTime) {
+    const startDate = new Date(formData.startDateTime);
+    const endDate = new Date(formData.endDateTime);
+    if (endDate <= startDate) {
+      setDateError("End date must be after start date");
       return;
     }
+  }
 
-    const payload = {
-      assigned_engineer: selectedEngineerResource.resource_id,
-      estimated_completion_time: toDecimalHours(formData.startDateTime, formData.endDateTime),
-      estimated_price: Number(formData.estimatedPrice),
-      dynamics_service_order_no: formData.dynamics_service_order_no,
-      est_start_datetime: formData.startDateTime,
-      est_end_datetime: formData.endDateTime,
-      status: "Assigned",
-      company: selectedCompany,
-      user_id: userId,
-      company_id: selectedCompany,
-    };
+  const selectedEngineerResource = Array.isArray(resources)
+    ? resources.find((resource) => resource.user === formData.engineerId)
+    : null;
 
-    const assignmentPayload = {
-      assignment_id: `ASG-${Date.now()}`,
-      assignment_type: "Assign",
-      status: "Pending",
-      decline_reason: "",
-      comments: "",
-      created_by: userId,
-      updated_by: userId,
-      company: selectedCompany,
-      request: currentRequest.request_id,
-      assigned_engineer: selectedEngineerResource.resource_id,
-      assigned_by: userId,
-      company_id: selectedCompany,
-      user_id: userId,
-    };
+  if (!selectedEngineerResource) {
+    Swal.fire({
+      icon: "error",
+      title: "Error!",
+      text: "Engineer resource not found. Please verify the selection.",
+      confirmButtonColor: "#3085d6",
+    });
+    return;
+  }
 
-    try {
-      await axios.post(`${baseURL}/assignment-history/`, assignmentPayload);
-      await axios.put(`${baseURL}/service-pools/${currentRequest.request_id}/`, payload);
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: 'Service request assigned successfully!',
-        confirmButtonColor: '#3085d6',
-      });
-
-      onSuccess();
-      onClose();
-    } catch (err) {
-      console.error("Assignment failed:", err);
-      let errorMessage = err.message;
-      
-      if (err.response?.data) {
-        errorMessage = `Assignment failed: ${JSON.stringify(err.response.data, null, 2)}`;
-      }
-
-      Swal.fire({
-        icon: 'error',
-        title: 'Assignment Failed',
-        text: errorMessage,
-        confirmButtonColor: '#3085d6',
-      });
-    }
+  const poolPayload = {
+    assigned_engineer: selectedEngineerResource.resource_id,
+    estimated_completion_time: toDecimalHours(formData.startDateTime, formData.endDateTime),
+    estimated_price: Number(formData.estimatedPrice),
+    dynamics_service_order_no: formData.dynamics_service_order_no,
+    est_start_datetime: formData.startDateTime,
+    est_end_datetime: formData.endDateTime,
+    status: "Assigned",
+    company: selectedCompany,
+    user_id: userId,
+    company_id: selectedCompany,
   };
+
+  const assignmentPayload = {
+    assignment_id: `ASG-${Date.now()}`,
+    assignment_type: "Assign",
+    status: "Pending",
+    decline_reason: "",
+    comments: "",
+    created_by: userId,
+    updated_by: userId,
+    company: selectedCompany,
+    request: currentRequest.request_id,
+    assigned_engineer: selectedEngineerResource.resource_id,
+    assigned_by: userId,
+    company_id: selectedCompany,
+    user_id: userId,
+  };
+
+  try {
+    // ✅ Step 1: PUT service pool FIRST
+    await axios.put(
+      `${baseURL}/service-pools/${currentRequest.request_id}/`,
+      poolPayload
+    );
+
+    // ✅ Step 2: Only POST assignment history if PUT succeeded
+    await axios.post(`${baseURL}/assignment-history/`, assignmentPayload);
+
+    Swal.fire({
+      icon: "success",
+      title: "Success!",
+      text: "Service request assigned successfully!",
+      confirmButtonColor: "#3085d6",
+    });
+
+    onSuccess();
+    onClose();
+  } catch (err) {
+    console.error("Assignment failed:", err);
+
+    // ✅ Clean error message extraction
+    let errorMessage = "Something went wrong. Please try again.";
+    if (err.response?.data?.error) {
+      errorMessage = err.response.data.error;
+    } else if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err.response?.data) {
+      errorMessage = JSON.stringify(err.response.data);
+    } else {
+      errorMessage = err.message;
+    }
+
+    Swal.fire({
+      icon: "error",
+      title: "Assignment Failed",
+      text: errorMessage,
+      confirmButtonColor: "#3085d6",
+    });
+  }
+};
 
   // Format date for display
   const formatDate = (dateString) => {
@@ -735,4 +816,4 @@ const AssignmentForm = ({
   );
 };
 
-export default AssignmentForm;
+export default AssignmentForm; 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Tabs, Tab } from "react-bootstrap";
@@ -27,7 +27,14 @@ const ServiceItemMachineDetails = () => {
   const [retainedError, setRetainedError] = useState(null);
 
   const [retentionDays, setRetentionDays] = useState(null);
-  const [totalRecords, setTotalRecords] = useState(0);
+
+  // Per-batch totals from API (used for pagination)
+  const [batchTotals, setBatchTotals] = useState({
+    batch1: 0,
+    batch2: 0,
+    batch3: 0,
+    error: 0,
+  });
 
   const [apiPage, setApiPage] = useState(1);
   const [apiPageSize, setApiPageSize] = useState(50);
@@ -67,100 +74,112 @@ const ServiceItemMachineDetails = () => {
   }, [pcbSerialNumber, selectedCompany, userId]);
 
   /* ================= FETCH RETAINED DATA ================= */
-  const fetchRetainedData = async (batchType) => {
-    try {
-      setRetainedLoading(true);
-      setRetainedError(null);
+  const fetchRetainedData = useCallback(
+    async (batchType) => {
+      try {
+        setRetainedLoading(true);
+        setRetainedError(null);
+        setRetainedData([]); // ✅ Clear stale data immediately on fetch
 
-      const res = await axios.get(
-        `${baseURL}/retained-data/${pcbSerialNumber}/`,
-        {
-          params: {
-            company_id: selectedCompany,
-            user_id: userId,
-            batch: batchType,
-            page: apiPage,
-            page_size: apiPageSize,
-          },
+        const res = await axios.get(
+          `${baseURL}/retained-data/${pcbSerialNumber}/`,
+          {
+            params: {
+              company_id: selectedCompany,
+              user_id: userId,
+              batch: batchType,
+              page: apiPage,
+              page_size: apiPageSize,
+            },
+          }
+        );
+
+        if (res.data?.status !== "success") {
+          setRetainedError("Failed to load retained data");
+          return;
         }
-      );
 
-      if (res.data.status !== "success") {
-        setRetainedError("Failed to load retained data");
-        return;
+        const data = res.data.data;
+
+        setRetentionDays(data.retention_period_days);
+
+        // ✅ Store all batch totals so pagination is always accurate
+        setBatchTotals({
+          batch1: data.batch_1?.total_records || 0,
+          batch2: data.batch_2?.total_records || 0,
+          batch3: data.batch_3?.total_records || 0,
+          error: data.error_code?.total_records || 0,
+        });
+
+        // ✅ Resolve records and total for current tab
+        const batchMap = {
+          batch1: { records: data.batch_1?.records || [], total: data.batch_1?.total_records || 0 },
+          batch2: { records: data.batch_2?.records || [], total: data.batch_2?.total_records || 0 },
+          batch3: { records: data.batch_3?.records || [], total: data.batch_3?.total_records || 0 },
+          error:  { records: data.error_code?.records || [], total: data.error_code?.total_records || 0 },
+          // "all" tab: API should ideally support batch=all and return paginated combined records.
+          // If not, we show all records from this single API call (one page worth).
+          all: {
+            records: [
+              ...(data.batch_1?.records || []),
+              ...(data.batch_2?.records || []),
+              ...(data.batch_3?.records || []),
+              ...(data.error_code?.records || []),
+            ],
+            total:
+              (data.batch_1?.total_records || 0) +
+              (data.batch_2?.total_records || 0) +
+              (data.batch_3?.total_records || 0) +
+              (data.error_code?.total_records || 0),
+          },
+        };
+
+        const resolved = batchMap[batchType] || { records: [], total: 0 };
+        setRetainedData(resolved.records);
+        // ✅ Total is stored in batchTotals, not separate state — see getTotalForTab()
+      } catch (err) {
+        console.error(err);
+        setRetainedError("Error loading retained data");
+      } finally {
+        setRetainedLoading(false);
       }
-
-      const data = res.data.data;
-
-      setRetentionDays(data.retention_period_days);
-
-      let records = [];
-      let total = 0;
-
-      if (batchType === "batch1") {
-        records = data.batch_1.records;
-        total = data.batch_1.total_records;
-      } else if (batchType === "batch2") {
-        records = data.batch_2.records;
-        total = data.batch_2.total_records;
-      } else if (batchType === "batch3") {
-        records = data.batch_3.records;
-        total = data.batch_3.total_records;
-      } else if (batchType === "error") {
-        records = data.error_code.records;
-        total = data.error_code.total_records;
-      } else if (batchType === "all") {
-        records = [
-          ...(data.batch_1?.records || []),
-          ...(data.batch_2?.records || []),
-          ...(data.batch_3?.records || []),
-          ...(data.error_code?.records || []),
-        ];
-        total =
-          (data.batch_1?.total_records || 0) +
-          (data.batch_2?.total_records || 0) +
-          (data.batch_3?.total_records || 0) +
-          (data.error_code?.total_records || 0);
-      }
-
-      setRetainedData(records);
-      setTotalRecords(total);
-    } catch (err) {
-      console.error(err);
-      setRetainedError("Error loading retained data");
-    } finally {
-      setRetainedLoading(false);
-    }
-  };
+    },
+    [pcbSerialNumber, selectedCompany, userId, apiPage, apiPageSize]
+  );
 
   /* ================= RETAINED EFFECT ================= */
   useEffect(() => {
     if (activeTab !== "live") {
       fetchRetainedData(activeTab);
     }
-  }, [activeTab, apiPage, apiPageSize]);
+  }, [activeTab, fetchRetainedData]); // ✅ fetchRetainedData is stable via useCallback
+
+  /* ================= HELPERS ================= */
+
+  // ✅ Returns the correct total for the active tab (used for page count)
+  const getTotalForTab = () => {
+    const map = {
+      batch1: batchTotals.batch1,
+      batch2: batchTotals.batch2,
+      batch3: batchTotals.batch3,
+      error: batchTotals.error,
+      all: batchTotals.batch1 + batchTotals.batch2 + batchTotals.batch3 + batchTotals.error,
+    };
+    return map[activeTab] || 0;
+  };
+
+  const totalRecords = getTotalForTab();
+  const totalPages = Math.ceil(totalRecords / apiPageSize) || 1;
 
   /* ================= BADGES ================= */
   const getModesBadge = (value) => {
-    const map = {
-      0: "Shutdown",
-      1: "IDEC",
-      2: "Auto",
-      3: "Fan",
-      4: "Indirect",
-      5: "Direct",
-    };
-    return <span className="badge bg-primary">{map[value] || "Unknown"}</span>;
+    const map = { 0: "Shutdown", 1: "IDEC", 2: "Auto", 3: "Fan", 4: "Indirect", 5: "Direct" };
+    return <span className="badge bg-primary">{map[value] ?? "Unknown"}</span>;
   };
 
   const getFanSpeedBadge = (value) => {
-    const map = {
-      3: "Shutdown",
-      0: "High",
-      1: "Medium",
-      2: "Low",
-    };
-    return <span className="badge bg-info">{map[value] || "Unknown"}</span>;
+    const map = { 3: "Shutdown", 0: "High", 1: "Medium", 2: "Low" };
+    return <span className="badge bg-info">{map[value] ?? "Unknown"}</span>;
   };
 
   /* ================= UI STATES ================= */
@@ -184,11 +203,7 @@ const ServiceItemMachineDetails = () => {
               <strong>PCB Serial:</strong> {machineData.pcb_serial_number}
             </div>
             <div>
-              <span
-                className={`badge ${
-                  machineData.is_online ? "bg-success" : "bg-danger"
-                }`}
-              >
+              <span className={`badge ${machineData.is_online ? "bg-success" : "bg-danger"}`}>
                 {machineData.is_online ? "Online" : "Offline"}
               </span>
             </div>
@@ -199,7 +214,8 @@ const ServiceItemMachineDetails = () => {
             activeKey={activeTab}
             onSelect={(k) => {
               setActiveTab(k);
-              setApiPage(1);
+              setApiPage(1); // ✅ Reset to page 1 on tab switch
+              setRetainedData([]); // ✅ Clear data immediately on tab switch
             }}
             className="mb-3"
           >
@@ -255,13 +271,13 @@ const ServiceItemMachineDetails = () => {
               {/* INFO BAR */}
               <div className="alert alert-secondary d-flex justify-content-between flex-wrap">
                 <div>
-                  <strong>Retention:</strong> {retentionDays} days
+                  <strong>Retention:</strong> {retentionDays ?? "-"} days
                 </div>
                 <div>
                   <strong>Total Records:</strong> {totalRecords}
                 </div>
                 <div>
-                  <strong>Page:</strong> {apiPage} |{" "}
+                  <strong>Page:</strong> {apiPage} / {totalPages} |{" "}
                   <strong>Page Size:</strong> {apiPageSize}
                 </div>
               </div>
@@ -275,7 +291,7 @@ const ServiceItemMachineDetails = () => {
                     value={apiPageSize}
                     onChange={(e) => {
                       setApiPageSize(Number(e.target.value));
-                      setApiPage(1);
+                      setApiPage(1); // ✅ Reset page when size changes
                     }}
                   >
                     <option value={20}>20</option>
@@ -293,10 +309,7 @@ const ServiceItemMachineDetails = () => {
                     value={apiPage}
                     onChange={(e) => setApiPage(Number(e.target.value))}
                   >
-                    {Array.from(
-                      { length: Math.ceil(totalRecords / apiPageSize) || 1 },
-                      (_, i) => i + 1
-                    ).map((p) => (
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                       <option key={p} value={p}>
                         {p}
                       </option>
@@ -307,7 +320,10 @@ const ServiceItemMachineDetails = () => {
 
               {/* TABLE */}
               {retainedLoading ? (
-                <div className="text-center">Loading retained data...</div>
+                <div className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status" />
+                  <div className="mt-2">Loading retained data...</div>
+                </div>
               ) : retainedError ? (
                 <div className="alert alert-danger">{retainedError}</div>
               ) : (
@@ -326,15 +342,13 @@ const ServiceItemMachineDetails = () => {
                     <tbody>
                       {retainedData.length > 0 ? (
                         retainedData.map((row, index) => (
-                          <tr key={index}>
-                            <td>{row.sl_no || index + 1}</td>
+                          <tr key={row.sl_no || index}>
+                            <td>{row.sl_no || (apiPage - 1) * apiPageSize + index + 1}</td>
                             <td>{row.sensor_code}</td>
                             <td>{row.sensor_name}</td>
                             <td>{row.value}</td>
                             <td>{row.unit || "-"}</td>
-                            <td>
-                              {new Date(row.timestamp).toLocaleString()}
-                            </td>
+                            <td>{new Date(row.timestamp).toLocaleString()}</td>
                           </tr>
                         ))
                       ) : (

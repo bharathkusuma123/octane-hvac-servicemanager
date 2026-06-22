@@ -942,15 +942,47 @@ import { FaTrashAlt, FaEdit, FaEye, FaKey } from 'react-icons/fa';
 const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [entriesPerPage, setEntriesPerPage] = useState(5);
-  const [currentPage, setCurrentPage] = useState(1);
+ const [searchTerm, setSearchTerm] = useState(() => {
+  return sessionStorage.getItem('customers_searchTerm') || '';
+});
+
+const [entriesPerPage, setEntriesPerPage] = useState(() => {
+  return Number(sessionStorage.getItem('customers_entriesPerPage')) || 5;
+});
+
+const [currentPage, setCurrentPage] = useState(() => {
+  return Number(sessionStorage.getItem('customers_currentPage')) || 1;
+});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [companiesData, setCompaniesData] = useState([]);
   const { selectedCompany } = useCompany();
   const { userId } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  useEffect(() => {
+  sessionStorage.setItem('customers_searchTerm', searchTerm);
+}, [searchTerm]);
+
+useEffect(() => {
+  sessionStorage.setItem('customers_entriesPerPage', entriesPerPage);
+}, [entriesPerPage]);
+
+useEffect(() => {
+  sessionStorage.setItem('customers_currentPage', currentPage);
+}, [currentPage]);
+
+const handleSearchChange = (value) => {
+  setSearchTerm(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('customers_currentPage', 1);
+};
+
+const handleEntriesPerPageChange = (value) => {
+  setEntriesPerPage(value);
+  setCurrentPage(1);
+  sessionStorage.setItem('customers_currentPage', 1);
+};
  
   const fetchCompanies = async () => {
     try {
@@ -1045,69 +1077,69 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
     ].join(' ');
   };
  
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      let results = customers;
-      if (selectedCompany) {
-        results = results.filter(customer => customer.company === selectedCompany);
-      }
-      setFilteredCustomers(results);
-      setCurrentPage(1);
-      return;
+useEffect(() => {
+  if (!searchTerm.trim()) {
+    let results = customers;
+
+    if (selectedCompany) {
+      results = results.filter(customer => customer.company === selectedCompany);
     }
- 
-    const searchLower = searchTerm.toLowerCase().trim();
- 
-    const filtered = customers.filter((customer) => {
-      if (selectedCompany && customer.company !== selectedCompany) return false;
- 
-      const companySearchData = getCompanySearchData(customer.company);
-      const createdDateFormats = formatDateForSearch(customer.created_at);
-      const updatedDateFormats = formatDateForSearch(customer.updated_at);
- 
-      const searchableText = [
-        customer.customer_id || '',
-        customer.company || '',
-        customer.full_name || '',
-        customer.username || '',
-        customer.email || '',
-        customer.mobile || '',
-        customer.city || '',
-        customer.customer_type || '',
-        customer.status || '',
-        customer.created_at || '',
-        customer.updated_at || '',
-        customer.telephone || '',
-        customer.address || '',
-        customer.country_code || '',
-        customer.remarks || '',
-        companySearchData,
-        createdDateFormats,
-        updatedDateFormats,
-        formatDate(customer.created_at),
-        getCompanyDisplayName(customer.company),
-        customer.email ? customer.email.split('@')[0] : '',
-        customer.mobile ? customer.mobile.replace(/[+\s-]/g, '') : '',
-        customer.full_name ? customer.full_name.toLowerCase().replace(/\s+/g, '') : '',
-        ...Object.values(customer).filter(val => val !== null && val !== undefined).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') return String(val);
-          if (typeof val === 'boolean') return val ? 'true yes active' : 'false no inactive';
-          if (Array.isArray(val)) return val.join(' ');
-          if (typeof val === 'object' && val !== null) return JSON.stringify(val);
-          return '';
-        })
-      ]
-        .join(' ')
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .trim();
- 
-      return searchableText.includes(searchLower);
-    });
- 
-    setFilteredCustomers(filtered);
-    setCurrentPage(1);
-  }, [searchTerm, customers, companiesData, selectedCompany]);
+
+    setFilteredCustomers(results);
+
+    // ✅ Clamp page
+    const totalPagesNow = Math.ceil(results.length / entriesPerPage);
+    const savedPage = Number(sessionStorage.getItem('customers_currentPage')) || 1;
+
+    if (savedPage > totalPagesNow && totalPagesNow > 0) {
+      setCurrentPage(totalPagesNow);
+    }
+
+    return;
+  }
+
+  const searchLower = searchTerm.toLowerCase().trim();
+
+  const filtered = customers.filter((customer) => {
+    if (selectedCompany && customer.company !== selectedCompany) return false;
+
+    const companySearchData = getCompanySearchData(customer.company);
+    const createdDateFormats = formatDateForSearch(customer.created_at);
+    const updatedDateFormats = formatDateForSearch(customer.updated_at);
+
+    const searchableText = [
+      customer.customer_id,
+      customer.full_name,
+      customer.username,
+      customer.email,
+      customer.mobile,
+      customer.city,
+      customer.customer_type,
+      customer.status,
+      companySearchData,
+      createdDateFormats,
+      updatedDateFormats,
+      formatDate(customer.created_at),
+      getCompanyDisplayName(customer.company),
+      ...Object.values(customer).map(v => String(v || ''))
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return searchableText.includes(searchLower);
+  });
+
+  setFilteredCustomers(filtered);
+
+  // ✅ Clamp page after filtering
+  const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
+  const savedPage = Number(sessionStorage.getItem('customers_currentPage')) || 1;
+
+  if (savedPage > totalPagesNow && totalPagesNow > 0) {
+    setCurrentPage(totalPagesNow);
+  }
+
+}, [searchTerm, customers, companiesData, selectedCompany, entriesPerPage]);
  
   const indexOfLastEntry = currentPage * entriesPerPage;
   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
@@ -1174,7 +1206,7 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
           Show
           <select
             value={entriesPerPage}
-            onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+           onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
             className="form-select form-select-sm w-auto"
           >
             <option value={5}>5</option>
@@ -1190,11 +1222,11 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
             placeholder="Search in all columns..."
             className="form-control"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+           onChange={(e) => handleSearchChange(e.target.value)}
             style={{ minWidth: '250px' }}
           />
           {searchTerm && (
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => setSearchTerm('')}>
+            <button className="btn btn-sm btn-outline-secondary" onClick={() => handleSearchChange('')}>
               Clear
             </button>
           )}
@@ -1347,6 +1379,6 @@ const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
       )}
     </>
   );
-};
+}; 
 
 export default CustomerTable;
