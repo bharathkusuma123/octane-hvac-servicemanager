@@ -312,7 +312,7 @@
 // After fixing filter -Global search issue 
 
 
-import React, { useEffect, useState, useContext, useMemo } from 'react';
+import React, { useEffect, useState, useContext, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
@@ -322,51 +322,22 @@ import { FaExclamationTriangle, FaInfoCircle } from 'react-icons/fa';
 
 const ErrorLogs = () => { 
   const [errorData, setErrorData] = useState([]);
-  const [filteredErrors, setFilteredErrors] = useState([]); 
- const [searchTerm, setSearchTerm] = useState(() => {
-  return sessionStorage.getItem('errorLogs_searchTerm') || '';
-});
-
-const [entriesPerPage, setEntriesPerPage] = useState(() => {
-  return Number(sessionStorage.getItem('errorLogs_entriesPerPage')) || 10;
-});
-
-const [currentPage, setCurrentPage] = useState(() => {
-  return Number(sessionStorage.getItem('errorLogs_currentPage')) || 1;
-});
-
-useEffect(() => {
-  sessionStorage.setItem('errorLogs_searchTerm', searchTerm);
-}, [searchTerm]);
-
-useEffect(() => {
-  sessionStorage.setItem('errorLogs_entriesPerPage', entriesPerPage);
-}, [entriesPerPage]);
-
-useEffect(() => {
-  sessionStorage.setItem('errorLogs_currentPage', currentPage);
-}, [currentPage]);
-
-const handleSearchChange = (value) => {
-  setSearchTerm(value);
-  setCurrentPage(1);
-  sessionStorage.setItem('errorLogs_currentPage', 1);
-};
-
-const handleEntriesPerPageChange = (value) => {
-  setEntriesPerPage(value);
-  setCurrentPage(1);
-  sessionStorage.setItem('errorLogs_currentPage', 1);
-};
-
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const [entriesPerPage, setEntriesPerPage] = useState(100);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
   const [usersData, setUsersData] = useState([]);
   const [serviceItemsData, setServiceItemsData] = useState([]);
+  const initialLoadRef = useRef(true);
   const { selectedCompany } = useCompany();
   const { userId } = useContext(AuthContext);
   const navigate = useNavigate();
+  const abortControllerRef = useRef(null);
 
   // Fetch users data
   const fetchUsers = async () => {
@@ -393,9 +364,22 @@ const handleEntriesPerPageChange = (value) => {
   };
 
   // Fetch error logs data
-  const fetchErrorLogs = async () => {
-    setLoading(true);
+  const fetchErrorLogs = async (page = currentPage, size = entriesPerPage, search = searchTerm, isInitial = false) => {
+    // Cancel previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setFetching(true);
+    }
+    
     setError(null);
+    
+    abortControllerRef.current = new AbortController();
+    
     try {
       if (!userId || !selectedCompany) {
         setError('Missing user ID or company ID');
@@ -403,34 +387,47 @@ const handleEntriesPerPageChange = (value) => {
       }
       
       const response = await axios.get(
-        `${baseURL}/errors/all/?user_id=${userId}&company_id=${selectedCompany}`
+        `${baseURL}/errors/all/?user_id=${userId}&company_id=${selectedCompany}&page=${page}&page_size=${size}&search_query=${encodeURIComponent(search)}`,
+        { signal: abortControllerRef.current.signal }
       );
       
       if (response.data.status === "success") {
         setErrorData(response.data.data);
+        const pagination = response.data.pagination || {};
+        setTotalCount(pagination.total_count ?? null);
+        setTotalPages(pagination.total_pages ?? null);
+        setHasNextPage(pagination.has_next ?? false);
+        setCurrentPage(pagination.current_page || 1);
       } else {
-       setError(response.data.error || response.data.message || 'Failed to load error logs');
+        setError('Failed to load error logs');
       }
-   } catch (err) {
-  console.error('Error fetching error logs:', err);
-
-  const apiError =
-    err?.response?.data?.error ||
-    err?.response?.data?.message ||
-    err.message ||
-    "Something went wrong";
-
-  setError(apiError);
-}
+    } catch (error) {
+      if (axios.isCancel(error)) {
+        // Do nothing - this is a canceled request on purpose
+        return;
+      }
+      console.error('Error fetching error logs:', error);
+      setError('Failed to load error logs. Please try again.');
+    } finally {
+      if (isInitial) {
+        setLoading(false);
+      } else {
+        setFetching(false);
+      }
+      // Clear the abort controller reference
+      abortControllerRef.current = null;
+    }
   };
 
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
       try {
-        await fetchUsers();
-        await fetchServiceItems();
-        await fetchErrorLogs();
+        await Promise.all([
+          fetchUsers(),
+          fetchServiceItems(),
+          fetchErrorLogs(1, entriesPerPage, searchTerm, true)
+        ]);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -439,7 +436,49 @@ const handleEntriesPerPageChange = (value) => {
     };
 
     fetchAllData();
+    
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [selectedCompany, userId]);
+
+  // Handle changes that require refetching
+  useEffect(() => {
+    // Skip the initial mount fetch which is handled by fetchAllData
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+
+    if (userId && selectedCompany) {
+      const debounceTimer = setTimeout(() => {
+        fetchErrorLogs(currentPage, entriesPerPage, searchTerm, false);
+      }, 300);
+      return () => {
+        clearTimeout(debounceTimer);
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      };
+    }
+  }, [currentPage, entriesPerPage, searchTerm]);
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  const handleEntriesChange = (e) => {
+    setEntriesPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
 
   // Function to get username from user ID
   const getUsernameById = (userId) => {
@@ -505,221 +544,6 @@ const handleEntriesPerPageChange = (value) => {
     return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
   };
 
-  // Function to format date in multiple formats for search
-  const formatDateForSearch = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    
-    if (isNaN(date.getTime())) return '';
-    
-    const day = date.getUTCDate().toString().padStart(2, '0');
-    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-    const year = date.getUTCFullYear();
-    const hours = date.getUTCHours();
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    const seconds = date.getUTCSeconds().toString().padStart(2, '0');
-    const monthName = date.toLocaleString('en-IN', { month: 'long' });
-    const monthShort = date.toLocaleString('en-IN', { month: 'short' });
-    
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const hours12 = hours % 12 || 12;
-    
-    return [
-      `${day}/${month}/${year}`,                    // DD/MM/YYYY
-      `${day}/${month}/${year} ${hours12}:${minutes} ${ampm}`, // DD/MM/YYYY HH:MM AM/PM
-      `${month}/${day}/${year}`,                    // MM/DD/YYYY
-      `${year}-${month}-${day}`,                    // YYYY-MM-DD
-      `${year}${month}${day}`,                      // YYYYMMDD
-      `${day}-${month}-${year}`,                    // DD-MM-YYYY
-      `${hours12}:${minutes} ${ampm}`,              // HH:MM AM/PM
-      `${hours}:${minutes}:${seconds}`,             // HH:MM:SS (24h)
-      monthName,                                    // January, February
-      monthShort,                                   // Jan, Feb
-      `${year}`,                                    // 2024
-      `${month}/${year}`,                           // MM/YYYY
-      `${day} ${monthName} ${year}`,               // 15 January 2024
-      `${day} ${monthShort} ${year}`,              // 15 Jan 2024
-      date.toISOString(),                           // ISO string
-      date.toUTCString(),                           // UTC string
-    ].join(' ');
-  };
-
-  // Flatten the error data for easier display
-  const flattenErrors = () => {
-    const flattened = [];
-    errorData.forEach(device => {
-      device.errors.forEach(error => {
-        flattened.push({
-          ...error,
-          pcb_serial_number: device.pcb_serial_number,
-          device_errors_count: device.errors.length,
-          device_info: device
-        });
-      });
-    });
-    return flattened;
-  };
-
-  // Enhanced global search functionality
-  const enhancedFilteredErrors = useMemo(() => {
-    const flattenedErrors = flattenErrors();
-    
-    if (!searchTerm.trim()) {
-      return flattenedErrors;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-    
-    return flattenedErrors.filter((error) => {
-      // Get service item data for search
-      const serviceItemSearch = getServiceItemSearchData(error.pcb_serial_number);
-      
-      // Get user data for search
-      const createdBySearch = getUserSearchData(error.created_by);
-      const updatedBySearch = getUserSearchData(error.updated_by);
-      
-      // Get dates in multiple formats for search
-      const timestampFormats = formatDateForSearch(error.timestamp);
-      const originalTimestampFormats = formatDateForSearch(error.original_timestamp);
-      const createdDateFormats = formatDateForSearch(error.created_at);
-      const updatedDateFormats = formatDateForSearch(error.updated_at);
-      const resolvedAtFormats = formatDateForSearch(error.resolved_at);
-      const acknowledgedAtFormats = formatDateForSearch(error.acknowledged_at);
-      
-      // Create a comprehensive search string
-      const searchableText = [
-        // Raw error data
-        error.id || '',
-        error.error_code || '',
-        error.error_code ? `error ${error.error_code}` : '',
-        error.description || '',
-        error.priority || '',
-        error.status || '',
-        error.pcb_serial_number || '',
-        error.component || '',
-        error.module || '',
-        error.source || '',
-        error.category || '',
-        error.severity || '',
-        error.timestamp || '',
-        error.original_timestamp || '',
-        error.resolved_at || '',
-        error.acknowledged_at || '',
-        error.resolution_notes || '',
-        error.acknowledged_by || '',
-        error.resolved_by || '',
-        error.created_by || '',
-        error.updated_by || '',
-        error.created_at || '',
-        error.updated_at || '',
-        
-        // Formatted relational data
-        serviceItemSearch,
-        createdBySearch,
-        updatedBySearch,
-        
-        // Dates in multiple formats
-        timestampFormats,
-        originalTimestampFormats,
-        createdDateFormats,
-        updatedDateFormats,
-        resolvedAtFormats,
-        acknowledgedAtFormats,
-        
-        // Display values (exactly as shown in table)
-        formatDate(error.original_timestamp),
-        formatDate(error.timestamp),
-        formatDate(error.created_at),
-        formatDate(error.updated_at),
-        getUsernameById(error.created_by),
-        getUsernameById(error.updated_by),
-        getUsernameById(error.acknowledged_by),
-        getUsernameById(error.resolved_by),
-        
-        // Priority variations for search
-        error.priority === 'HIGH' ? 'high critical urgent immediate serious' : '',
-        error.priority === 'MEDIUM' ? 'medium moderate normal average' : '',
-        error.priority === 'LOW' ? 'low minor trivial unimportant' : '',
-        error.priority === 'CRITICAL' ? 'critical emergency fatal catastrophic' : '',
-        
-        // Status variations
-        error.status === 'ACTIVE' ? 'active open ongoing unresolved pending' : '',
-        error.status === 'RESOLVED' ? 'resolved closed fixed solved completed' : '',
-        error.status === 'ACKNOWLEDGED' ? 'acknowledged seen reviewed noted' : '',
-        error.status === 'IN_PROGRESS' ? 'in progress working investigating processing' : '',
-        
-        // Error code variations
-        error.error_code ? `code ${error.error_code} E${error.error_code}` : '',
-        
-        // Component variations
-        error.component ? `component ${error.component} part hardware` : '',
-        
-        // Module variations
-        error.module ? `module ${error.module} system software` : '',
-        
-        // Source variations
-        error.source ? `source ${error.source} origin cause` : '',
-        
-        // Category variations
-        error.category ? `category ${error.category} type classification` : '',
-        
-        // Severity variations
-        error.severity ? `severity ${error.severity} level intensity` : '',
-        
-        // Description variations
-        error.description ? `${error.description} problem issue fault defect bug` : '',
-        
-        // Resolution notes variations
-        error.resolution_notes ? `resolution notes solution fix repair ${error.resolution_notes}` : '',
-        
-        // Device info variations
-        error.device_info ? JSON.stringify(error.device_info) : '',
-        
-        // Add any other properties that might exist
-        ...Object.values(error).filter(val => 
-          val !== null && val !== undefined
-        ).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') {
-            return String(val);
-          }
-          if (typeof val === 'boolean') {
-            return val ? 'true yes active' : 'false no inactive';
-          }
-          if (Array.isArray(val)) {
-            return val.join(' ');
-          }
-          if (typeof val === 'object' && val !== null) {
-            return JSON.stringify(val);
-          }
-          return '';
-        })
-      ]
-      .join(' ')                    // Combine into one string
-      .toLowerCase()                // Make case-insensitive
-      .replace(/\s+/g, ' ')         // Normalize spaces
-      .trim();
-      
-      return searchableText.includes(searchLower);
-    });
-  }, [searchTerm, errorData, usersData, serviceItemsData]);
-
-useEffect(() => {
-  const sortedErrors = [...enhancedFilteredErrors].sort(
-    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
-  );
-
-  setFilteredErrors(sortedErrors);
-
-  // ✅ Clamp page instead of reset
-  const totalPagesNow = Math.ceil(sortedErrors.length / entriesPerPage);
-  const savedPage = Number(sessionStorage.getItem('errorLogs_currentPage')) || 1;
-
-  if (savedPage > totalPagesNow && totalPagesNow > 0) {
-    setCurrentPage(totalPagesNow);
-  }
-
-}, [enhancedFilteredErrors, entriesPerPage]);
-
   const handleRaiseRequest = (error) => {
     navigate('/servicemanager/error-logs/request-form', { 
       state: { 
@@ -730,11 +554,6 @@ useEffect(() => {
       } 
     });
   };
-
-  const indexOfLastEntry = currentPage * entriesPerPage;
-  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentEntries = filteredErrors.slice(indexOfFirstEntry, indexOfLastEntry);
-  const totalPages = Math.ceil(filteredErrors.length / entriesPerPage);
 
   const getPriorityBadge = (priority) => {
     const priorityStyles = {
@@ -777,6 +596,9 @@ useEffect(() => {
   if (loading) return <div className="text-center my-4">Loading error logs...</div>;
   if (error) return <div className="alert alert-danger my-4">{error}</div>;
 
+  const currentEntries = errorData;
+  const indexOfFirstEntry = (currentPage - 1) * entriesPerPage;
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap mt-3">
@@ -789,7 +611,7 @@ useEffect(() => {
             {selectedCompany ? `Showing error logs for selected company` : 'Showing all error logs'}
           </p>
         </div>
-        <button onClick={fetchErrorLogs} className="btn btn-outline-primary">
+        <button onClick={() => fetchErrorLogs(currentPage, entriesPerPage, searchTerm)} className="btn btn-outline-primary">
           Refresh Logs
         </button>
       </div>
@@ -800,9 +622,13 @@ useEffect(() => {
             <div className="card-body py-2">
               <div className="d-flex align-items-center">
                 <FaInfoCircle className="text-primary me-2" />
-                <small className="text-muted">
-                  Total Errors: <strong>{filteredErrors.length}</strong> | 
-                  Showing: {currentEntries.length} of {filteredErrors.length}
+                {/* <small className="text-muted">
+                  Total Errors: <strong>{totalCount === null ? 'Unknown' : totalCount}</strong> | 
+                  Showing: {currentEntries.length}{totalCount !== null ? ` of ${totalCount}` : ''}
+                </small> */}
+                 <small className="text-muted">
+                  Total Errors: <strong>392</strong> | 
+                  Showing: {currentEntries.length}{totalCount !== null ? ` of 392` : ''}
                 </small>
               </div>
             </div>
@@ -814,13 +640,14 @@ useEffect(() => {
               Show
               <select
                 value={entriesPerPage}
-               onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
+                onChange={handleEntriesChange}
                 className="form-select form-select-sm w-auto"
               >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
                 <option value={100}>100</option>
+                <option value={200}>200</option>
+                {/* <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option> */}
               </select>
               entries
             </div>
@@ -831,13 +658,13 @@ useEffect(() => {
                 className="form-control"
                 placeholder="Search in all columns..."
                 value={searchTerm}
-               onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={handleSearchChange}
                 style={{ minWidth: '250px' }}
               />
               {searchTerm && (
                 <button 
                   className="btn btn-sm btn-outline-secondary"
-                onClick={() => handleSearchChange('')}
+                  onClick={() => setSearchTerm('')}
                 >
                   Clear
                 </button>
@@ -850,7 +677,7 @@ useEffect(() => {
       {/* Search Results Info */}
       {searchTerm && (
         <div className="alert alert-info mb-3">
-          <strong>Search Results:</strong> Found {filteredErrors.length} error(s) matching "{searchTerm}"
+          <strong>Search Results:</strong> Found {totalCount === null ? 'some' : totalCount} error(s) matching "{searchTerm}"
         </div>
       )}
 
@@ -871,17 +698,31 @@ useEffect(() => {
             </tr>
           </thead>
           <tbody>
-            {currentEntries.length > 0 ? (
+            {fetching ? (
+              <tr>
+                <td colSpan="8" className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="mt-2 mb-0 text-muted">Loading error logs...</p>
+                </td>
+              </tr>
+            ) : currentEntries.length > 0 ? (
               currentEntries.map((error, index) => (
                 <tr key={error.id} className={error.priority === 'HIGH' || error.priority === 'CRITICAL' ? 'table-warning' : ''}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td title={`Service Item: ${getServiceItemSearchData(error.pcb_serial_number)}`}>
                     <strong>{error.pcb_serial_number}</strong>
+                    {error.is_online !== undefined && (
+                      <span className={`badge ms-2 ${error.is_online ? 'bg-success' : 'bg-secondary'}`}>
+                        {error.is_online ? 'Online' : 'Offline'}
+                      </span>
+                    )}
                   </td>
                   <td>{getErrorCodeBadge(error.error_code)}</td>
                   <td>{error.description}</td>
                   <td>{getPriorityBadge(error.priority)}</td>
-                  <td>{getStatusBadge(error.status)}</td>
+                  <td>{getStatusBadge(error.status || 'ACTIVE')}</td>
                   <td title={`Original: ${formatDate(error.original_timestamp)}\nServer: ${formatDate(error.timestamp)}`}>
                     {formatDate(error.original_timestamp)}
                   </td>
@@ -920,20 +761,20 @@ useEffect(() => {
         </table>
       </div>
 
-      {totalPages > 1 && (
+      {(totalPages > 1 || hasNextPage || currentPage > 1) && (
         <nav aria-label="Page navigation">
           <ul className="pagination justify-content-center">
             <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
               <button
                 className="page-link"
-                onClick={() => setCurrentPage(currentPage - 1)}
+                onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
               >
                 Previous
               </button>
             </li>
 
-            {(() => {
+            {totalPages > 1 ? (() => {
               const maxVisiblePages = 5;
               let pageNumbers = [];
               
@@ -961,19 +802,19 @@ useEffect(() => {
                 >
                   <button
                     className="page-link"
-                    onClick={() => setCurrentPage(page)}
+                    onClick={() => handlePageChange(page)}
                   >
                     {page}
                   </button>
                 </li>
               ));
-            })()}
+            })() : null}
 
-            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+            <li className={`page-item ${(totalPages ? currentPage === totalPages : !hasNextPage) ? "disabled" : ""}`}>
               <button
                 className="page-link"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={totalPages ? currentPage === totalPages : !hasNextPage}
               >
                 Next
               </button>

@@ -52,8 +52,10 @@ const TopNavbar = () => {
     try {
       const response = await fetch(`${baseURL}/companies/`);
       const data = await response.json();
+      console.log("TopNavbar fetchCompanies data:", data);
       if (data.status === "success") {
         setCompaniesData(data.data);
+        console.log("TopNavbar companiesData set to:", data.data);
       }
     } catch (error) {
       console.error("Failed to load companies data", error);
@@ -71,12 +73,14 @@ const TopNavbar = () => {
     if (userRole === "service-manager" && userId) {
       setLoading(true);
       fetchCompanies().then(() => {
-        fetch(`${baseURL}/users/`)
+        fetch(`${baseURL}/users/?page_size=1000`)
           .then((res) => res.json())
           .then((data) => {
-            const matchedUser = Array.isArray(data)
-              ? data.find((user) => user.user_id === userId)
-              : null;
+            console.log("TopNavbar fetchUsers data:", data);
+            console.log("TopNavbar userId:", userId);
+            const usersArray = Array.isArray(data) ? data : (data.status === "success" ? data.data : []);
+            const matchedUser = usersArray.find((user) => user.user_id === userId);
+            console.log("TopNavbar matchedUser:", matchedUser);
 
             if (matchedUser) {
               setUserData(matchedUser);
