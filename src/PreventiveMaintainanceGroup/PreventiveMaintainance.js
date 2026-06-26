@@ -522,6 +522,347 @@
 
 
 
+// import React, { useState, useEffect, useContext } from 'react';
+// import './PreventiveMaintainance.css';
+// import PMGroupForm from './PreventiveMaintainanceGroupForm';
+// import PMGroupTable from './PreventiveMaintainanceGroupTable';
+// import { AuthContext } from "../AuthContext/AuthContext";
+// import baseURL from '../ApiUrl/Apiurl';
+// import Swal from 'sweetalert2';
+
+// const PreventiveMaintenance = () => { 
+//   const [showForm, setShowForm] = useState(false);
+//   const [pmGroups, setPmGroups] = useState([]);
+//   const [filteredGroups, setFilteredGroups] = useState([]);
+//   const { userRole, userId, logout } = useContext(AuthContext);
+//   const [selectedGroup, setSelectedGroup] = useState(null);
+//   const [users, setUsers] = useState([]);
+
+//   // ✅ CHANGED: Persist searchTerm in sessionStorage so it survives navigation
+//   const [searchTerm, setSearchTerm] = useState(() => {
+//     return sessionStorage.getItem('pmGroup_searchTerm') || '';
+//   });
+
+//   // ✅ CHANGED: Persist entriesPerPage in sessionStorage so it survives navigation
+//   const [entriesPerPage, setEntriesPerPage] = useState(() => {
+//     return Number(sessionStorage.getItem('pmGroup_entriesPerPage')) || 5;
+//   });
+
+//   // ✅ CHANGED: Persist currentPage in sessionStorage so it survives navigation
+//   const [currentPage, setCurrentPage] = useState(() => {
+//     return Number(sessionStorage.getItem('pmGroup_currentPage')) || 1;
+//   });
+
+//   // ✅ NEW: Save searchTerm to sessionStorage whenever it changes
+//   useEffect(() => {
+//     sessionStorage.setItem('pmGroup_searchTerm', searchTerm);
+//   }, [searchTerm]);
+
+//   // ✅ NEW: Save entriesPerPage to sessionStorage whenever it changes
+//   useEffect(() => {
+//     sessionStorage.setItem('pmGroup_entriesPerPage', entriesPerPage);
+//   }, [entriesPerPage]);
+
+//   // ✅ NEW: Save currentPage to sessionStorage whenever it changes
+//   useEffect(() => {
+//     sessionStorage.setItem('pmGroup_currentPage', currentPage);
+//   }, [currentPage]);
+
+//   // Handle browser back button and swipe gesture when form is open
+//   useEffect(() => {
+//     if (showForm) {
+//       window.history.pushState({ formOpen: true }, '', window.location.pathname);
+      
+//       const handlePopState = (event) => {
+//         if (showForm) {
+//           event.preventDefault();
+//           setShowForm(false);
+//           setSelectedGroup(null);
+//           window.history.pushState({ formOpen: true }, '', window.location.pathname);
+//         }
+//       };
+      
+//       window.addEventListener('popstate', handlePopState);
+      
+//       return () => {
+//         window.removeEventListener('popstate', handlePopState);
+//       };
+//     }
+//   }, [showForm]);
+
+//   // Fetch users data for username search
+//   const fetchUsers = async () => {
+//     try {
+//       const response = await fetch(`${baseURL}/users/`);
+//       const result = await response.json();
+//       if (Array.isArray(result)) {
+//         setUsers(result);
+//       }
+//     } catch (error) {
+//       console.error('Error fetching users:', error);
+//     }
+//   };
+
+//   const fetchPmGroups = async () => {
+//     try {
+//       const response = await fetch(`${baseURL}/pm-groups/`);
+//       const result = await response.json();
+//       const sortedData = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+//       setPmGroups(sortedData);
+//     } catch (error) {
+//       console.error('Error fetching PM groups:', error);
+//       Swal.fire({
+//         icon: 'error',
+//         title: 'Error',
+//         text: 'Failed to fetch PM groups. Please try again later.',
+//         confirmButtonColor: '#3085d6',
+//       });
+//     }
+//   };
+
+//   // Function to get username from user_id
+//   const getUsernameById = (userId) => {
+//     if (!userId || users.length === 0) return userId;
+//     const user = users.find(user => user.user_id === userId);
+//     return user ? user.username : userId;
+//   };
+
+//   // Function to get user search data (both ID and username)
+//   const getUserSearchData = (userId) => {
+//     if (!userId) return '';
+//     const user = users.find(user => user.user_id === userId);
+//     return user ? `${userId} ${user.username}` : userId;
+//   };
+
+//   const handleDelete = async (pmGroupId) => {
+//     try {
+//       const result = await Swal.fire({
+//         title: 'Are you sure?',
+//         text: "You won't be able to revert this!",
+//         icon: 'warning',
+//         showCancelButton: true,
+//         confirmButtonColor: '#d33',
+//         cancelButtonColor: '#3085d6',
+//         confirmButtonText: 'Yes, delete it!'
+//       });
+
+//       if (result.isConfirmed) {
+//         const response = await fetch(`${baseURL}/pm-groups/${pmGroupId}/`, {
+//           method: 'DELETE'
+//         });
+
+//         if (response.ok) {
+//           setPmGroups(prev => prev.filter(group => group.pm_group_id !== pmGroupId));
+//           Swal.fire({
+//             icon: 'success',
+//             title: 'Deleted!',
+//             text: 'PM Group has been deleted.',
+//             confirmButtonColor: '#3085d6',
+//           });
+//         } else {
+//           throw new Error('Failed to delete PM Group');
+//         }
+//       }
+//     } catch (error) {
+//       console.error('Error deleting PM Group:', error);
+//       Swal.fire({
+//         icon: 'error',
+//         title: 'Error',
+//         text: error.message || 'Failed to delete PM Group',
+//         confirmButtonColor: '#3085d6',
+//       });
+//     }
+//   };
+
+//   useEffect(() => {
+//     fetchUsers();
+//     fetchPmGroups();
+//   }, []);
+
+//   // Function to format date in multiple formats for search
+//   const formatDateForSearch = (dateString) => {
+//     if (!dateString) return '';
+//     const date = new Date(dateString);
+//     if (isNaN(date.getTime())) return '';
+//     const day = date.getDate().toString().padStart(2, '0');
+//     const month = (date.getMonth() + 1).toString().padStart(2, '0');
+//     const year = date.getFullYear();
+//     const monthName = date.toLocaleString('en-IN', { month: 'long' });
+//     const monthShort = date.toLocaleString('en-IN', { month: 'short' });
+//     const hour = date.getHours().toString().padStart(2, '0');
+//     const minute = date.getMinutes().toString().padStart(2, '0');
+//     const second = date.getSeconds().toString().padStart(2, '0');
+//     return [
+//       `${day}/${month}/${year}`,
+//       `${day}/${month}/${year} ${hour}:${minute}:${second}`,
+//       `${month}/${day}/${year}`,
+//       `${year}-${month}-${day}`,
+//       `${year}${month}${day}`,
+//       `${day}-${month}-${year}`,
+//       date.toISOString(),
+//       monthName,
+//       monthShort,
+//       `${year}`,
+//       `${month}/${year}`,
+//       `${day} ${monthName} ${year}`,
+//       `${day} ${monthShort} ${year}`,
+//       `${hour}:${minute}`,
+//       `${hour}:${minute}:${second}`,
+//     ].join(' ');
+//   };
+
+//   // ✅ CHANGED: Removed setCurrentPage(1) from search effect so page is preserved on navigation back.
+//   // Page only resets when user explicitly changes the search term (handled in PMGroupTable via handleSearchChange).
+//   useEffect(() => {
+//     if (!searchTerm.trim()) {
+//       setFilteredGroups(pmGroups);
+
+//       // ✅ Only clamp page if saved page is now out of range
+//       const totalPagesNow = Math.ceil(pmGroups.length / entriesPerPage);
+//       const savedPage = Number(sessionStorage.getItem('pmGroup_currentPage')) || 1;
+//       if (savedPage > totalPagesNow && totalPagesNow > 0) {
+//         setCurrentPage(totalPagesNow);
+//       }
+//       return;
+//     }
+
+//     const searchLower = searchTerm.toLowerCase().trim();
+
+//     const filtered = pmGroups.filter((group) => {
+//       const createdBySearch = getUserSearchData(group.created_by);
+//       const updatedBySearch = getUserSearchData(group.updated_by);
+//       const createdDateFormats = formatDateForSearch(group.created_at);
+//       const updatedDateFormats = formatDateForSearch(group.updated_at);
+
+//       const searchableText = [
+//         group.pm_group_id || '',
+//         group.pm_group_name || '',
+//         group.series || '',
+//         group.created_at || '',
+//         group.updated_at || '',
+//         group.created_by || '',
+//         group.updated_by || '',
+//         group.company_id || '',
+//         group.status || '',
+//         group.is_active !== undefined ? String(group.is_active) : '',
+//         group.description || '',
+//         group.frequency || '',
+//         group.duration || '',
+//         createdBySearch,
+//         updatedBySearch,
+//         createdDateFormats,
+//         updatedDateFormats,
+//         getUsernameById(group.created_by),
+//         getUsernameById(group.updated_by),
+//         group.pm_group_name ? `PM ${group.pm_group_name} preventive maintenance group` : '',
+//         group.series ? `series ${group.series} model` : '',
+//         group.status === 'Active' ? 'Active Active Active' : '',
+//         group.status === 'Inactive' ? 'Inactive Inactive Inactive' : '',
+//         group.status === 'Pending' ? 'Pending Pending Pending' : '',
+//         group.is_active === true ? 'active true yes enabled' : '',
+//         group.is_active === false ? 'inactive false no disabled' : '',
+//         ...Object.values(group).filter(val =>
+//           val !== null && val !== undefined
+//         ).map(val => {
+//           if (typeof val === 'string' || typeof val === 'number') return String(val);
+//           if (typeof val === 'boolean') return val ? 'true yes active' : 'false no inactive';
+//           if (Array.isArray(val)) return val.join(' ');
+//           if (typeof val === 'object' && val !== null) return JSON.stringify(val);
+//           return '';
+//         })
+//       ]
+//         .join(' ')
+//         .toLowerCase()
+//         .replace(/\s+/g, ' ')
+//         .trim();
+
+//       return searchableText.includes(searchLower);
+//     });
+
+//     setFilteredGroups(filtered);
+
+//     // ✅ Only clamp page if saved page is now out of range after filtering
+//     const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
+//     const savedPage = Number(sessionStorage.getItem('pmGroup_currentPage')) || 1;
+//     if (savedPage > totalPagesNow && totalPagesNow > 0) {
+//       setCurrentPage(totalPagesNow);
+//     }
+//   }, [searchTerm, pmGroups, users]);
+
+//   const toggleForm = () => {
+//     setShowForm(false);
+//     setSelectedGroup(null);
+//   };
+
+//   const handleEdit = (group) => {
+//     setSelectedGroup(group);
+//     setShowForm(true);
+//   };
+
+//   // ✅ NEW: Handler passed to table so page resets when user deliberately changes search
+//   const handleSearchChange = (value) => {
+//     setSearchTerm(value);
+//     setCurrentPage(1);
+//     sessionStorage.setItem('pmGroup_currentPage', 1);
+//   };
+
+//   // ✅ NEW: Handler passed to table so page resets when user deliberately changes entries per page
+//   const handleEntriesPerPageChange = (value) => {
+//     setEntriesPerPage(value);
+//     setCurrentPage(1);
+//     sessionStorage.setItem('pmGroup_currentPage', 1);
+//   };
+
+//   return (
+//     <div className="pm-container">
+//       {!showForm ? (
+//         <>
+//           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+//             <div>
+//               <h2 className="pm-title">Preventive Maintenance Group</h2>
+//               <p className="pm-subtitle">Manage preventive maintenance groups</p>
+//             </div>
+//             <button
+//               onClick={() => {
+//                 setSelectedGroup(null);
+//                 setShowForm(true);
+//               }}
+//               className="btn btn-primary"
+//             >
+//               Add New PM Group
+//             </button>
+//           </div>
+//           <PMGroupTable
+//             filteredGroups={filteredGroups}
+//             searchTerm={searchTerm}
+//             // ✅ CHANGED: Pass handler functions instead of raw setters
+//             setSearchTerm={handleSearchChange}
+//             entriesPerPage={entriesPerPage}
+//             setEntriesPerPage={handleEntriesPerPageChange}
+//             currentPage={currentPage}
+//             setCurrentPage={setCurrentPage}
+//             onDelete={handleDelete}
+//             onEdit={handleEdit}
+//             users={users}
+//             getUsernameById={getUsernameById}
+//           />
+//         </>
+//       ) : (
+//         <PMGroupForm
+//           fetchPmGroups={fetchPmGroups}
+//           toggleForm={toggleForm}
+//           initialData={selectedGroup || {}}
+//           setSelectedGroup={setSelectedGroup}
+//         />
+//       )}
+//     </div>
+//   );
+// };
+
+// export default PreventiveMaintenance;
+
+
+
 import React, { useState, useEffect, useContext } from 'react';
 import './PreventiveMaintainance.css';
 import PMGroupForm from './PreventiveMaintainanceGroupForm';
@@ -529,41 +870,44 @@ import PMGroupTable from './PreventiveMaintainanceGroupTable';
 import { AuthContext } from "../AuthContext/AuthContext";
 import baseURL from '../ApiUrl/Apiurl';
 import Swal from 'sweetalert2';
+import axios from 'axios';
 
 const PreventiveMaintenance = () => { 
   const [showForm, setShowForm] = useState(false);
   const [pmGroups, setPmGroups] = useState([]);
-  const [filteredGroups, setFilteredGroups] = useState([]);
   const { userRole, userId, logout } = useContext(AuthContext);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [error, setError] = useState(null);
 
-  // ✅ CHANGED: Persist searchTerm in sessionStorage so it survives navigation
+  // Pagination states (server-side)
   const [searchTerm, setSearchTerm] = useState(() => {
     return sessionStorage.getItem('pmGroup_searchTerm') || '';
   });
-
-  // ✅ CHANGED: Persist entriesPerPage in sessionStorage so it survives navigation
   const [entriesPerPage, setEntriesPerPage] = useState(() => {
-    return Number(sessionStorage.getItem('pmGroup_entriesPerPage')) || 5;
+    return Number(sessionStorage.getItem('pmGroup_entriesPerPage')) || 10;
   });
-
-  // ✅ CHANGED: Persist currentPage in sessionStorage so it survives navigation
   const [currentPage, setCurrentPage] = useState(() => {
     return Number(sessionStorage.getItem('pmGroup_currentPage')) || 1;
   });
 
-  // ✅ NEW: Save searchTerm to sessionStorage whenever it changes
+  // Server-side pagination data
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+
+  // Save pagination state to sessionStorage
   useEffect(() => {
     sessionStorage.setItem('pmGroup_searchTerm', searchTerm);
   }, [searchTerm]);
 
-  // ✅ NEW: Save entriesPerPage to sessionStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem('pmGroup_entriesPerPage', entriesPerPage);
   }, [entriesPerPage]);
 
-  // ✅ NEW: Save currentPage to sessionStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem('pmGroup_currentPage', currentPage);
   }, [currentPage]);
@@ -590,48 +934,109 @@ const PreventiveMaintenance = () => {
     }
   }, [showForm]);
 
-  // Fetch users data for username search
+  // Fetch users data
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${baseURL}/users/`);
-      const result = await response.json();
-      if (Array.isArray(result)) {
-        setUsers(result);
+      const response = await axios.get(`${baseURL}/users/?page=1&page_size=100`);
+      if (response.data && Array.isArray(response.data.data)) {
+        setUsers(response.data.data);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
     }
   };
 
-  const fetchPmGroups = async () => {
+  // Fetch PM groups with pagination
+  const fetchPmGroups = async (page = currentPage, size = entriesPerPage, search = searchTerm) => {
+    setFetching(true);
+    setError(null);
+
     try {
-      const response = await fetch(`${baseURL}/pm-groups/`);
-      const result = await response.json();
-      const sortedData = result.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      setPmGroups(sortedData);
+      const params = new URLSearchParams({
+        page: page,
+        page_size: size
+      });
+
+      // Add search parameter if exists
+      if (search) {
+        params.append('search', search);
+      }
+
+      // Add user_id if available
+      if (userId) {
+        params.append('user_id', userId);
+      }
+
+      const response = await axios.get(`${baseURL}/pm-groups/?${params.toString()}`);
+      
+      if (response.data.status === "success") {
+        const data = response.data.data || [];
+        const pagination = response.data.pagination || {};
+        
+        // Sort by created_at descending
+        const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        setPmGroups(sortedData);
+        setTotalCount(pagination.total_count || 0);
+        setTotalPages(pagination.total_pages || 1);
+        setHasNextPage(pagination.has_next || false);
+        setHasPreviousPage(pagination.has_previous || false);
+        setCurrentPage(pagination.current_page || 1);
+      } else {
+        setError('Failed to load PM groups');
+        setPmGroups([]);
+      }
     } catch (error) {
       console.error('Error fetching PM groups:', error);
+      setError('Failed to fetch PM groups. Please try again.');
+      setPmGroups([]);
       Swal.fire({
         icon: 'error',
         title: 'Error',
         text: 'Failed to fetch PM groups. Please try again later.',
         confirmButtonColor: '#3085d6',
       });
+    } finally {
+      setFetching(false);
     }
   };
+
+  // Initial data fetch
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchUsers(),
+          fetchPmGroups(1, entriesPerPage, searchTerm)
+        ]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
+  // Refetch when pagination or search changes
+  useEffect(() => {
+    if (!loading) {
+      const debounceTimer = setTimeout(() => {
+        fetchPmGroups(currentPage, entriesPerPage, searchTerm);
+      }, 300);
+      
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [currentPage, entriesPerPage, searchTerm]);
 
   // Function to get username from user_id
   const getUsernameById = (userId) => {
     if (!userId || users.length === 0) return userId;
     const user = users.find(user => user.user_id === userId);
     return user ? user.username : userId;
-  };
-
-  // Function to get user search data (both ID and username)
-  const getUserSearchData = (userId) => {
-    if (!userId) return '';
-    const user = users.find(user => user.user_id === userId);
-    return user ? `${userId} ${user.username}` : userId;
   };
 
   const handleDelete = async (pmGroupId) => {
@@ -652,7 +1057,8 @@ const PreventiveMaintenance = () => {
         });
 
         if (response.ok) {
-          setPmGroups(prev => prev.filter(group => group.pm_group_id !== pmGroupId));
+          // Refresh the current page data
+          fetchPmGroups(currentPage, entriesPerPage, searchTerm);
           Swal.fire({
             icon: 'success',
             title: 'Deleted!',
@@ -674,121 +1080,6 @@ const PreventiveMaintenance = () => {
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-    fetchPmGroups();
-  }, []);
-
-  // Function to format date in multiple formats for search
-  const formatDateForSearch = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const monthName = date.toLocaleString('en-IN', { month: 'long' });
-    const monthShort = date.toLocaleString('en-IN', { month: 'short' });
-    const hour = date.getHours().toString().padStart(2, '0');
-    const minute = date.getMinutes().toString().padStart(2, '0');
-    const second = date.getSeconds().toString().padStart(2, '0');
-    return [
-      `${day}/${month}/${year}`,
-      `${day}/${month}/${year} ${hour}:${minute}:${second}`,
-      `${month}/${day}/${year}`,
-      `${year}-${month}-${day}`,
-      `${year}${month}${day}`,
-      `${day}-${month}-${year}`,
-      date.toISOString(),
-      monthName,
-      monthShort,
-      `${year}`,
-      `${month}/${year}`,
-      `${day} ${monthName} ${year}`,
-      `${day} ${monthShort} ${year}`,
-      `${hour}:${minute}`,
-      `${hour}:${minute}:${second}`,
-    ].join(' ');
-  };
-
-  // ✅ CHANGED: Removed setCurrentPage(1) from search effect so page is preserved on navigation back.
-  // Page only resets when user explicitly changes the search term (handled in PMGroupTable via handleSearchChange).
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredGroups(pmGroups);
-
-      // ✅ Only clamp page if saved page is now out of range
-      const totalPagesNow = Math.ceil(pmGroups.length / entriesPerPage);
-      const savedPage = Number(sessionStorage.getItem('pmGroup_currentPage')) || 1;
-      if (savedPage > totalPagesNow && totalPagesNow > 0) {
-        setCurrentPage(totalPagesNow);
-      }
-      return;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-
-    const filtered = pmGroups.filter((group) => {
-      const createdBySearch = getUserSearchData(group.created_by);
-      const updatedBySearch = getUserSearchData(group.updated_by);
-      const createdDateFormats = formatDateForSearch(group.created_at);
-      const updatedDateFormats = formatDateForSearch(group.updated_at);
-
-      const searchableText = [
-        group.pm_group_id || '',
-        group.pm_group_name || '',
-        group.series || '',
-        group.created_at || '',
-        group.updated_at || '',
-        group.created_by || '',
-        group.updated_by || '',
-        group.company_id || '',
-        group.status || '',
-        group.is_active !== undefined ? String(group.is_active) : '',
-        group.description || '',
-        group.frequency || '',
-        group.duration || '',
-        createdBySearch,
-        updatedBySearch,
-        createdDateFormats,
-        updatedDateFormats,
-        getUsernameById(group.created_by),
-        getUsernameById(group.updated_by),
-        group.pm_group_name ? `PM ${group.pm_group_name} preventive maintenance group` : '',
-        group.series ? `series ${group.series} model` : '',
-        group.status === 'Active' ? 'Active Active Active' : '',
-        group.status === 'Inactive' ? 'Inactive Inactive Inactive' : '',
-        group.status === 'Pending' ? 'Pending Pending Pending' : '',
-        group.is_active === true ? 'active true yes enabled' : '',
-        group.is_active === false ? 'inactive false no disabled' : '',
-        ...Object.values(group).filter(val =>
-          val !== null && val !== undefined
-        ).map(val => {
-          if (typeof val === 'string' || typeof val === 'number') return String(val);
-          if (typeof val === 'boolean') return val ? 'true yes active' : 'false no inactive';
-          if (Array.isArray(val)) return val.join(' ');
-          if (typeof val === 'object' && val !== null) return JSON.stringify(val);
-          return '';
-        })
-      ]
-        .join(' ')
-        .toLowerCase()
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      return searchableText.includes(searchLower);
-    });
-
-    setFilteredGroups(filtered);
-
-    // ✅ Only clamp page if saved page is now out of range after filtering
-    const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
-    const savedPage = Number(sessionStorage.getItem('pmGroup_currentPage')) || 1;
-    if (savedPage > totalPagesNow && totalPagesNow > 0) {
-      setCurrentPage(totalPagesNow);
-    }
-  }, [searchTerm, pmGroups, users]);
-
   const toggleForm = () => {
     setShowForm(false);
     setSelectedGroup(null);
@@ -799,19 +1090,29 @@ const PreventiveMaintenance = () => {
     setShowForm(true);
   };
 
-  // ✅ NEW: Handler passed to table so page resets when user deliberately changes search
+  // Handler for search change - resets to page 1
   const handleSearchChange = (value) => {
     setSearchTerm(value);
     setCurrentPage(1);
     sessionStorage.setItem('pmGroup_currentPage', 1);
   };
 
-  // ✅ NEW: Handler passed to table so page resets when user deliberately changes entries per page
+  // Handler for entries per page change - resets to page 1
   const handleEntriesPerPageChange = (value) => {
     setEntriesPerPage(value);
     setCurrentPage(1);
     sessionStorage.setItem('pmGroup_currentPage', 1);
   };
+
+  // Handler for page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  if (loading) return <div className="text-center my-4">Loading PM groups...</div>;
+  if (error) return <div className="alert alert-danger my-4">{error}</div>;
 
   return (
     <div className="pm-container">
@@ -833,14 +1134,18 @@ const PreventiveMaintenance = () => {
             </button>
           </div>
           <PMGroupTable
-            filteredGroups={filteredGroups}
+            pmGroups={pmGroups}
             searchTerm={searchTerm}
-            // ✅ CHANGED: Pass handler functions instead of raw setters
             setSearchTerm={handleSearchChange}
             entriesPerPage={entriesPerPage}
             setEntriesPerPage={handleEntriesPerPageChange}
             currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
+            setCurrentPage={handlePageChange}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            hasNextPage={hasNextPage}
+            hasPreviousPage={hasPreviousPage}
+            fetching={fetching}
             onDelete={handleDelete}
             onEdit={handleEdit}
             users={users}
@@ -849,7 +1154,7 @@ const PreventiveMaintenance = () => {
         </>
       ) : (
         <PMGroupForm
-          fetchPmGroups={fetchPmGroups}
+          fetchPmGroups={() => fetchPmGroups(currentPage, entriesPerPage, searchTerm)}
           toggleForm={toggleForm}
           initialData={selectedGroup || {}}
           setSelectedGroup={setSelectedGroup}

@@ -1355,8 +1355,720 @@
 
 
 
-import React, { useState, useEffect, useContext } from "react";
+// import React, { useState, useEffect, useContext } from "react";
+// import { useNavigate } from "react-router-dom";
+// import baseURL from "../ApiUrl/Apiurl";
+// import { AuthContext } from '../AuthContext/AuthContext';
+// import { useCompany } from '../AuthContext/CompanyContext';
+
+// const CustomerComplaints = () => {
+//     const { userId } = useContext(AuthContext);
+//     const { selectedCompany } = useCompany();
+//     const navigate = useNavigate();
+//     const [complaints, setComplaints] = useState([]);
+//     const [customersData, setCustomersData] = useState([]);
+//     const [companiesData, setCompaniesData] = useState([]);
+//     const [loading, setLoading] = useState(true);
+//     const [error, setError] = useState(null);
+// const [searchTerm, setSearchTerm] = useState(() => {
+//   return sessionStorage.getItem('complaints_searchTerm') || '';
+// });
+
+// const [entriesPerPage, setEntriesPerPage] = useState(() => {
+//   return Number(sessionStorage.getItem('complaints_entriesPerPage')) || 5;
+// });
+
+// const [currentPage, setCurrentPage] = useState(() => {
+//   return Number(sessionStorage.getItem('complaints_currentPage')) || 1;
+// });
+//     const [users, setUsers] = useState([]); // To store user data for search
+
+
+//     useEffect(() => {
+//   sessionStorage.setItem('complaints_searchTerm', searchTerm);
+// }, [searchTerm]);
+
+// useEffect(() => {
+//   sessionStorage.setItem('complaints_entriesPerPage', entriesPerPage);
+// }, [entriesPerPage]);
+
+// useEffect(() => {
+//   sessionStorage.setItem('complaints_currentPage', currentPage);
+// }, [currentPage]);
+
+
+
+// const handleSearchChange = (value) => {
+//   setSearchTerm(value);
+//   setCurrentPage(1);
+//   sessionStorage.setItem('complaints_currentPage', 1);
+// };
+
+// const handleEntriesPerPageChange = (value) => {
+//   setEntriesPerPage(value);
+//   setCurrentPage(1);
+//   sessionStorage.setItem('complaints_currentPage', 1);
+// };
+
+//     // Fetch users data for username search
+//     const fetchUsers = async () => {
+//         try {
+//             const response = await fetch(`${baseURL}/users/`);
+//             if (response.ok) {
+//                 const data = await response.json();
+//                 if (Array.isArray(data)) {
+//                     setUsers(data);
+//                 }
+//             }
+//         } catch (err) {
+//             console.error("Error fetching users:", err);
+//         }
+//     };
+
+//     // Fetch companies data
+//     const fetchCompanies = async () => {
+//         try {
+//             const response = await fetch(`${baseURL}/companies/`);
+            
+//             if (!response.ok) {
+//                 throw new Error(`HTTP error! status: ${response.status}`);
+//             }
+            
+//             const data = await response.json();
+            
+//             if (data.status === "success") {
+//                 setCompaniesData(data.data || []);
+//             } else {
+//                 throw new Error(data.message || "Failed to fetch companies");
+//             }
+//         } catch (err) {
+//             console.error("Error fetching companies:", err);
+//             setCompaniesData([]);
+//         }
+//     };
+
+//     // Fetch customers data
+//     const fetchCustomers = async () => {
+//         try {
+//             const response = await fetch(
+//                 `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
+//             );
+            
+//             if (!response.ok) {
+//                 throw new Error(`HTTP error! status: ${response.status}`);
+//             }
+            
+//             const data = await response.json();
+            
+//             if (data.status === "success") {
+//                 setCustomersData(data.data || []);
+//             } else {
+//                 throw new Error(data.message || "Failed to fetch customers");
+//             }
+//         } catch (err) {
+//             console.error("Error fetching customers:", err);
+//             setCustomersData([]);
+//         }
+//     };
+
+//     // Fetch complaints data
+//     const fetchComplaints = async () => {
+//         try {
+//             setLoading(true);
+            
+//             if (!userId) {
+//                 throw new Error("User ID not found");
+//             }
+            
+//             const response = await fetch(
+//                 `${baseURL}/customer-complaints/?user_id=${userId}&company_id=${selectedCompany}`
+//             );
+            
+//             if (!response.ok) {
+//                 throw new Error(`HTTP error! status: ${response.status}`);
+//             }
+            
+//             const data = await response.json();
+            
+//             if (data.status === "success") {
+//                 setComplaints(data.data || []);
+//             } else {
+//                 throw new Error(data.message || "Failed to fetch complaints");
+//             }
+//         } catch (err) {
+//             setError(err.message);
+//             console.error("Error fetching complaints:", err);
+//         } finally {
+//             setLoading(false);
+//         }
+//     };
+
+//     // Fetch all data
+//     useEffect(() => {
+//         const fetchAllData = async () => {
+//             setLoading(true);
+//             try {
+//                 await fetchUsers(); // Fetch users first
+//                 await fetchCompanies(); // Then fetch companies
+//                 await fetchCustomers(); // Then fetch customers
+//                 await fetchComplaints(); // Then fetch complaints
+//             } catch (err) {
+//                 setError(err.message);
+//             } finally {
+//                 setLoading(false);
+//             }
+//         };
+
+//         fetchAllData();
+//     }, [selectedCompany, userId]);
+
+//     // Function to handle customer click navigation
+//     const handleCustomerClick = (customerId) => {
+//         if (customerId) {
+//             navigate(`/servicemanager/customers/${customerId}`, { 
+//                 state: { 
+//                     selectedCompany: selectedCompany, 
+//                     userId: userId 
+//                 } 
+//             });
+//         }
+//     };
+
+//     // Function to get username from user ID
+//     const getUsernameById = (userId) => {
+//         if (!userId || users.length === 0) return userId;
+        
+//         const user = users.find(user => user.user_id === userId);
+//         return user ? user.username : userId;
+//     };
+
+//     // Function to get user search data (both ID and username)
+//     const getUserSearchData = (userId) => {
+//         if (!userId) return '';
+//         const user = users.find(user => user.user_id === userId);
+//         return user ? `${userId} ${user.username}` : userId;
+//     };
+
+//     // Function to get company name by company ID
+//     const getCompanyName = (companyId) => {
+//         if (!companiesData || companiesData.length === 0) return companyId;
+        
+//         const company = companiesData.find(comp => comp.company_id === companyId);
+//         return company ? company.company_name : companyId;
+//     };
+
+//     // Function to get company search data (both ID and name)
+//     const getCompanySearchData = (companyId) => {
+//         if (!companyId) return '';
+//         const company = companiesData.find(comp => comp.company_id === companyId);
+//         return company ? `${companyId} ${company.company_name}` : companyId;
+//     };
+
+//     // Function to get customer username by customer ID
+//     const getCustomerUsername = (customerId) => {
+//         if (!customersData || customersData.length === 0) return customerId;
+        
+//         const customer = customersData.find(cust => cust.customer_id === customerId);
+//         return customer ? customer.username : customerId;
+//     };
+
+//     // Function to get customer display (both ID and username with link)
+//     const getCustomerDisplay = (customerId) => {
+//         if (!customerId) return "—";
+        
+//         const customer = customersData.find(cust => cust.customer_id === customerId);
+//         if (customer) {
+//             return {
+//                 displayText: `${customer.customer_id} - ${customer.username}`,
+//                 customerId: customer.customer_id
+//             };
+//         }
+//         return {
+//             displayText: customerId,
+//             customerId: customerId
+//         };
+//     };
+
+//     // Function to get customer search data (both ID and username)
+//     const getCustomerSearchData = (customerId) => {
+//         if (!customerId) return '';
+//         const customer = customersData.find(cust => cust.customer_id === customerId);
+//         return customer ? `${customerId} ${customer.username} ${customer.full_name} ${customer.email}` : customerId;
+//     };
+
+//     // Function to format date for display
+//     const formatDate = (dateString) => {
+//         if (!dateString) return "—";
+//         try {
+//             const date = new Date(dateString);
+//             if (isNaN(date.getTime())) return "Invalid date";
+            
+//             const day = date.getDate().toString().padStart(2, "0");
+//             const month = (date.getMonth() + 1).toString().padStart(2, "0");
+//             const year = date.getFullYear();
+            
+//             return `${day}/${month}/${year}`;
+//         } catch (e) {
+//             return "Invalid date";
+//         }
+//     };
+
+//     // Function to format date in multiple formats for search
+//     const formatDateForSearch = (dateString) => {
+//         if (!dateString) return '';
+//         const date = new Date(dateString);
+        
+//         if (isNaN(date.getTime())) return '';
+        
+//         const day = date.getDate().toString().padStart(2, '0');
+//         const month = (date.getMonth() + 1).toString().padStart(2, '0');
+//         const year = date.getFullYear();
+//         const monthName = date.toLocaleString('en-IN', { month: 'long' });
+//         const monthShort = date.toLocaleString('en-IN', { month: 'short' });
+//         const hour = date.getHours().toString().padStart(2, '0');
+//         const minute = date.getMinutes().toString().padStart(2, '0');
+//         const second = date.getSeconds().toString().padStart(2, '0');
+        
+//         // Return multiple formats for better searchability
+//         return [
+//             `${day}/${month}/${year}`,                    // DD/MM/YYYY
+//             `${day}/${month}/${year} ${hour}:${minute}:${second}`, // DD/MM/YYYY HH:MM:SS
+//             `${month}/${day}/${year}`,                    // MM/DD/YYYY
+//             `${year}-${month}-${day}`,                    // YYYY-MM-DD
+//             `${year}${month}${day}`,                      // YYYYMMDD
+//             `${day}-${month}-${year}`,                    // DD-MM-YYYY
+//             date.toISOString(),                           // ISO string
+//             monthName,                                    // January, February
+//             monthShort,                                   // Jan, Feb
+//             `${year}`,                                    // 2024
+//             `${month}/${year}`,                           // MM/YYYY
+//             `${day} ${monthName} ${year}`,               // 15 January 2024
+//             `${day} ${monthShort} ${year}`,              // 15 Jan 2024
+//             `${hour}:${minute}`,                          // HH:MM
+//             `${hour}:${minute}:${second}`,               // HH:MM:SS
+//         ].join(' ');
+//     };
+
+//     // Enhanced global search functionality
+//     const filteredComplaints = React.useMemo(() => {
+//         if (!searchTerm.trim()) {
+//             return complaints;
+//         }
+
+//         const searchLower = searchTerm.toLowerCase().trim();
+        
+//         return complaints.filter((complaint) => {
+//             // Get user data for search
+//             const createdBySearch = getUserSearchData(complaint.created_by);
+//             const updatedBySearch = getUserSearchData(complaint.updated_by);
+            
+//             // Get company data for search
+//             const companySearchData = getCompanySearchData(complaint.company);
+            
+//             // Get customer data for search
+//             const customerSearchData = getCustomerSearchData(complaint.customer);
+            
+//             // Get dates in multiple formats for search
+//             const complaintDateFormats = formatDateForSearch(complaint.complaint_date);
+//             const resolvedDateFormats = formatDateForSearch(complaint.resolved_at);
+//             const createdDateFormats = formatDateForSearch(complaint.created_at);
+//             const updatedDateFormats = formatDateForSearch(complaint.updated_at);
+            
+//             // Create a comprehensive search string
+//             const searchableText = [
+//                 // Raw complaint data
+//                 complaint.complaint_id || '',
+//                 complaint.complaint_type || '',
+//                 complaint.complaint_details || '',
+//                 complaint.complaint_date || '',
+//                 complaint.escalation_level || '',
+//                 complaint.service_manager_email || '',
+//                 complaint.gm_email || '',
+//                 complaint.resolution_details || '',
+//                 complaint.resolved_at || '',
+//                 complaint.created_by || '',
+//                 complaint.updated_by || '',
+//                 complaint.company || '',
+//                 complaint.customer || '',
+//                 complaint.service_request || '',
+//                 complaint.created_at || '',
+//                 complaint.updated_at || '',
+//                 complaint.status || '',
+//                 complaint.priority || '',
+//                 complaint.severity || '',
+//                 complaint.category || '',
+//                 complaint.sub_category || '',
+//                 complaint.attachment_url || '',
+//                 complaint.follow_up_date || '',
+//                 complaint.assigned_to || '',
+//                 complaint.estimated_resolution_date || '',
+//                 complaint.actual_resolution_date || '',
+                
+//                 // Formatted user data for search
+//                 createdBySearch,
+//                 updatedBySearch,
+                
+//                 // Formatted company data for search
+//                 companySearchData,
+                
+//                 // Formatted customer data for search
+//                 customerSearchData,
+                
+//                 // Dates in multiple formats
+//                 complaintDateFormats,
+//                 resolvedDateFormats,
+//                 createdDateFormats,
+//                 updatedDateFormats,
+                
+//                 // Display values (exactly as shown in table)
+//                 formatDate(complaint.complaint_date),
+//                 formatDate(complaint.resolved_at),
+//                 formatDate(complaint.created_at),
+//                 getUsernameById(complaint.created_by),
+//                 getUsernameById(complaint.updated_by),
+//                 getCompanyName(complaint.company),
+//                 getCustomerUsername(complaint.customer),
+                
+//                 // Complaint type variations for better search
+//                 complaint.complaint_type === 'Service Delay' ? 'Service Delay late delay tardy' : '',
+//                 complaint.complaint_type === 'Billing Issue' ? 'Billing Issue bill payment charge' : '',
+//                 complaint.complaint_type === 'Quality Issue' ? 'Quality Issue quality defective poor' : '',
+//                 complaint.complaint_type === 'Technical Issue' ? 'Technical Issue technical problem error' : '',
+//                 complaint.complaint_type === 'Customer Service' ? 'Customer Service service support rude' : '',
+//                 complaint.complaint_type === 'Product Issue' ? 'Product Issue product defective broken' : '',
+                
+//                 // Escalation level variations
+//                 complaint.escalation_level === 'Level 1' ? 'Level 1 L1 first low' : '',
+//                 complaint.escalation_level === 'Level 2' ? 'Level 2 L2 second medium' : '',
+//                 complaint.escalation_level === 'Level 3' ? 'Level 3 L3 third high' : '',
+//                 complaint.escalation_level === 'Level 4' ? 'Level 4 L4 fourth critical' : '',
+                
+//                 // Status variations with badge text multiple times
+//                 complaint.status === 'Open' ? 'Open open pending new' : '',
+//                 complaint.status === 'In Progress' ? 'In Progress progress working ongoing' : '',
+//                 complaint.status === 'Resolved' ? 'Resolved resolved closed completed' : '',
+//                 complaint.status === 'Closed' ? 'Closed closed finished done' : '',
+//                 complaint.status === 'Escalated' ? 'Escalated escalated transferred' : '',
+//                 complaint.status === 'Reopened' ? 'Reopened reopened again' : '',
+                
+//                 // Priority variations
+//                 complaint.priority === 'High' ? 'High high urgent critical' : '',
+//                 complaint.priority === 'Medium' ? 'Medium medium normal moderate' : '',
+//                 complaint.priority === 'Low' ? 'Low low minor trivial' : '',
+                
+//                 // Severity variations
+//                 complaint.severity === 'Critical' ? 'Critical critical severe emergency' : '',
+//                 complaint.severity === 'Major' ? 'Major major significant serious' : '',
+//                 complaint.severity === 'Minor' ? 'Minor minor small trivial' : '',
+                
+//                 // Email username variations (without domain)
+//                 complaint.service_manager_email ? complaint.service_manager_email.split('@')[0] : '',
+//                 complaint.gm_email ? complaint.gm_email.split('@')[0] : '',
+                
+//                 // Resolution details variations
+//                 complaint.resolution_details ? `resolution ${complaint.resolution_details}` : '',
+                
+//                 // Service request variations
+//                 complaint.service_request ? `service request ${complaint.service_request}` : '',
+                
+//                 // Add any other properties that might exist
+//                 ...Object.values(complaint).filter(val => 
+//                     val !== null && val !== undefined
+//                 ).map(val => {
+//                     if (typeof val === 'string' || typeof val === 'number') {
+//                         return String(val);
+//                     }
+//                     if (typeof val === 'boolean') {
+//                         return val ? 'true yes active' : 'false no inactive';
+//                     }
+//                     if (Array.isArray(val)) {
+//                         return val.join(' ');
+//                     }
+//                     if (typeof val === 'object' && val !== null) {
+//                         return JSON.stringify(val);
+//                     }
+//                     return '';
+//                 })
+//             ]
+//             .join(' ')                    // Combine into one string
+//             .toLowerCase()                // Make case-insensitive
+//             .replace(/\s+/g, ' ')         // Normalize spaces
+//             .trim();
+            
+//             return searchableText.includes(searchLower);
+//         });
+//     }, [searchTerm, complaints, users, companiesData, customersData]);
+
+  
+
+//     // Pagination logic
+//     const indexOfLastEntry = currentPage * entriesPerPage;
+//     const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+//     const currentItems = filteredComplaints.slice(indexOfFirstEntry, indexOfLastEntry);
+//     const totalPages = Math.ceil(filteredComplaints.length / entriesPerPage);
+//     useEffect(() => {
+//   const savedPage = Number(sessionStorage.getItem('complaints_currentPage')) || 1;
+
+//   if (savedPage > totalPages && totalPages > 0) {
+//     setCurrentPage(totalPages);
+//   }
+// }, [filteredComplaints, entriesPerPage]);
+
+//     if (loading) {
+//         return (
+//             <div className="pm-container mt-4">
+//                 <h2 className="pm-title mb-4">Customer Complaints</h2>
+//                 <div className="text-center">
+//                     <div className="spinner-border" role="status">
+//                         <span className="visually-hidden">Loading...</span>
+//                     </div>
+//                     <p className="mt-2">Loading complaints...</p>
+//                 </div>
+//             </div>
+//         );
+//     }
+
+//     if (error) {
+//         return (
+//             <div className="pm-container mt-4">
+//                 <h2 className="pm-title mb-4">Customer Complaints</h2>
+//                 <div className="alert alert-danger" role="alert">
+//                     Error: {error}
+//                 </div>
+//             </div>
+//         );
+//     }
+
+//     return (
+//         <div className="pm-container mt-4">
+//             <h2 className="pm-title mb-4">Customer Complaints</h2>
+
+//             <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+//                 <div className="d-flex align-items-center gap-2">
+//                     Show
+//                     <select
+//                         value={entriesPerPage}
+//                        onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
+//                         className="form-select form-select-sm w-auto"
+//                     >
+//                         <option value={5}>5</option>
+//                         <option value={10}>10</option>
+//                         <option value={25}>25</option>
+//                         <option value={50}>50</option>
+//                     </select>
+//                     entries
+//                 </div>
+//                 <div className="d-flex align-items-center gap-2">
+//                     <input
+//                         type="text"
+//                         className="form-control"
+//                         placeholder="Search in all columns..."
+//                         value={searchTerm}
+//                        onChange={(e) => handleSearchChange(e.target.value)}
+//                         style={{ minWidth: '250px' }}
+//                     />
+//                     {searchTerm && (
+//                         <button 
+//                             className="btn btn-sm btn-outline-secondary"
+//                             onClick={() => handleSearchChange('')}
+//                         >
+//                             Clear
+//                         </button>
+//                     )}
+//                 </div>
+//             </div>
+
+//             {/* Search Results Info */}
+//             {searchTerm && (
+//                 <div className="alert alert-info mb-3">
+//                     <strong>Search Results:</strong> Found {filteredComplaints.length} complaint(s) matching "{searchTerm}"
+//                 </div>
+//             )}
+
+//             <div className="table-responsive mb-4">
+//                 <table className="table">
+//                     <thead className="service-item-table-header">
+//                         <tr>
+//                             <th>S.No</th>
+//                             <th>Complaint ID</th>
+//                             <th>Type</th>
+//                             <th>Details</th>
+//                             <th>Complaint Date</th>
+//                             <th>Escalation Level</th>
+//                             <th>Service Manager Email</th>
+//                             <th>GM Email</th>
+//                             <th>Resolution Details</th>
+//                             <th>Resolved At</th>
+//                             <th>Created By</th>
+//                             <th>Updated By</th>
+//                             <th>Company</th>
+//                             <th>Customer</th>
+//                             <th>Service Request</th>
+//                             <th>Created At</th>
+//                             <th>Status</th>
+//                         </tr>
+//                     </thead>
+//                     <tbody>
+//                         {currentItems.length > 0 ? (
+//                             currentItems.map((complaint, index) => {
+//                                 const customerDisplay = getCustomerDisplay(complaint.customer);
+//                                 return (
+//                                     <tr key={complaint.complaint_id || index}>
+//                                         <td>{indexOfFirstEntry + index + 1}</td>
+//                                         <td>{complaint.complaint_id}</td>
+//                                         <td>{complaint.complaint_type}</td>
+//                                         <td className="text-truncate" style={{ maxWidth: "200px" }} title={complaint.complaint_details}>
+//                                             {complaint.complaint_details}
+//                                         </td>
+//                                         <td>{formatDate(complaint.complaint_date)}</td>
+//                                         <td>{complaint.escalation_level}</td>
+//                                         <td>{complaint.service_manager_email}</td>
+//                                         <td>{complaint.gm_email}</td>
+//                                         <td className="text-truncate" style={{ maxWidth: "200px" }} title={complaint.resolution_details}>
+//                                             {complaint.resolution_details || "—"}
+//                                         </td>
+//                                         <td>{formatDate(complaint.resolved_at)}</td>
+//                                         <td title={`ID: ${complaint.created_by}`}>
+//                                             {getUsernameById(complaint.created_by)}
+//                                         </td>
+//                                         <td title={`ID: ${complaint.updated_by}`}>
+//                                             {getUsernameById(complaint.updated_by)}
+//                                         </td>
+//                                         <td title={`ID: ${complaint.company}`}>
+//                                             {getCompanyName(complaint.company)}
+//                                         </td>
+//                                         <td>
+//                                             {customerDisplay.displayText !== "—" ? (
+//                                                 <button 
+//                                                     className="btn btn-link p-0 text-primary text-decoration-underline"
+//                                                     onClick={() => handleCustomerClick(customerDisplay.customerId)}
+//                                                     style={{
+//                                                         color: '#0d6efd',
+//                                                         textDecoration: 'underline',
+//                                                         border: 'none',
+//                                                         background: 'none',
+//                                                         cursor: 'pointer',
+//                                                         fontSize: 'inherit',
+//                                                         padding: '0',
+//                                                         margin: '0',
+                                                       
+//                                                     }}
+//                                                     title="View Customer Details"
+//                                                 >
+//                                                     {customerDisplay.displayText}
+//                                                 </button>
+//                                             ) : (
+//                                                 "—"
+//                                             )}
+//                                         </td>
+//                                         <td>{complaint.service_request}</td>
+//                                         <td>{formatDate(complaint.created_at)}</td>
+//                                         <td>
+//                                             <span
+//                                                 className={`badge ${
+//                                                     complaint.status === "Open"
+//                                                         ? "bg-warning"
+//                                                         : complaint.status === "In Progress"
+//                                                         ? "bg-info"
+//                                                         : complaint.status === "Resolved"
+//                                                         ? "bg-success"
+//                                                         : "bg-secondary"
+//                                                 }`}
+//                                             >
+//                                                 {complaint.status}
+//                                             </span>
+//                                         </td>
+//                                     </tr>
+//                                 );
+//                             })
+//                         ) : (
+//                             <tr>
+//                                 <td colSpan="17" className="text-center">
+//                                     {searchTerm 
+//                                         ? `No complaints found matching "${searchTerm}"`
+//                                         : "No complaints found."}
+//                                 </td>
+//                             </tr>
+//                         )}
+//                     </tbody>
+//                 </table>
+//             </div>
+
+//             {totalPages > 1 && (
+//                 <nav aria-label="Page navigation">
+//                     <ul className="pagination justify-content-center">
+//                         <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+//                             <button
+//                                 className="page-link"
+//                                 onClick={() => setCurrentPage(currentPage - 1)}
+//                                 disabled={currentPage === 1}
+//                             >
+//                                 Previous
+//                             </button>
+//                         </li>
+
+//                         {(() => {
+//                             const maxVisiblePages = 5;
+//                             let pageNumbers = [];
+                            
+//                             if (totalPages <= maxVisiblePages) {
+//                                 for (let i = 1; i <= totalPages; i++) {
+//                                     pageNumbers.push(i);
+//                                 }
+//                             } else {
+//                                 let startPage = Math.max(1, currentPage - 2);
+//                                 let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                                
+//                                 if (endPage - startPage + 1 < maxVisiblePages) {
+//                                     startPage = Math.max(1, endPage - maxVisiblePages + 1);
+//                                 }
+                                
+//                                 for (let i = startPage; i <= endPage; i++) {
+//                                     pageNumbers.push(i);
+//                                 }
+//                             }
+                            
+//                             return pageNumbers.map((page) => (
+//                                 <li
+//                                     key={page}
+//                                     className={`page-item ${currentPage === page ? "active" : ""}`}
+//                                 >
+//                                     <button
+//                                         className="page-link"
+//                                         onClick={() => setCurrentPage(page)}
+//                                     >
+//                                         {page}
+//                                     </button>
+//                                 </li>
+//                             ));
+//                         })()}
+
+//                         <li
+//                             className={`page-item ${
+//                                 currentPage === totalPages ? "disabled" : ""
+//                             }`}
+//                         >
+//                             <button
+//                                 className="page-link"
+//                                 onClick={() => setCurrentPage(currentPage + 1)}
+//                                 disabled={currentPage === totalPages}
+//                             >
+//                                 Next
+//                             </button>
+//                         </li>
+//                     </ul>
+//                 </nav>
+//             )}
+//         </div>
+//     );
+// }; 
+
+// export default CustomerComplaints;
+
+
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 import baseURL from "../ApiUrl/Apiurl";
 import { AuthContext } from '../AuthContext/AuthContext';
 import { useCompany } from '../AuthContext/CompanyContext';
@@ -1369,158 +2081,41 @@ const CustomerComplaints = () => {
     const [customersData, setCustomersData] = useState([]);
     const [companiesData, setCompaniesData] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [fetching, setFetching] = useState(false);
     const [error, setError] = useState(null);
-const [searchTerm, setSearchTerm] = useState(() => {
-  return sessionStorage.getItem('complaints_searchTerm') || '';
-});
+    const [users, setUsers] = useState([]);
+    const initialLoadRef = useRef(true);
+    const abortControllerRef = useRef(null);
+    
+    // Pagination states (server-side)
+    const [searchTerm, setSearchTerm] = useState(() => {
+        return sessionStorage.getItem('complaints_searchTerm') || '';
+    });
+    const [entriesPerPage, setEntriesPerPage] = useState(() => {
+        return Number(sessionStorage.getItem('complaints_entriesPerPage')) || 10;
+    });
+    const [currentPage, setCurrentPage] = useState(() => {
+        return Number(sessionStorage.getItem('complaints_currentPage')) || 1;
+    });
+    
+    // Server-side pagination data
+    const [totalCount, setTotalCount] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const [hasPreviousPage, setHasPreviousPage] = useState(false);
 
-const [entriesPerPage, setEntriesPerPage] = useState(() => {
-  return Number(sessionStorage.getItem('complaints_entriesPerPage')) || 5;
-});
-
-const [currentPage, setCurrentPage] = useState(() => {
-  return Number(sessionStorage.getItem('complaints_currentPage')) || 1;
-});
-    const [users, setUsers] = useState([]); // To store user data for search
-
+    // Save pagination state to sessionStorage
+    useEffect(() => {
+        sessionStorage.setItem('complaints_searchTerm', searchTerm);
+    }, [searchTerm]);
 
     useEffect(() => {
-  sessionStorage.setItem('complaints_searchTerm', searchTerm);
-}, [searchTerm]);
+        sessionStorage.setItem('complaints_entriesPerPage', entriesPerPage);
+    }, [entriesPerPage]);
 
-useEffect(() => {
-  sessionStorage.setItem('complaints_entriesPerPage', entriesPerPage);
-}, [entriesPerPage]);
-
-useEffect(() => {
-  sessionStorage.setItem('complaints_currentPage', currentPage);
-}, [currentPage]);
-
-
-
-const handleSearchChange = (value) => {
-  setSearchTerm(value);
-  setCurrentPage(1);
-  sessionStorage.setItem('complaints_currentPage', 1);
-};
-
-const handleEntriesPerPageChange = (value) => {
-  setEntriesPerPage(value);
-  setCurrentPage(1);
-  sessionStorage.setItem('complaints_currentPage', 1);
-};
-
-    // Fetch users data for username search
-    const fetchUsers = async () => {
-        try {
-            const response = await fetch(`${baseURL}/users/`);
-            if (response.ok) {
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    setUsers(data);
-                }
-            }
-        } catch (err) {
-            console.error("Error fetching users:", err);
-        }
-    };
-
-    // Fetch companies data
-    const fetchCompanies = async () => {
-        try {
-            const response = await fetch(`${baseURL}/companies/`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.status === "success") {
-                setCompaniesData(data.data || []);
-            } else {
-                throw new Error(data.message || "Failed to fetch companies");
-            }
-        } catch (err) {
-            console.error("Error fetching companies:", err);
-            setCompaniesData([]);
-        }
-    };
-
-    // Fetch customers data
-    const fetchCustomers = async () => {
-        try {
-            const response = await fetch(
-                `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
-            );
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.status === "success") {
-                setCustomersData(data.data || []);
-            } else {
-                throw new Error(data.message || "Failed to fetch customers");
-            }
-        } catch (err) {
-            console.error("Error fetching customers:", err);
-            setCustomersData([]);
-        }
-    };
-
-    // Fetch complaints data
-    const fetchComplaints = async () => {
-        try {
-            setLoading(true);
-            
-            if (!userId) {
-                throw new Error("User ID not found");
-            }
-            
-            const response = await fetch(
-                `${baseURL}/customer-complaints/?user_id=${userId}&company_id=${selectedCompany}`
-            );
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.status === "success") {
-                setComplaints(data.data || []);
-            } else {
-                throw new Error(data.message || "Failed to fetch complaints");
-            }
-        } catch (err) {
-            setError(err.message);
-            console.error("Error fetching complaints:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Fetch all data
     useEffect(() => {
-        const fetchAllData = async () => {
-            setLoading(true);
-            try {
-                await fetchUsers(); // Fetch users first
-                await fetchCompanies(); // Then fetch companies
-                await fetchCustomers(); // Then fetch customers
-                await fetchComplaints(); // Then fetch complaints
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAllData();
-    }, [selectedCompany, userId]);
+        sessionStorage.setItem('complaints_currentPage', currentPage);
+    }, [currentPage]);
 
     // Function to handle customer click navigation
     const handleCustomerClick = (customerId) => {
@@ -1534,47 +2129,194 @@ const handleEntriesPerPageChange = (value) => {
         }
     };
 
+    // Fetch users data - WITHOUT pagination parameters (like ErrorLogs)
+    const fetchUsers = async () => {
+        try {
+            const response = await axios.get(`${baseURL}/users/`);
+            if (response.data && Array.isArray(response.data)) {
+                setUsers(response.data);
+            }
+        } catch (err) {
+            console.error("Error fetching users:", err);
+        }
+    };
+
+    // Fetch companies data - WITHOUT pagination parameters
+    const fetchCompanies = async () => {
+        try {
+            const response = await axios.get(`${baseURL}/companies/`);
+            if (response.data.status === "success") {
+                setCompaniesData(response.data.data || []);
+            }
+        } catch (err) {
+            console.error("Error fetching companies:", err);
+            setCompaniesData([]);
+        }
+    };
+
+    // Fetch customers data - WITHOUT pagination parameters (like ErrorLogs)
+    const fetchCustomers = async () => {
+        try {
+            const response = await axios.get(
+                `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
+            );
+            if (response.data.status === "success") {
+                setCustomersData(response.data.data || []);
+            }
+        } catch (err) {
+            console.error("Error fetching customers:", err);
+            setCustomersData([]);
+        }
+    };
+
+    // Fetch complaints with DYNAMIC pagination
+    const fetchComplaints = async (page = currentPage, size = entriesPerPage, search = searchTerm, isInitial = false) => {
+        // Cancel previous request if any
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+
+        if (isInitial) {
+            setLoading(true);
+        } else {
+            setFetching(true);
+        }
+        
+        setError(null);
+        
+        abortControllerRef.current = new AbortController();
+
+        try {
+            if (!userId || !selectedCompany) {
+                setError('Missing user ID or company ID');
+                if (isInitial) {
+                    setLoading(false);
+                } else {
+                    setFetching(false);
+                }
+                return;
+            }
+
+            // Build URL with dynamic pagination parameters
+            let url = `${baseURL}/customer-complaints/?user_id=${userId}&company_id=${selectedCompany}&page=${page}&page_size=${size}`;
+            
+            // Add search parameter if exists
+            if (search) {
+                url += `&search=${encodeURIComponent(search)}`;
+            }
+
+            const response = await axios.get(
+                url,
+                { signal: abortControllerRef.current.signal }
+            );
+
+            if (response.data.status === "success") {
+                const data = response.data.data || [];
+                const pagination = response.data.pagination || {};
+                
+                setComplaints(data);
+                setTotalCount(pagination.total_count || 0);
+                setTotalPages(pagination.total_pages || 1);
+                setHasNextPage(pagination.has_next || false);
+                setHasPreviousPage(pagination.has_previous || false);
+                setCurrentPage(pagination.current_page || 1);
+            } else {
+                setError('Failed to load complaints');
+                setComplaints([]);
+            }
+        } catch (err) {
+            if (axios.isCancel(err)) {
+                return;
+            }
+            setError(err.message || 'Failed to fetch complaints');
+            console.error("Error fetching complaints:", err);
+            setComplaints([]);
+        } finally {
+            if (isInitial) {
+                setLoading(false);
+            } else {
+                setFetching(false);
+            }
+            abortControllerRef.current = null;
+        }
+    };
+
+    // Fetch all data - Initial load
+    useEffect(() => {
+        const fetchAllData = async () => {
+            setLoading(true);
+            try {
+                await Promise.all([
+                    fetchUsers(),
+                    fetchCompanies(),
+                    fetchCustomers(),
+                    fetchComplaints(1, entriesPerPage, searchTerm, true)
+                ]);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (userId && selectedCompany) {
+            fetchAllData();
+        }
+
+        // Cleanup function
+        return () => {
+            if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+            }
+        };
+    }, [selectedCompany, userId]);
+
+    // Refetch when pagination or search changes
+    useEffect(() => {
+        // Skip the initial mount fetch which is handled by fetchAllData
+        if (initialLoadRef.current) {
+            initialLoadRef.current = false;
+            return;
+        }
+
+        if (userId && selectedCompany && !loading) {
+            const debounceTimer = setTimeout(() => {
+                fetchComplaints(currentPage, entriesPerPage, searchTerm, false);
+            }, 300);
+            
+            return () => {
+                clearTimeout(debounceTimer);
+                if (abortControllerRef.current) {
+                    abortControllerRef.current.abort();
+                }
+            };
+        }
+    }, [currentPage, entriesPerPage, searchTerm]);
+
     // Function to get username from user ID
     const getUsernameById = (userId) => {
         if (!userId || users.length === 0) return userId;
-        
         const user = users.find(user => user.user_id === userId);
         return user ? user.username : userId;
-    };
-
-    // Function to get user search data (both ID and username)
-    const getUserSearchData = (userId) => {
-        if (!userId) return '';
-        const user = users.find(user => user.user_id === userId);
-        return user ? `${userId} ${user.username}` : userId;
     };
 
     // Function to get company name by company ID
     const getCompanyName = (companyId) => {
         if (!companiesData || companiesData.length === 0) return companyId;
-        
         const company = companiesData.find(comp => comp.company_id === companyId);
         return company ? company.company_name : companyId;
-    };
-
-    // Function to get company search data (both ID and name)
-    const getCompanySearchData = (companyId) => {
-        if (!companyId) return '';
-        const company = companiesData.find(comp => comp.company_id === companyId);
-        return company ? `${companyId} ${company.company_name}` : companyId;
     };
 
     // Function to get customer username by customer ID
     const getCustomerUsername = (customerId) => {
         if (!customersData || customersData.length === 0) return customerId;
-        
         const customer = customersData.find(cust => cust.customer_id === customerId);
         return customer ? customer.username : customerId;
     };
 
     // Function to get customer display (both ID and username with link)
     const getCustomerDisplay = (customerId) => {
-        if (!customerId) return "—";
+        if (!customerId) return { displayText: "—", customerId: null };
         
         const customer = customersData.find(cust => cust.customer_id === customerId);
         if (customer) {
@@ -1587,13 +2329,6 @@ const handleEntriesPerPageChange = (value) => {
             displayText: customerId,
             customerId: customerId
         };
-    };
-
-    // Function to get customer search data (both ID and username)
-    const getCustomerSearchData = (customerId) => {
-        if (!customerId) return '';
-        const customer = customersData.find(cust => cust.customer_id === customerId);
-        return customer ? `${customerId} ${customer.username} ${customer.full_name} ${customer.email}` : customerId;
     };
 
     // Function to format date for display
@@ -1613,206 +2348,43 @@ const handleEntriesPerPageChange = (value) => {
         }
     };
 
-    // Function to format date in multiple formats for search
-    const formatDateForSearch = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        
-        if (isNaN(date.getTime())) return '';
-        
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-        const year = date.getFullYear();
-        const monthName = date.toLocaleString('en-IN', { month: 'long' });
-        const monthShort = date.toLocaleString('en-IN', { month: 'short' });
-        const hour = date.getHours().toString().padStart(2, '0');
-        const minute = date.getMinutes().toString().padStart(2, '0');
-        const second = date.getSeconds().toString().padStart(2, '0');
-        
-        // Return multiple formats for better searchability
-        return [
-            `${day}/${month}/${year}`,                    // DD/MM/YYYY
-            `${day}/${month}/${year} ${hour}:${minute}:${second}`, // DD/MM/YYYY HH:MM:SS
-            `${month}/${day}/${year}`,                    // MM/DD/YYYY
-            `${year}-${month}-${day}`,                    // YYYY-MM-DD
-            `${year}${month}${day}`,                      // YYYYMMDD
-            `${day}-${month}-${year}`,                    // DD-MM-YYYY
-            date.toISOString(),                           // ISO string
-            monthName,                                    // January, February
-            monthShort,                                   // Jan, Feb
-            `${year}`,                                    // 2024
-            `${month}/${year}`,                           // MM/YYYY
-            `${day} ${monthName} ${year}`,               // 15 January 2024
-            `${day} ${monthShort} ${year}`,              // 15 Jan 2024
-            `${hour}:${minute}`,                          // HH:MM
-            `${hour}:${minute}:${second}`,               // HH:MM:SS
-        ].join(' ');
+    // Handle entries per page change
+    const handleEntriesPerPageChange = (e) => {
+        const newSize = Number(e.target.value);
+        setEntriesPerPage(newSize);
+        setCurrentPage(1);
+        sessionStorage.setItem('complaints_entriesPerPage', newSize);
+        sessionStorage.setItem('complaints_currentPage', 1);
     };
 
-    // Enhanced global search functionality
-    const filteredComplaints = React.useMemo(() => {
-        if (!searchTerm.trim()) {
-            return complaints;
+    // Handle search change
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        setCurrentPage(1);
+        sessionStorage.setItem('complaints_searchTerm', value);
+        sessionStorage.setItem('complaints_currentPage', 1);
+    };
+
+    // Handle clear search
+    const handleClearSearch = () => {
+        setSearchTerm('');
+        setCurrentPage(1);
+        sessionStorage.setItem('complaints_searchTerm', '');
+        sessionStorage.setItem('complaints_currentPage', 1);
+    };
+
+    // Handle page change
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            setCurrentPage(newPage);
         }
+    };
 
-        const searchLower = searchTerm.toLowerCase().trim();
-        
-        return complaints.filter((complaint) => {
-            // Get user data for search
-            const createdBySearch = getUserSearchData(complaint.created_by);
-            const updatedBySearch = getUserSearchData(complaint.updated_by);
-            
-            // Get company data for search
-            const companySearchData = getCompanySearchData(complaint.company);
-            
-            // Get customer data for search
-            const customerSearchData = getCustomerSearchData(complaint.customer);
-            
-            // Get dates in multiple formats for search
-            const complaintDateFormats = formatDateForSearch(complaint.complaint_date);
-            const resolvedDateFormats = formatDateForSearch(complaint.resolved_at);
-            const createdDateFormats = formatDateForSearch(complaint.created_at);
-            const updatedDateFormats = formatDateForSearch(complaint.updated_at);
-            
-            // Create a comprehensive search string
-            const searchableText = [
-                // Raw complaint data
-                complaint.complaint_id || '',
-                complaint.complaint_type || '',
-                complaint.complaint_details || '',
-                complaint.complaint_date || '',
-                complaint.escalation_level || '',
-                complaint.service_manager_email || '',
-                complaint.gm_email || '',
-                complaint.resolution_details || '',
-                complaint.resolved_at || '',
-                complaint.created_by || '',
-                complaint.updated_by || '',
-                complaint.company || '',
-                complaint.customer || '',
-                complaint.service_request || '',
-                complaint.created_at || '',
-                complaint.updated_at || '',
-                complaint.status || '',
-                complaint.priority || '',
-                complaint.severity || '',
-                complaint.category || '',
-                complaint.sub_category || '',
-                complaint.attachment_url || '',
-                complaint.follow_up_date || '',
-                complaint.assigned_to || '',
-                complaint.estimated_resolution_date || '',
-                complaint.actual_resolution_date || '',
-                
-                // Formatted user data for search
-                createdBySearch,
-                updatedBySearch,
-                
-                // Formatted company data for search
-                companySearchData,
-                
-                // Formatted customer data for search
-                customerSearchData,
-                
-                // Dates in multiple formats
-                complaintDateFormats,
-                resolvedDateFormats,
-                createdDateFormats,
-                updatedDateFormats,
-                
-                // Display values (exactly as shown in table)
-                formatDate(complaint.complaint_date),
-                formatDate(complaint.resolved_at),
-                formatDate(complaint.created_at),
-                getUsernameById(complaint.created_by),
-                getUsernameById(complaint.updated_by),
-                getCompanyName(complaint.company),
-                getCustomerUsername(complaint.customer),
-                
-                // Complaint type variations for better search
-                complaint.complaint_type === 'Service Delay' ? 'Service Delay late delay tardy' : '',
-                complaint.complaint_type === 'Billing Issue' ? 'Billing Issue bill payment charge' : '',
-                complaint.complaint_type === 'Quality Issue' ? 'Quality Issue quality defective poor' : '',
-                complaint.complaint_type === 'Technical Issue' ? 'Technical Issue technical problem error' : '',
-                complaint.complaint_type === 'Customer Service' ? 'Customer Service service support rude' : '',
-                complaint.complaint_type === 'Product Issue' ? 'Product Issue product defective broken' : '',
-                
-                // Escalation level variations
-                complaint.escalation_level === 'Level 1' ? 'Level 1 L1 first low' : '',
-                complaint.escalation_level === 'Level 2' ? 'Level 2 L2 second medium' : '',
-                complaint.escalation_level === 'Level 3' ? 'Level 3 L3 third high' : '',
-                complaint.escalation_level === 'Level 4' ? 'Level 4 L4 fourth critical' : '',
-                
-                // Status variations with badge text multiple times
-                complaint.status === 'Open' ? 'Open open pending new' : '',
-                complaint.status === 'In Progress' ? 'In Progress progress working ongoing' : '',
-                complaint.status === 'Resolved' ? 'Resolved resolved closed completed' : '',
-                complaint.status === 'Closed' ? 'Closed closed finished done' : '',
-                complaint.status === 'Escalated' ? 'Escalated escalated transferred' : '',
-                complaint.status === 'Reopened' ? 'Reopened reopened again' : '',
-                
-                // Priority variations
-                complaint.priority === 'High' ? 'High high urgent critical' : '',
-                complaint.priority === 'Medium' ? 'Medium medium normal moderate' : '',
-                complaint.priority === 'Low' ? 'Low low minor trivial' : '',
-                
-                // Severity variations
-                complaint.severity === 'Critical' ? 'Critical critical severe emergency' : '',
-                complaint.severity === 'Major' ? 'Major major significant serious' : '',
-                complaint.severity === 'Minor' ? 'Minor minor small trivial' : '',
-                
-                // Email username variations (without domain)
-                complaint.service_manager_email ? complaint.service_manager_email.split('@')[0] : '',
-                complaint.gm_email ? complaint.gm_email.split('@')[0] : '',
-                
-                // Resolution details variations
-                complaint.resolution_details ? `resolution ${complaint.resolution_details}` : '',
-                
-                // Service request variations
-                complaint.service_request ? `service request ${complaint.service_request}` : '',
-                
-                // Add any other properties that might exist
-                ...Object.values(complaint).filter(val => 
-                    val !== null && val !== undefined
-                ).map(val => {
-                    if (typeof val === 'string' || typeof val === 'number') {
-                        return String(val);
-                    }
-                    if (typeof val === 'boolean') {
-                        return val ? 'true yes active' : 'false no inactive';
-                    }
-                    if (Array.isArray(val)) {
-                        return val.join(' ');
-                    }
-                    if (typeof val === 'object' && val !== null) {
-                        return JSON.stringify(val);
-                    }
-                    return '';
-                })
-            ]
-            .join(' ')                    // Combine into one string
-            .toLowerCase()                // Make case-insensitive
-            .replace(/\s+/g, ' ')         // Normalize spaces
-            .trim();
-            
-            return searchableText.includes(searchLower);
-        });
-    }, [searchTerm, complaints, users, companiesData, customersData]);
-
-  
-
-    // Pagination logic
-    const indexOfLastEntry = currentPage * entriesPerPage;
-    const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-    const currentItems = filteredComplaints.slice(indexOfFirstEntry, indexOfLastEntry);
-    const totalPages = Math.ceil(filteredComplaints.length / entriesPerPage);
-    useEffect(() => {
-  const savedPage = Number(sessionStorage.getItem('complaints_currentPage')) || 1;
-
-  if (savedPage > totalPages && totalPages > 0) {
-    setCurrentPage(totalPages);
-  }
-}, [filteredComplaints, entriesPerPage]);
+    // Function to refresh complaints
+    const handleRefresh = () => {
+        fetchComplaints(currentPage, entriesPerPage, searchTerm, false);
+    };
 
     if (loading) {
         return (
@@ -1839,24 +2411,48 @@ const handleEntriesPerPageChange = (value) => {
         );
     }
 
+    // Calculate index for display
+    const indexOfFirstEntry = (currentPage - 1) * entriesPerPage;
+
     return (
         <div className="pm-container mt-4">
-            <h2 className="pm-title mb-4">Customer Complaints</h2>
-
             <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                <div>
+                    <h2 className="pm-title mb-0">Customer Complaints</h2>
+                    <p className="customer-subtitle mb-0 text-muted">
+                        {selectedCompany 
+                            ? `Showing complaints for selected company`
+                            : 'Showing all complaints'}
+                    </p>
+                    <p className="customer-subtitle text-muted mb-0">Manage customer complaints</p>
+                </div>
+                <button 
+                    onClick={handleRefresh} 
+                    className="btn btn-outline-primary"
+                    disabled={fetching}
+                >
+                    {fetching ? 'Loading...' : 'Refresh Complaints'}
+                </button>
+            </div>
+
+            <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
                 <div className="d-flex align-items-center gap-2">
                     Show
                     <select
                         value={entriesPerPage}
-                       onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
+                        onChange={handleEntriesPerPageChange}
                         className="form-select form-select-sm w-auto"
                     >
                         <option value={5}>5</option>
                         <option value={10}>10</option>
                         <option value={25}>25</option>
                         <option value={50}>50</option>
+                        <option value={100}>100</option>
                     </select>
                     entries
+                    <span className="text-muted ms-2">
+                        (Total: <strong>{totalCount}</strong> complaints)
+                    </span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
                     <input
@@ -1864,13 +2460,13 @@ const handleEntriesPerPageChange = (value) => {
                         className="form-control"
                         placeholder="Search in all columns..."
                         value={searchTerm}
-                       onChange={(e) => handleSearchChange(e.target.value)}
+                        onChange={handleSearchChange}
                         style={{ minWidth: '250px' }}
                     />
                     {searchTerm && (
                         <button 
                             className="btn btn-sm btn-outline-secondary"
-                            onClick={() => handleSearchChange('')}
+                            onClick={handleClearSearch}
                         >
                             Clear
                         </button>
@@ -1881,7 +2477,7 @@ const handleEntriesPerPageChange = (value) => {
             {/* Search Results Info */}
             {searchTerm && (
                 <div className="alert alert-info mb-3">
-                    <strong>Search Results:</strong> Found {filteredComplaints.length} complaint(s) matching "{searchTerm}"
+                    <strong>Search Results:</strong> Found {totalCount} complaint(s) matching "{searchTerm}"
                 </div>
             )}
 
@@ -1909,8 +2505,17 @@ const handleEntriesPerPageChange = (value) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {currentItems.length > 0 ? (
-                            currentItems.map((complaint, index) => {
+                        {fetching ? (
+                            <tr>
+                                <td colSpan="17" className="text-center py-4">
+                                    <div className="spinner-border text-primary" role="status">
+                                        <span className="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p className="mt-2 mb-0 text-muted">Loading complaints...</p>
+                                </td>
+                            </tr>
+                        ) : complaints.length > 0 ? (
+                            complaints.map((complaint, index) => {
                                 const customerDisplay = getCustomerDisplay(complaint.customer);
                                 return (
                                     <tr key={complaint.complaint_id || index}>
@@ -1950,8 +2555,7 @@ const handleEntriesPerPageChange = (value) => {
                                                         cursor: 'pointer',
                                                         fontSize: 'inherit',
                                                         padding: '0',
-                                                        margin: '0',
-                                                       
+                                                        margin: '0'
                                                     }}
                                                     title="View Customer Details"
                                                 >
@@ -1983,10 +2587,14 @@ const handleEntriesPerPageChange = (value) => {
                             })
                         ) : (
                             <tr>
-                                <td colSpan="17" className="text-center">
-                                    {searchTerm 
-                                        ? `No complaints found matching "${searchTerm}"`
-                                        : "No complaints found."}
+                                <td colSpan="17" className="text-center py-4">
+                                    <div className="text-muted">
+                                        <p className="mb-0">
+                                            {searchTerm 
+                                                ? `No complaints found matching "${searchTerm}"`
+                                                : "No complaints found."}
+                                        </p>
+                                    </div>
                                 </td>
                             </tr>
                         )}
@@ -1994,20 +2602,21 @@ const handleEntriesPerPageChange = (value) => {
                 </table>
             </div>
 
-            {totalPages > 1 && (
+            {/* Pagination - Dynamic like ErrorLogs */}
+            {(totalPages > 1 || hasNextPage || currentPage > 1) && (
                 <nav aria-label="Page navigation">
                     <ul className="pagination justify-content-center">
                         <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
                             <button
                                 className="page-link"
-                                onClick={() => setCurrentPage(currentPage - 1)}
+                                onClick={() => handlePageChange(currentPage - 1)}
                                 disabled={currentPage === 1}
                             >
                                 Previous
                             </button>
                         </li>
 
-                        {(() => {
+                        {totalPages > 1 ? (() => {
                             const maxVisiblePages = 5;
                             let pageNumbers = [];
                             
@@ -2035,23 +2644,19 @@ const handleEntriesPerPageChange = (value) => {
                                 >
                                     <button
                                         className="page-link"
-                                        onClick={() => setCurrentPage(page)}
+                                        onClick={() => handlePageChange(page)}
                                     >
                                         {page}
                                     </button>
                                 </li>
                             ));
-                        })()}
+                        })() : null}
 
-                        <li
-                            className={`page-item ${
-                                currentPage === totalPages ? "disabled" : ""
-                            }`}
-                        >
+                        <li className={`page-item ${(totalPages ? currentPage === totalPages : !hasNextPage) ? "disabled" : ""}`}>
                             <button
                                 className="page-link"
-                                onClick={() => setCurrentPage(currentPage + 1)}
-                                disabled={currentPage === totalPages}
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={totalPages ? currentPage === totalPages : !hasNextPage}
                             >
                                 Next
                             </button>
@@ -2059,8 +2664,15 @@ const handleEntriesPerPageChange = (value) => {
                     </ul>
                 </nav>
             )}
+            
+            {/* Total count display */}
+            {totalCount > 0 && (
+                <div className="text-center text-muted mt-2">
+                    <small>Showing {complaints.length} of {totalCount} complaints</small>
+                </div>
+            )}
         </div>
     );
-}; 
+};
 
 export default CustomerComplaints;

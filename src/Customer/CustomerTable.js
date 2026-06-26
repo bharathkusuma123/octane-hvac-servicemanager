@@ -931,7 +931,460 @@
 // After fixing filter -Global search issue 
 
 
-import React, { useEffect, useState, useContext } from 'react';
+// import React, { useEffect, useState, useContext } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import axios from 'axios';
+// import baseURL from '../ApiUrl/Apiurl';
+// import { useCompany } from "../AuthContext/CompanyContext";
+// import { AuthContext } from "../AuthContext/AuthContext";
+// import { FaTrashAlt, FaEdit, FaEye, FaKey } from 'react-icons/fa';
+
+// const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
+//   const [customers, setCustomers] = useState([]);
+//   const [filteredCustomers, setFilteredCustomers] = useState([]);
+//  const [searchTerm, setSearchTerm] = useState(() => {
+//   return sessionStorage.getItem('customers_searchTerm') || '';
+// });
+
+// const [entriesPerPage, setEntriesPerPage] = useState(() => {
+//   return Number(sessionStorage.getItem('customers_entriesPerPage')) || 5;
+// });
+
+// const [currentPage, setCurrentPage] = useState(() => {
+//   return Number(sessionStorage.getItem('customers_currentPage')) || 1;
+// });
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState(null);
+//   const [companiesData, setCompaniesData] = useState([]);
+//   const { selectedCompany } = useCompany();
+//   const { userId } = useContext(AuthContext);
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//   sessionStorage.setItem('customers_searchTerm', searchTerm);
+// }, [searchTerm]);
+
+// useEffect(() => {
+//   sessionStorage.setItem('customers_entriesPerPage', entriesPerPage);
+// }, [entriesPerPage]);
+
+// useEffect(() => {
+//   sessionStorage.setItem('customers_currentPage', currentPage);
+// }, [currentPage]);
+
+// const handleSearchChange = (value) => {
+//   setSearchTerm(value);
+//   setCurrentPage(1);
+//   sessionStorage.setItem('customers_currentPage', 1);
+// };
+
+// const handleEntriesPerPageChange = (value) => {
+//   setEntriesPerPage(value);
+//   setCurrentPage(1);
+//   sessionStorage.setItem('customers_currentPage', 1);
+// };
+ 
+//   const fetchCompanies = async () => {
+//     try {
+//       const response = await axios.get(`${baseURL}/companies/`);
+//       if (response.data.status === "success") {
+//         setCompaniesData(response.data.data);
+//       }
+//     } catch (error) {
+//       console.error("Failed to load companies data", error);
+//     }
+//   };
+ 
+//   const getCompanyDisplayName = (companyId) => {
+//     if (!companiesData || companiesData.length === 0) return companyId;
+//     const company = companiesData.find(comp => comp.company_id === companyId);
+//     return company ? `${company.company_name} (${company.company_id})` : companyId;
+//   };
+ 
+//   const getCompanySearchData = (companyId) => {
+//     if (!companyId) return '';
+//     if (!companiesData || companiesData.length === 0) return companyId;
+//     const company = companiesData.find(comp => comp.company_id === companyId);
+//     return company
+//       ? `${company.company_id} ${company.company_name} ${company.company_name} (${company.company_id})`
+//       : companyId;
+//   };
+ 
+//   const fetchCustomers = async () => {
+//     setLoading(true);
+//     setError(null);
+//     try {
+//       if (!userId || !selectedCompany) {
+//         setError('Missing user ID or company ID');
+//         return;
+//       }
+//       const response = await axios.get(
+//         `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
+//       );
+//       const filteredAndSorted = response.data.data
+//         .filter(user => user.status === 'Active')
+//         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+//       setCustomers(filteredAndSorted);
+//     } catch (error) {
+//       console.error('Error fetching customer data:', error);
+//       setError('Failed to load customers');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+ 
+//   useEffect(() => {
+//     fetchCompanies().then(() => fetchCustomers());
+//   }, [selectedCompany, userId]);
+ 
+//   const formatDate = (dateString) => {
+//     if (!dateString) return '-';
+//     const date = new Date(dateString);
+//     const day = date.getDate().toString().padStart(2, '0');
+//     const month = (date.getMonth() + 1).toString().padStart(2, '0');
+//     const year = date.getFullYear();
+//     return `${day}/${month}/${year}`;
+//   };
+ 
+//   const formatDateForSearch = (dateString) => {
+//     if (!dateString) return '';
+//     const date = new Date(dateString);
+//     if (isNaN(date.getTime())) return '';
+//     const day = date.getDate().toString().padStart(2, '0');
+//     const month = (date.getMonth() + 1).toString().padStart(2, '0');
+//     const year = date.getFullYear();
+//     const monthName = date.toLocaleString('en-IN', { month: 'long' });
+//     const monthShort = date.toLocaleString('en-IN', { month: 'short' });
+//     const hour = date.getHours().toString().padStart(2, '0');
+//     const minute = date.getMinutes().toString().padStart(2, '0');
+//     const second = date.getSeconds().toString().padStart(2, '0');
+//     return [
+//       `${day}/${month}/${year}`,
+//       `${day}/${month}/${year} ${hour}:${minute}:${second}`,
+//       `${month}/${day}/${year}`,
+//       `${year}-${month}-${day}`,
+//       `${year}${month}${day}`,
+//       `${day}-${month}-${year}`,
+//       date.toISOString(),
+//       monthName,
+//       monthShort,
+//       `${year}`,
+//       `${month}/${year}`,
+//       `${day} ${monthName} ${year}`,
+//       `${day} ${monthShort} ${year}`,
+//       `${hour}:${minute}`,
+//       `${hour}:${minute}:${second}`,
+//     ].join(' ');
+//   };
+ 
+// useEffect(() => {
+//   if (!searchTerm.trim()) {
+//     let results = customers;
+
+//     if (selectedCompany) {
+//       results = results.filter(customer => customer.company === selectedCompany);
+//     }
+
+//     setFilteredCustomers(results);
+
+//     // ✅ Clamp page
+//     const totalPagesNow = Math.ceil(results.length / entriesPerPage);
+//     const savedPage = Number(sessionStorage.getItem('customers_currentPage')) || 1;
+
+//     if (savedPage > totalPagesNow && totalPagesNow > 0) {
+//       setCurrentPage(totalPagesNow);
+//     }
+
+//     return;
+//   }
+
+//   const searchLower = searchTerm.toLowerCase().trim();
+
+//   const filtered = customers.filter((customer) => {
+//     if (selectedCompany && customer.company !== selectedCompany) return false;
+
+//     const companySearchData = getCompanySearchData(customer.company);
+//     const createdDateFormats = formatDateForSearch(customer.created_at);
+//     const updatedDateFormats = formatDateForSearch(customer.updated_at);
+
+//     const searchableText = [
+//       customer.customer_id,
+//       customer.full_name,
+//       customer.username,
+//       customer.email,
+//       customer.mobile,
+//       customer.city,
+//       customer.customer_type,
+//       customer.status,
+//       companySearchData,
+//       createdDateFormats,
+//       updatedDateFormats,
+//       formatDate(customer.created_at),
+//       getCompanyDisplayName(customer.company),
+//       ...Object.values(customer).map(v => String(v || ''))
+//     ]
+//       .join(' ')
+//       .toLowerCase();
+
+//     return searchableText.includes(searchLower);
+//   });
+
+//   setFilteredCustomers(filtered);
+
+//   // ✅ Clamp page after filtering
+//   const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
+//   const savedPage = Number(sessionStorage.getItem('customers_currentPage')) || 1;
+
+//   if (savedPage > totalPagesNow && totalPagesNow > 0) {
+//     setCurrentPage(totalPagesNow);
+//   }
+
+// }, [searchTerm, customers, companiesData, selectedCompany, entriesPerPage]);
+ 
+//   const indexOfLastEntry = currentPage * entriesPerPage;
+//   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+//   const currentEntries = filteredCustomers.slice(indexOfFirstEntry, indexOfLastEntry);
+//   const totalPages = Math.ceil(filteredCustomers.length / entriesPerPage);
+ 
+//   const handleDeleteCustomer = (customerId) => {
+//     if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
+//       axios
+//         .delete(`${baseURL}/customers/${customerId}/?user_id=${userId}&company_id=${selectedCompany}`)
+//         .then(() => {
+//           alert('Customer deleted successfully');
+//           fetchCustomers();
+//         })
+//         .catch(() => alert("Failed to delete customer. Please try again."));
+//     }
+//   };
+ 
+//   const handleViewCustomer = (customer) => {
+//     navigate(`/servicemanager/customers/${customer.customer_id}`, {
+//       state: { selectedCompany, userId },
+//     });
+//   };
+ 
+//   const handleCustomerIdClick = (customerId) => {
+//     navigate(`/servicemanager/customers/${customerId}`, {
+//       state: { selectedCompany, userId },
+//     });
+//   };
+ 
+//   // ── NEW: Navigate to Reset Password page, passing customer data ──────────
+//   const handleResetPassword = (customer) => {
+//     navigate(`/servicemanager/customers/${customer.customer_id}/reset-password`, {
+//       state: {
+//         customer,           // full customer object (has mobile, security_question1/2, answer1/2)
+//         selectedCompany,
+//         userId,
+//       },
+//     });
+//   };
+//   // ─────────────────────────────────────────────────────────────────────────
+ 
+//   if (loading) return <div className="text-center my-4">Loading customers...</div>;
+//   if (error) return <div className="alert alert-danger my-4">{error}</div>;
+ 
+//   return (
+//     <>
+//       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+//         <div>
+//           <h2 className="customer-title mb-0">Customers</h2>
+//           <p className="customer-subtitle mb-0 text-muted">
+//             {selectedCompany
+//               ? `Showing customers for ${getCompanyDisplayName(selectedCompany)}`
+//               : 'Showing all customers'}
+//           </p>
+//         </div>
+//         <button onClick={toggleForm} className="btn btn-primary">
+//           Add New Customer
+//         </button>
+//       </div>
+ 
+//       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+//         <div className="d-flex align-items-center gap-2">
+//           Show
+//           <select
+//             value={entriesPerPage}
+//            onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
+//             className="form-select form-select-sm w-auto"
+//           >
+//             <option value={5}>5</option>
+//             <option value={10}>10</option>
+//             <option value={25}>25</option>
+//           </select>
+//           entries
+//         </div>
+ 
+//         <div className="d-flex align-items-center gap-2">
+//           <input
+//             type="text"
+//             placeholder="Search in all columns..."
+//             className="form-control"
+//             value={searchTerm}
+//            onChange={(e) => handleSearchChange(e.target.value)}
+//             style={{ minWidth: '250px' }}
+//           />
+//           {searchTerm && (
+//             <button className="btn btn-sm btn-outline-secondary" onClick={() => handleSearchChange('')}>
+//               Clear
+//             </button>
+//           )}
+//         </div>
+//       </div>
+ 
+//       {searchTerm && (
+//         <div className="alert alert-info mb-3">
+//           <strong>Search Results:</strong> Found {filteredCustomers.length} customer(s) matching "{searchTerm}"
+//         </div>
+//       )}
+ 
+//       <div className="table-responsive mb-4">
+//         <table className="table">
+//           <thead className="new-customer-table-header">
+//             <tr>
+//               <th>S.No</th>
+//               <th>Customer ID</th>
+//               <th>Company</th>
+//               <th>Full Name</th>
+//               <th>Username</th>
+//               <th>Email</th>
+//               <th>Mobile</th>
+//               <th>City</th>
+//               <th>Type</th>
+//               <th>Status</th>
+//               <th>Created At</th>
+//               <th>Reset Password</th>  {/* ── NEW column header ── */}
+//               <th>Actions</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {currentEntries.length > 0 ? (
+//               currentEntries.map((customer, index) => (
+//                 <tr key={index}>
+//                   <td>{indexOfFirstEntry + index + 1}</td>
+//                   <td>
+//                     <button
+//                       className="btn btn-link p-0 text-primary text-decoration-underline"
+//                       onClick={() => handleCustomerIdClick(customer.customer_id)}
+//                       style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 'inherit' }}
+//                       title="View Customer Details"
+//                     >
+//                       {customer.customer_id}
+//                     </button>
+//                   </td>
+//                   <td title={getCompanyDisplayName(customer.company)}>
+//                     {getCompanyDisplayName(customer.company)}
+//                   </td>
+//                   <td>{customer.full_name}</td>
+//                   <td>{customer.username}</td>
+//                   <td>{customer.email}</td>
+//                   <td>{customer.mobile}</td>
+//                   <td>{customer.city}</td>
+//                   <td>{customer.customer_type}</td>
+//                   <td>
+//                     <span className={`badge ${
+//                       customer.status === 'Active' ? 'bg-success' :
+//                       customer.status === 'Inactive' ? 'bg-warning text-dark' :
+//                       'bg-danger'
+//                     }`}>
+//                       {customer.status}
+//                     </span>
+//                   </td>
+//                   <td>{formatDate(customer.created_at)}</td>
+ 
+//                   {/* ── NEW: Reset Password cell ── */}
+//                   <td>
+//                     <button
+//                       className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
+//                       onClick={() => handleResetPassword(customer)}
+//                       title={`Reset password for ${customer.full_name}`}
+//                     >
+//                       <FaKey size={12} />
+//                       Reset Password
+//                     </button>
+//                   </td>
+//                   {/* ── END NEW ── */}
+ 
+//                   <td>
+//                     <div className="d-flex gap-2">
+//                       <FaEye
+//                         style={{ color: "#0d6efd", cursor: "pointer", fontSize: "18px" }}
+//                         onClick={() => handleViewCustomer(customer)}
+//                         title="View Customer"
+//                       />
+//                       <FaEdit
+//                         style={{ color: "#ffc107", cursor: "pointer", fontSize: "18px" }}
+//                         onClick={() => onEditCustomer(customer)}
+//                         title="Edit Customer"
+//                       />
+//                       <FaTrashAlt
+//                         style={{ color: "#dc3545", cursor: "pointer", fontSize: "18px" }}
+//                         onClick={() => handleDeleteCustomer(customer.customer_id)}
+//                         title="Delete Customer"
+//                       />
+//                     </div>
+//                   </td>
+//                 </tr>
+//               ))
+//             ) : (
+//               <tr>
+//                 <td colSpan="13" className="text-center">
+//                   {searchTerm
+//                     ? `No customers found matching "${searchTerm}"`
+//                     : selectedCompany
+//                     ? `No customers found for ${getCompanyDisplayName(selectedCompany)}`
+//                     : 'No customers found'}
+//                 </td>
+//               </tr>
+//             )}
+//           </tbody>
+//         </table>
+//       </div>
+ 
+//       {totalPages > 1 && (
+//         <nav aria-label="Page navigation">
+//           <ul className="pagination justify-content-center">
+//             <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+//               <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+//                 Previous
+//               </button>
+//             </li>
+//             {(() => {
+//               const maxVisiblePages = 5;
+//               let pageNumbers = [];
+//               if (totalPages <= maxVisiblePages) {
+//                 for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+//               } else {
+//                 let startPage = Math.max(1, currentPage - 2);
+//                 let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+//                 if (endPage - startPage + 1 < maxVisiblePages) {
+//                   startPage = Math.max(1, endPage - maxVisiblePages + 1);
+//                 }
+//                 for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
+//               }
+//               return pageNumbers.map((page) => (
+//                 <li key={page} className={`page-item ${currentPage === page ? "active" : ""}`}>
+//                   <button className="page-link" onClick={() => setCurrentPage(page)}>{page}</button>
+//                 </li>
+//               ));
+//             })()}
+//             <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+//               <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+//                 Next
+//               </button>
+//             </li>
+//           </ul>
+//         </nav>
+//       )}
+//     </>
+//   );
+// }; 
+
+// export default CustomerTable;
+
+
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import baseURL from '../ApiUrl/Apiurl';
@@ -941,49 +1394,47 @@ import { FaTrashAlt, FaEdit, FaEye, FaKey } from 'react-icons/fa';
 
 const CustomerTable = ({ toggleForm, onEditCustomer, onViewCustomer }) => {
   const [customers, setCustomers] = useState([]);
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
- const [searchTerm, setSearchTerm] = useState(() => {
-  return sessionStorage.getItem('customers_searchTerm') || '';
-});
-
-const [entriesPerPage, setEntriesPerPage] = useState(() => {
-  return Number(sessionStorage.getItem('customers_entriesPerPage')) || 5;
-});
-
-const [currentPage, setCurrentPage] = useState(() => {
-  return Number(sessionStorage.getItem('customers_currentPage')) || 1;
-});
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
   const [companiesData, setCompaniesData] = useState([]);
   const { selectedCompany } = useCompany();
   const { userId } = useContext(AuthContext);
   const navigate = useNavigate();
+  const initialLoadRef = useRef(true);
+  const abortControllerRef = useRef(null);
+
+  // Pagination states (server-side)
+  const [searchTerm, setSearchTerm] = useState(() => {
+    return sessionStorage.getItem('customers_searchTerm') || '';
+  });
+  const [entriesPerPage, setEntriesPerPage] = useState(() => {
+    return Number(sessionStorage.getItem('customers_entriesPerPage')) || 10;
+  });
+  const [currentPage, setCurrentPage] = useState(() => {
+    return Number(sessionStorage.getItem('customers_currentPage')) || 1;
+  });
+
+  // Server-side pagination data
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+
+  // Save pagination state to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('customers_searchTerm', searchTerm);
+  }, [searchTerm]);
 
   useEffect(() => {
-  sessionStorage.setItem('customers_searchTerm', searchTerm);
-}, [searchTerm]);
+    sessionStorage.setItem('customers_entriesPerPage', entriesPerPage);
+  }, [entriesPerPage]);
 
-useEffect(() => {
-  sessionStorage.setItem('customers_entriesPerPage', entriesPerPage);
-}, [entriesPerPage]);
+  useEffect(() => {
+    sessionStorage.setItem('customers_currentPage', currentPage);
+  }, [currentPage]);
 
-useEffect(() => {
-  sessionStorage.setItem('customers_currentPage', currentPage);
-}, [currentPage]);
-
-const handleSearchChange = (value) => {
-  setSearchTerm(value);
-  setCurrentPage(1);
-  sessionStorage.setItem('customers_currentPage', 1);
-};
-
-const handleEntriesPerPageChange = (value) => {
-  setEntriesPerPage(value);
-  setCurrentPage(1);
-  sessionStorage.setItem('customers_currentPage', 1);
-};
- 
+  // Fetch companies data
   const fetchCompanies = async () => {
     try {
       const response = await axios.get(`${baseURL}/companies/`);
@@ -994,49 +1445,141 @@ const handleEntriesPerPageChange = (value) => {
       console.error("Failed to load companies data", error);
     }
   };
- 
+
   const getCompanyDisplayName = (companyId) => {
     if (!companiesData || companiesData.length === 0) return companyId;
     const company = companiesData.find(comp => comp.company_id === companyId);
     return company ? `${company.company_name} (${company.company_id})` : companyId;
   };
- 
-  const getCompanySearchData = (companyId) => {
-    if (!companyId) return '';
-    if (!companiesData || companiesData.length === 0) return companyId;
-    const company = companiesData.find(comp => comp.company_id === companyId);
-    return company
-      ? `${company.company_id} ${company.company_name} ${company.company_name} (${company.company_id})`
-      : companyId;
-  };
- 
-  const fetchCustomers = async () => {
-    setLoading(true);
+
+  // Fetch customers with server-side pagination
+  const fetchCustomers = async (page = currentPage, size = entriesPerPage, search = searchTerm, isInitial = false) => {
+    // Cancel previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setFetching(true);
+    }
+
     setError(null);
+    abortControllerRef.current = new AbortController();
+
     try {
       if (!userId || !selectedCompany) {
         setError('Missing user ID or company ID');
+        if (isInitial) {
+          setLoading(false);
+        } else {
+          setFetching(false);
+        }
         return;
       }
+
+      const params = new URLSearchParams({
+        user_id: userId,
+        company_id: selectedCompany,
+        page: page,
+        page_size: size
+      });
+
+      if (search) {
+        params.append('search', search);
+      }
+
       const response = await axios.get(
-        `${baseURL}/customers/?user_id=${userId}&company_id=${selectedCompany}`
+        `${baseURL}/customers/?${params.toString()}`,
+        { signal: abortControllerRef.current.signal }
       );
-      const filteredAndSorted = response.data.data
-        .filter(user => user.status === 'Active')
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      setCustomers(filteredAndSorted);
+
+      if (response.data.status === "success") {
+        const data = response.data.data || [];
+        const pagination = response.data.pagination || {};
+
+        // Filter active customers (client-side filtering since API might not support status filter)
+        const activeCustomers = data.filter(customer => customer.status === 'Active');
+        
+        setCustomers(activeCustomers);
+        setTotalCount(pagination.total_count || 0);
+        setTotalPages(pagination.total_pages || 1);
+        setHasNextPage(pagination.has_next || false);
+        setHasPreviousPage(pagination.has_previous || false);
+        setCurrentPage(pagination.current_page || 1);
+      } else {
+        setError('Failed to load customers');
+        setCustomers([]);
+      }
     } catch (error) {
-      console.error('Error fetching customer data:', error);
-      setError('Failed to load customers');
+      if (axios.isCancel(error)) {
+        return;
+      }
+      console.error('Error fetching customers:', error);
+      setError('Failed to load customers. Please try again.');
+      setCustomers([]);
     } finally {
-      setLoading(false);
+      if (isInitial) {
+        setLoading(false);
+      } else {
+        setFetching(false);
+      }
+      abortControllerRef.current = null;
     }
   };
- 
+
+  // Initial data fetch
   useEffect(() => {
-    fetchCompanies().then(() => fetchCustomers());
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchCompanies(),
+          fetchCustomers(1, entriesPerPage, searchTerm, true)
+        ]);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userId && selectedCompany) {
+      fetchAllData();
+    }
+
+    // Cleanup function
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [selectedCompany, userId]);
- 
+
+  // Refetch when pagination or search changes
+  useEffect(() => {
+    // Skip the initial mount fetch which is handled by fetchAllData
+    if (initialLoadRef.current) {
+      initialLoadRef.current = false;
+      return;
+    }
+
+    if (userId && selectedCompany && !loading) {
+      const debounceTimer = setTimeout(() => {
+        fetchCustomers(currentPage, entriesPerPage, searchTerm, false);
+      }, 300);
+      
+      return () => {
+        clearTimeout(debounceTimer);
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      };
+    }
+  }, [currentPage, entriesPerPage, searchTerm]);
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -1045,146 +1588,85 @@ const handleEntriesPerPageChange = (value) => {
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
- 
-  const formatDateForSearch = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const monthName = date.toLocaleString('en-IN', { month: 'long' });
-    const monthShort = date.toLocaleString('en-IN', { month: 'short' });
-    const hour = date.getHours().toString().padStart(2, '0');
-    const minute = date.getMinutes().toString().padStart(2, '0');
-    const second = date.getSeconds().toString().padStart(2, '0');
-    return [
-      `${day}/${month}/${year}`,
-      `${day}/${month}/${year} ${hour}:${minute}:${second}`,
-      `${month}/${day}/${year}`,
-      `${year}-${month}-${day}`,
-      `${year}${month}${day}`,
-      `${day}-${month}-${year}`,
-      date.toISOString(),
-      monthName,
-      monthShort,
-      `${year}`,
-      `${month}/${year}`,
-      `${day} ${monthName} ${year}`,
-      `${day} ${monthShort} ${year}`,
-      `${hour}:${minute}`,
-      `${hour}:${minute}:${second}`,
-    ].join(' ');
-  };
- 
-useEffect(() => {
-  if (!searchTerm.trim()) {
-    let results = customers;
 
-    if (selectedCompany) {
-      results = results.filter(customer => customer.company === selectedCompany);
-    }
-
-    setFilteredCustomers(results);
-
-    // ✅ Clamp page
-    const totalPagesNow = Math.ceil(results.length / entriesPerPage);
-    const savedPage = Number(sessionStorage.getItem('customers_currentPage')) || 1;
-
-    if (savedPage > totalPagesNow && totalPagesNow > 0) {
-      setCurrentPage(totalPagesNow);
-    }
-
-    return;
-  }
-
-  const searchLower = searchTerm.toLowerCase().trim();
-
-  const filtered = customers.filter((customer) => {
-    if (selectedCompany && customer.company !== selectedCompany) return false;
-
-    const companySearchData = getCompanySearchData(customer.company);
-    const createdDateFormats = formatDateForSearch(customer.created_at);
-    const updatedDateFormats = formatDateForSearch(customer.updated_at);
-
-    const searchableText = [
-      customer.customer_id,
-      customer.full_name,
-      customer.username,
-      customer.email,
-      customer.mobile,
-      customer.city,
-      customer.customer_type,
-      customer.status,
-      companySearchData,
-      createdDateFormats,
-      updatedDateFormats,
-      formatDate(customer.created_at),
-      getCompanyDisplayName(customer.company),
-      ...Object.values(customer).map(v => String(v || ''))
-    ]
-      .join(' ')
-      .toLowerCase();
-
-    return searchableText.includes(searchLower);
-  });
-
-  setFilteredCustomers(filtered);
-
-  // ✅ Clamp page after filtering
-  const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
-  const savedPage = Number(sessionStorage.getItem('customers_currentPage')) || 1;
-
-  if (savedPage > totalPagesNow && totalPagesNow > 0) {
-    setCurrentPage(totalPagesNow);
-  }
-
-}, [searchTerm, customers, companiesData, selectedCompany, entriesPerPage]);
- 
-  const indexOfLastEntry = currentPage * entriesPerPage;
-  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentEntries = filteredCustomers.slice(indexOfFirstEntry, indexOfLastEntry);
-  const totalPages = Math.ceil(filteredCustomers.length / entriesPerPage);
- 
   const handleDeleteCustomer = (customerId) => {
     if (window.confirm('Are you sure you want to delete this customer? This action cannot be undone.')) {
       axios
         .delete(`${baseURL}/customers/${customerId}/?user_id=${userId}&company_id=${selectedCompany}`)
         .then(() => {
           alert('Customer deleted successfully');
-          fetchCustomers();
+          fetchCustomers(currentPage, entriesPerPage, searchTerm, false);
         })
         .catch(() => alert("Failed to delete customer. Please try again."));
     }
   };
- 
+
   const handleViewCustomer = (customer) => {
     navigate(`/servicemanager/customers/${customer.customer_id}`, {
       state: { selectedCompany, userId },
     });
   };
- 
+
   const handleCustomerIdClick = (customerId) => {
     navigate(`/servicemanager/customers/${customerId}`, {
       state: { selectedCompany, userId },
     });
   };
- 
-  // ── NEW: Navigate to Reset Password page, passing customer data ──────────
+
   const handleResetPassword = (customer) => {
     navigate(`/servicemanager/customers/${customer.customer_id}/reset-password`, {
       state: {
-        customer,           // full customer object (has mobile, security_question1/2, answer1/2)
+        customer,
         selectedCompany,
         userId,
       },
     });
   };
-  // ─────────────────────────────────────────────────────────────────────────
- 
+
+  // Handle refresh
+  const handleRefresh = () => {
+    fetchCustomers(currentPage, entriesPerPage, searchTerm, false);
+  };
+
+  // Handle entries per page change
+  const handleEntriesPerPageChange = (e) => {
+    const newSize = Number(e.target.value);
+    setEntriesPerPage(newSize);
+    setCurrentPage(1);
+    sessionStorage.setItem('customers_entriesPerPage', newSize);
+    sessionStorage.setItem('customers_currentPage', 1);
+  };
+
+  // Handle search change
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setCurrentPage(1);
+    sessionStorage.setItem('customers_searchTerm', value);
+    sessionStorage.setItem('customers_currentPage', 1);
+  };
+
+  // Handle clear search
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setCurrentPage(1);
+    sessionStorage.setItem('customers_searchTerm', '');
+    sessionStorage.setItem('customers_currentPage', 1);
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   if (loading) return <div className="text-center my-4">Loading customers...</div>;
   if (error) return <div className="alert alert-danger my-4">{error}</div>;
- 
+
+  // Calculate index for display
+  const indexOfFirstEntry = (currentPage - 1) * entriesPerPage;
+
   return (
     <>
       <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
@@ -1195,50 +1677,65 @@ useEffect(() => {
               ? `Showing customers for ${getCompanyDisplayName(selectedCompany)}`
               : 'Showing all customers'}
           </p>
+          <p className="customer-subtitle text-muted mb-0">Manage customers</p>
         </div>
-        <button onClick={toggleForm} className="btn btn-primary">
-          Add New Customer
-        </button>
+        <div className="d-flex gap-2">
+          {/* <button 
+            onClick={handleRefresh} 
+            className="btn btn-outline-primary"
+            disabled={fetching}
+          >
+            {fetching ? 'Loading...' : 'Refresh Customers'}
+          </button> */}
+          <button onClick={toggleForm} className="btn btn-primary">
+            Add New Customer
+          </button>
+        </div>
       </div>
- 
+
       <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
         <div className="d-flex align-items-center gap-2">
           Show
           <select
             value={entriesPerPage}
-           onChange={(e) => handleEntriesPerPageChange(Number(e.target.value))}
+            onChange={handleEntriesPerPageChange}
             className="form-select form-select-sm w-auto"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
             <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
           </select>
           entries
+          <span className="text-muted ms-2">
+            (Total: <strong>{totalCount}</strong> customers)
+          </span>
         </div>
- 
+
         <div className="d-flex align-items-center gap-2">
           <input
             type="text"
             placeholder="Search in all columns..."
             className="form-control"
             value={searchTerm}
-           onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={handleSearchChange}
             style={{ minWidth: '250px' }}
           />
           {searchTerm && (
-            <button className="btn btn-sm btn-outline-secondary" onClick={() => handleSearchChange('')}>
+            <button className="btn btn-sm btn-outline-secondary" onClick={handleClearSearch}>
               Clear
             </button>
           )}
         </div>
       </div>
- 
+
       {searchTerm && (
         <div className="alert alert-info mb-3">
-          <strong>Search Results:</strong> Found {filteredCustomers.length} customer(s) matching "{searchTerm}"
+          <strong>Search Results:</strong> Found {totalCount} customer(s) matching "{searchTerm}"
         </div>
       )}
- 
+
       <div className="table-responsive mb-4">
         <table className="table">
           <thead className="new-customer-table-header">
@@ -1254,14 +1751,23 @@ useEffect(() => {
               <th>Type</th>
               <th>Status</th>
               <th>Created At</th>
-              <th>Reset Password</th>  {/* ── NEW column header ── */}
+              <th>Reset Password</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {currentEntries.length > 0 ? (
-              currentEntries.map((customer, index) => (
-                <tr key={index}>
+            {fetching ? (
+              <tr>
+                <td colSpan="13" className="text-center py-4">
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p className="mt-2 mb-0 text-muted">Loading customers...</p>
+                </td>
+              </tr>
+            ) : customers.length > 0 ? (
+              customers.map((customer, index) => (
+                <tr key={customer.customer_id}>
                   <td>{indexOfFirstEntry + index + 1}</td>
                   <td>
                     <button
@@ -1292,8 +1798,6 @@ useEffect(() => {
                     </span>
                   </td>
                   <td>{formatDate(customer.created_at)}</td>
- 
-                  {/* ── NEW: Reset Password cell ── */}
                   <td>
                     <button
                       className="btn btn-sm btn-outline-danger d-flex align-items-center gap-1"
@@ -1304,8 +1808,6 @@ useEffect(() => {
                       Reset Password
                     </button>
                   </td>
-                  {/* ── END NEW ── */}
- 
                   <td>
                     <div className="d-flex gap-2">
                       <FaEye
@@ -1329,56 +1831,94 @@ useEffect(() => {
               ))
             ) : (
               <tr>
-                <td colSpan="13" className="text-center">
-                  {searchTerm
-                    ? `No customers found matching "${searchTerm}"`
-                    : selectedCompany
-                    ? `No customers found for ${getCompanyDisplayName(selectedCompany)}`
-                    : 'No customers found'}
+                <td colSpan="13" className="text-center py-4">
+                  <div className="text-muted">
+                    <p className="mb-0">
+                      {searchTerm
+                        ? `No customers found matching "${searchTerm}"`
+                        : selectedCompany
+                        ? `No customers found for ${getCompanyDisplayName(selectedCompany)}`
+                        : 'No customers found'}
+                    </p>
+                  </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
- 
-      {totalPages > 1 && (
+
+      {/* Pagination - Dynamic like ErrorLogs */}
+      {(totalPages > 1 || hasNextPage || currentPage > 1) && (
         <nav aria-label="Page navigation">
           <ul className="pagination justify-content-center">
             <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-              <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
                 Previous
               </button>
             </li>
-            {(() => {
+
+            {totalPages > 1 ? (() => {
               const maxVisiblePages = 5;
               let pageNumbers = [];
+              
               if (totalPages <= maxVisiblePages) {
-                for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+                for (let i = 1; i <= totalPages; i++) {
+                  pageNumbers.push(i);
+                }
               } else {
                 let startPage = Math.max(1, currentPage - 2);
                 let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                
                 if (endPage - startPage + 1 < maxVisiblePages) {
                   startPage = Math.max(1, endPage - maxVisiblePages + 1);
                 }
-                for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
+                
+                for (let i = startPage; i <= endPage; i++) {
+                  pageNumbers.push(i);
+                }
               }
+              
               return pageNumbers.map((page) => (
-                <li key={page} className={`page-item ${currentPage === page ? "active" : ""}`}>
-                  <button className="page-link" onClick={() => setCurrentPage(page)}>{page}</button>
+                <li
+                  key={page}
+                  className={`page-item ${currentPage === page ? "active" : ""}`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </button>
                 </li>
               ));
-            })()}
-            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-              <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+            })() : null}
+
+            <li className={`page-item ${(totalPages ? currentPage === totalPages : !hasNextPage) ? "disabled" : ""}`}>
+              <button
+                className="page-link"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={totalPages ? currentPage === totalPages : !hasNextPage}
+              >
                 Next
               </button>
             </li>
           </ul>
         </nav>
       )}
+
+      {/* Total count display */}
+      {totalCount > 0 && (
+        <div className="text-center text-muted mt-2">
+          <small>Showing {customers.length} of {totalCount} customers</small>
+        </div>
+      )}
     </>
   );
-}; 
+};
 
 export default CustomerTable;

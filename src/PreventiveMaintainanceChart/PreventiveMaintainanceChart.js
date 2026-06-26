@@ -1036,12 +1036,481 @@
 
 
 
+// import React, { useState, useEffect } from "react";
+// import ChartTable from "./PreventiveMaintainanceChartTable";
+// import ChartForm from "./PreventiveMaintainanceChartForm";
+// import "./PreventiveMaintainanceChart.css";
+// import baseURL from '../ApiUrl/Apiurl';
+// import Swal from 'sweetalert2'; 
+
+// const PreventiveMaintainanceChart = () => {
+//   const [showForm, setShowForm] = useState(false);
+//   const [selectedChart, setSelectedChart] = useState(null);
+//   const [formData, setFormData] = useState({
+//     pm_group: "",
+//     pm_id: "",
+//     description: "",
+//     task_type: "",
+//     frequency_days: "",
+//     alert_days: "",
+//     overdue_alert_days: "",
+//     responsible: "",
+//     remarks: "",
+//     created_by: "Service Manager",
+//     updated_by: "Service Manager"
+//   });
+
+//   const [pmGroups, setPmGroups] = useState([]);
+//   const [charts, setCharts] = useState([]);
+//   const [users, setUsers] = useState([]); // To store user data for search
+
+//    // ✅ PERSISTED STATES
+//   const [searchTerm, setSearchTerm] = useState(() => {
+//     return sessionStorage.getItem("pmChart_searchTerm") || "";
+//   });
+
+//   const [entriesPerPage, setEntriesPerPage] = useState(() => {
+//     return Number(sessionStorage.getItem("pmChart_entriesPerPage")) || 10;
+//   });
+
+//   const [currentPage, setCurrentPage] = useState(() => {
+//     return Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
+//   });
+
+//   // ✅ SAVE TO SESSION STORAGE
+//   useEffect(() => {
+//     sessionStorage.setItem("pmChart_searchTerm", searchTerm);
+//   }, [searchTerm]);
+
+//   useEffect(() => {
+//     sessionStorage.setItem("pmChart_entriesPerPage", entriesPerPage);
+//   }, [entriesPerPage]);
+
+//   useEffect(() => {
+//     sessionStorage.setItem("pmChart_currentPage", currentPage);
+//   }, [currentPage]);
+
+//   // ✅ HANDLERS (IMPORTANT)
+//   const handleSearchChange = (value) => {
+//     setSearchTerm(value);
+//     setCurrentPage(1);
+//     sessionStorage.setItem("pmChart_currentPage", 1);
+//   };
+
+//   const handleEntriesPerPageChange = (value) => {
+//     setEntriesPerPage(value);
+//     setCurrentPage(1);
+//     sessionStorage.setItem("pmChart_currentPage", 1);
+//   };
+
+//   // Handle browser back button and swipe gesture when form is open
+//   useEffect(() => {
+//     if (showForm) {
+//       // Push a new history state to trap the back button
+//       window.history.pushState({ formOpen: true }, '', window.location.pathname);
+      
+//       const handlePopState = (event) => {
+//         if (showForm) {
+//           // Prevent default back navigation
+//           event.preventDefault();
+//           // Close the form instead of navigating away
+//           setShowForm(false);
+//           resetForm();
+//           // Push a new state to handle any further back attempts
+//           window.history.pushState({ formOpen: true }, '', window.location.pathname);
+//         }
+//       };
+      
+//       window.addEventListener('popstate', handlePopState);
+      
+//       // Cleanup event listener when form closes
+//       return () => {
+//         window.removeEventListener('popstate', handlePopState);
+//       };
+//     }
+//   }, [showForm]);
+
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         // Fetch PM Groups
+//         const groupsResponse = await fetch(`${baseURL}/pm-groups/`);
+//         const groupsData = await groupsResponse.json();
+//         if (groupsData.status === "success") {
+//           setPmGroups(groupsData.data);
+//         }
+
+//         // Fetch Charts
+//         const chartsResponse = await fetch(`${baseURL}/pm-charts/`);
+//         const chartsData = await chartsResponse.json();
+//         if (chartsData.status === "success") {
+//           const sortedCharts = chartsData.data.sort(
+//             (a, b) => new Date(b.created_at) - new Date(a.created_at)
+//           );
+//           setCharts(sortedCharts);
+//         }
+
+//         // Fetch Users for username search
+//         const usersResponse = await fetch(`${baseURL}/users/`);
+//         const usersData = await usersResponse.json();
+//         if (usersData && Array.isArray(usersData)) {
+//           setUsers(usersData);
+//         }
+//       } catch (error) {
+//         console.error("Error fetching data:", error);
+//         Swal.fire({
+//           icon: 'error',
+//           title: 'Error',
+//           text: 'Failed to fetch data. Please try again later.',
+//           confirmButtonColor: '#3085d6',
+//         });
+//       }
+//     };
+
+//     fetchData();
+//   }, []);
+
+//   // Function to get username from user_id
+//   const getUsernameById = (userId) => {
+//     if (!userId || users.length === 0) return userId;
+    
+//     const user = users.find(user => user.user_id === userId);
+//     return user ? user.username : userId;
+//   };
+
+//   // Function to get user search data (both ID and username)
+//   const getUserSearchData = (userId) => {
+//     if (!userId) return '';
+//     const user = users.find(user => user.user_id === userId);
+//     return user ? `${userId} ${user.username}` : userId;
+//   };
+
+//   const resetForm = () => {
+//     setSelectedChart(null);
+//     setFormData({
+//       pm_group: "",
+//       pm_id: "",
+//       description: "",
+//       task_type: "",
+//       frequency_days: "",
+//       alert_days: "",
+//       overdue_alert_days: "",
+//       responsible: "",
+//       remarks: "",
+//       created_by: "Service Manager",
+//       updated_by: "Service Manager",
+//     });
+//   };
+
+//   const toggleForm = () => {
+//     setShowForm(false);
+//     resetForm();
+//   };
+
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((prevData) => ({ ...prevData, [name]: value }));
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+
+//     const payload = {
+//       ...formData,
+//       frequency_days: parseInt(formData.frequency_days),
+//       alert_days: parseInt(formData.alert_days),
+//       overdue_alert_days: parseInt(formData.overdue_alert_days),
+//       updated_by: "Service Manager"
+//     };
+
+//     const isEdit = !!selectedChart;
+//     const url = isEdit
+//       ? `${baseURL}/pm-charts/${selectedChart.chart_id}/`
+//       : `${baseURL}/pm-charts/`;
+//     const method = isEdit ? "PUT" : "POST";
+
+//     try {
+//       const response = await fetch(url, {
+//         method,
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify(payload),
+//       });
+
+//       const result = await response.json();
+
+//       if (response.ok && result.status === "success") {
+//         if (isEdit) {
+//           setCharts(prev =>
+//             prev.map(chart =>
+//               chart.chart_id === selectedChart.chart_id ? result.data : chart
+//             )
+//           );
+//         } else {
+//           setCharts(prev => [result.data, ...prev]);
+//         }
+
+//         Swal.fire({
+//           icon: "success",
+//           title: "Success!",
+//           text: `PM Chart ${isEdit ? "updated" : "created"} successfully!`,
+//           confirmButtonColor: "#3085d6",
+//         });
+
+//         resetForm();
+//         toggleForm();
+//       } else {
+//         console.error(
+//           `❌ ${method} ${url} failed with status ${response.status}:`,
+//           result
+//         );
+
+//         Swal.fire({
+//           icon: "error",
+//           title: "Error",
+//           text: result.message || `Failed to ${isEdit ? "update" : "create"} PM Chart`,
+//           confirmButtonColor: "#3085d6",
+//         });
+//       }
+//     } catch (error) {
+//       console.error(`⚠️ Error during ${method} ${url}:`, error);
+
+//       Swal.fire({
+//         icon: "error",
+//         title: "Error",
+//         text: `An error occurred while ${isEdit ? "updating" : "creating"} the PM Chart`,
+//         confirmButtonColor: "#3085d6",
+//       });
+//     }
+//   };
+
+//   const handleDelete = async (chartId) => {
+//     try {
+//       const result = await Swal.fire({
+//         title: 'Are you sure?',
+//         text: "You won't be able to revert this!",
+//         icon: 'warning',
+//         showCancelButton: true,
+//         confirmButtonColor: '#d33',
+//         cancelButtonColor: '#3085d6',
+//         confirmButtonText: 'Yes, delete it!'
+//       });
+
+//       if (result.isConfirmed) {
+//         const response = await fetch(`${baseURL}/pm-charts/${chartId}/`, {
+//           method: "DELETE"
+//         });
+
+//         if (response.ok) {
+//           setCharts(prev => prev.filter(chart => chart.chart_id !== chartId));
+//           Swal.fire({
+//             icon: 'success',
+//             title: 'Deleted!',
+//             text: 'PM Chart has been deleted.',
+//             confirmButtonColor: '#3085d6',
+//           });
+//         } else {
+//           const errorData = await response.json();
+//           throw new Error(errorData.message || 'Failed to delete PM Chart');
+//         }
+//       }
+//     } catch (error) {
+//       console.error("Error deleting PM Chart:", error);
+//       Swal.fire({
+//         icon: 'error',
+//         title: 'Error',
+//         text: error.message || 'Failed to delete PM Chart',
+//         confirmButtonColor: '#3085d6',
+//       });
+//     }
+//   };
+
+//   const handleEdit = (chart) => {
+//     setSelectedChart(chart);
+//     setFormData({
+//       pm_group: chart.pm_group || "",
+//       pm_id: chart.pm_id || "",
+//       description: chart.description || "",
+//       task_type: chart.task_type || "",
+//       frequency_days: chart.frequency_days || "",
+//       alert_days: chart.alert_days || "",
+//       overdue_alert_days: chart.overdue_alert_days || "",
+//       responsible: chart.responsible || "",
+//       remarks: chart.remarks || "",
+//       created_by: chart.created_by || "Service Manager",
+//       updated_by: "Service Manager"
+//     });
+//     setShowForm(true);
+//   };
+
+//   // Function to format date in multiple formats for search
+//   const formatDateForSearch = (dateString) => {
+//     if (!dateString) return '';
+//     const date = new Date(dateString);
+    
+//     if (isNaN(date.getTime())) return '';
+    
+//     const day = date.getDate().toString().padStart(2, '0');
+//     const month = (date.getMonth() + 1).toString().padStart(2, '0');
+//     const year = date.getFullYear();
+//     const monthName = date.toLocaleString('en-IN', { month: 'long' });
+//     const monthShort = date.toLocaleString('en-IN', { month: 'short' });
+//     const hour = date.getHours().toString().padStart(2, '0');
+//     const minute = date.getMinutes().toString().padStart(2, '0');
+//     const second = date.getSeconds().toString().padStart(2, '0');
+    
+//     // Return multiple formats for better searchability
+//     return [
+//       `${day}/${month}/${year}`,                    // DD/MM/YYYY
+//       `${day}/${month}/${year} ${hour}:${minute}:${second}`, // DD/MM/YYYY HH:MM:SS
+//       `${month}/${day}/${year}`,                    // MM/DD/YYYY
+//       `${year}-${month}-${day}`,                    // YYYY-MM-DD
+//       `${year}${month}${day}`,                      // YYYYMMDD
+//       `${day}-${month}-${year}`,                    // DD-MM-YYYY
+//       date.toISOString(),                           // ISO string
+//       monthName,                                    // January, February
+//       monthShort,                                   // Jan, Feb
+//       `${year}`,                                    // 2024
+//       `${month}/${year}`,                           // MM/YYYY
+//       `${day} ${monthName} ${year}`,               // 15 January 2024
+//       `${day} ${monthShort} ${year}`,              // 15 Jan 2024
+//       `${hour}:${minute}`,                          // HH:MM
+//       `${hour}:${minute}:${second}`,               // HH:MM:SS
+//     ].join(' ');
+//   };
+
+//  const filteredCharts = React.useMemo(() => {
+//     if (!searchTerm.trim()) {
+//       const totalPagesNow = Math.ceil(charts.length / entriesPerPage);
+//       const savedPage =
+//         Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
+
+//       if (savedPage > totalPagesNow && totalPagesNow > 0) {
+//         setCurrentPage(totalPagesNow);
+//       }
+
+//       return charts;
+//     }
+
+//     const searchLower = searchTerm.toLowerCase().trim();
+
+//     const filtered = charts.filter((chart) => {
+//       const createdBySearch = getUserSearchData(chart.created_by);
+//       const updatedBySearch = getUserSearchData(chart.updated_by);
+
+//       const text = [
+//         chart.chart_id,
+//         chart.pm_id,
+//         chart.description,
+//         chart.task_type,
+//         chart.responsible,
+//         chart.status,
+//         createdBySearch,
+//         updatedBySearch,
+//         formatDateForSearch(chart.created_at),
+//         formatDateForSearch(chart.updated_at),
+//       ]
+//         .join(" ")
+//         .toLowerCase();
+
+//       return text.includes(searchLower);
+//     });
+
+//     // ✅ CLAMP PAGE AFTER FILTER
+//     const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
+//     const savedPage =
+//       Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
+
+//     if (savedPage > totalPagesNow && totalPagesNow > 0) {
+//       setCurrentPage(totalPagesNow);
+//     }
+
+//     return filtered;
+//   }, [searchTerm, charts, users, entriesPerPage]);
+
+//   // PAGINATION
+//   const indexOfLastEntry = currentPage * entriesPerPage;
+//   const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
+//   const currentItems = filteredCharts.slice(
+//     indexOfFirstEntry,
+//     indexOfLastEntry
+//   );
+
+//   const totalPages = Math.ceil(filteredCharts.length / entriesPerPage);
+
+//   return (
+//     <div className="pm-container">
+//       {!showForm && (
+//         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+//           <div>
+//             <h2 className="pm-title">Preventive Maintenance Chart</h2>
+//             <p className="pm-subtitle">Create and manage maintenance tasks and schedules</p>
+//           </div>
+//           <button
+//             onClick={() => {
+//               setSelectedChart(null);
+//               setFormData({
+//                 pm_group: "",
+//                 pm_id: "",
+//                 description: "",
+//                 task_type: "",
+//                 frequency_days: "",
+//                 alert_days: "",
+//                 overdue_alert_days: "",
+//                 responsible: "",
+//                 remarks: "",
+//                 created_by: "Service Manager",
+//                 updated_by: "Service Manager",
+//               });
+//               setShowForm(true);
+//             }}
+//             className="btn btn-primary"
+//           >
+//             Add New Chart
+//           </button>
+//         </div>
+//       )}
+
+//       {showForm ? (
+//         <ChartForm
+//           formData={formData}
+//           handleChange={handleChange}
+//           handleSubmit={handleSubmit}
+//           pmGroups={pmGroups}
+//           toggleForm={toggleForm}
+//         />
+//       ) : (
+//         <ChartTable
+//           currentItems={currentItems}
+//           indexOfFirstEntry={indexOfFirstEntry}
+//           searchTerm={searchTerm}
+//           setSearchTerm={handleSearchChange}
+//           entriesPerPage={entriesPerPage}
+//           setEntriesPerPage={handleEntriesPerPageChange}
+//           currentPage={currentPage}
+//           setCurrentPage={setCurrentPage}
+//           totalPages={totalPages}
+//           filteredCharts={filteredCharts}
+//           onDelete={handleDelete}
+//           onEdit={handleEdit}
+//           users={users}
+//           getUsernameById={getUsernameById}
+//         />
+//       )}
+//     </div>
+//   );
+// };
+
+// export default PreventiveMaintainanceChart; 
+
+
+
 import React, { useState, useEffect } from "react";
 import ChartTable from "./PreventiveMaintainanceChartTable";
 import ChartForm from "./PreventiveMaintainanceChartForm";
 import "./PreventiveMaintainanceChart.css";
 import baseURL from '../ApiUrl/Apiurl';
-import Swal from 'sweetalert2'; 
+import Swal from 'sweetalert2';
+import axios from 'axios';
 
 const PreventiveMaintainanceChart = () => {
   const [showForm, setShowForm] = useState(false);
@@ -1062,22 +1531,29 @@ const PreventiveMaintainanceChart = () => {
 
   const [pmGroups, setPmGroups] = useState([]);
   const [charts, setCharts] = useState([]);
-  const [users, setUsers] = useState([]); // To store user data for search
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [error, setError] = useState(null);
 
-   // ✅ PERSISTED STATES
+  // Pagination states (server-side)
   const [searchTerm, setSearchTerm] = useState(() => {
     return sessionStorage.getItem("pmChart_searchTerm") || "";
   });
-
   const [entriesPerPage, setEntriesPerPage] = useState(() => {
     return Number(sessionStorage.getItem("pmChart_entriesPerPage")) || 10;
   });
-
   const [currentPage, setCurrentPage] = useState(() => {
     return Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
   });
 
-  // ✅ SAVE TO SESSION STORAGE
+  // Server-side pagination data
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPreviousPage, setHasPreviousPage] = useState(false);
+
+  // Save pagination state to sessionStorage
   useEffect(() => {
     sessionStorage.setItem("pmChart_searchTerm", searchTerm);
   }, [searchTerm]);
@@ -1090,99 +1566,138 @@ const PreventiveMaintainanceChart = () => {
     sessionStorage.setItem("pmChart_currentPage", currentPage);
   }, [currentPage]);
 
-  // ✅ HANDLERS (IMPORTANT)
-  const handleSearchChange = (value) => {
-    setSearchTerm(value);
-    setCurrentPage(1);
-    sessionStorage.setItem("pmChart_currentPage", 1);
-  };
-
-  const handleEntriesPerPageChange = (value) => {
-    setEntriesPerPage(value);
-    setCurrentPage(1);
-    sessionStorage.setItem("pmChart_currentPage", 1);
-  };
-
   // Handle browser back button and swipe gesture when form is open
   useEffect(() => {
     if (showForm) {
-      // Push a new history state to trap the back button
       window.history.pushState({ formOpen: true }, '', window.location.pathname);
       
       const handlePopState = (event) => {
         if (showForm) {
-          // Prevent default back navigation
           event.preventDefault();
-          // Close the form instead of navigating away
           setShowForm(false);
           resetForm();
-          // Push a new state to handle any further back attempts
           window.history.pushState({ formOpen: true }, '', window.location.pathname);
         }
       };
       
       window.addEventListener('popstate', handlePopState);
       
-      // Cleanup event listener when form closes
       return () => {
         window.removeEventListener('popstate', handlePopState);
       };
     }
   }, [showForm]);
 
+  // Fetch PM Groups
+  const fetchPmGroups = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/pm-groups/?page=1&page_size=100`);
+      if (response.data.status === "success") {
+        setPmGroups(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching PM groups:", error);
+    }
+  };
+
+  // Fetch Users
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(`${baseURL}/users/?page=1&page_size=100`);
+      if (response.data && Array.isArray(response.data.data)) {
+        setUsers(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  // Fetch Charts with pagination
+  const fetchCharts = async (page = currentPage, size = entriesPerPage, search = searchTerm) => {
+    setFetching(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams({
+        page: page,
+        page_size: size
+      });
+
+      if (search) {
+        params.append('search', search);
+      }
+
+      const response = await axios.get(`${baseURL}/pm-charts/?${params.toString()}`);
+      
+      if (response.data.status === "success") {
+        const data = response.data.data || [];
+        const pagination = response.data.pagination || {};
+        
+        // Sort by created_at descending
+        const sortedCharts = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        setCharts(sortedCharts);
+        setTotalCount(pagination.total_count || 0);
+        setTotalPages(pagination.total_pages || 1);
+        setHasNextPage(pagination.has_next || false);
+        setHasPreviousPage(pagination.has_previous || false);
+        setCurrentPage(pagination.current_page || 1);
+      } else {
+        setError('Failed to load charts');
+        setCharts([]);
+      }
+    } catch (error) {
+      console.error("Error fetching charts:", error);
+      setError('Failed to fetch charts. Please try again.');
+      setCharts([]);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch charts. Please try again later.',
+        confirmButtonColor: '#3085d6',
+      });
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  // Initial data fetch
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAllData = async () => {
+      setLoading(true);
       try {
-        // Fetch PM Groups
-        const groupsResponse = await fetch(`${baseURL}/pm-groups/`);
-        const groupsData = await groupsResponse.json();
-        if (groupsData.status === "success") {
-          setPmGroups(groupsData.data);
-        }
-
-        // Fetch Charts
-        const chartsResponse = await fetch(`${baseURL}/pm-charts/`);
-        const chartsData = await chartsResponse.json();
-        if (chartsData.status === "success") {
-          const sortedCharts = chartsData.data.sort(
-            (a, b) => new Date(b.created_at) - new Date(a.created_at)
-          );
-          setCharts(sortedCharts);
-        }
-
-        // Fetch Users for username search
-        const usersResponse = await fetch(`${baseURL}/users/`);
-        const usersData = await usersResponse.json();
-        if (usersData && Array.isArray(usersData)) {
-          setUsers(usersData);
-        }
+        await Promise.all([
+          fetchPmGroups(),
+          fetchUsers(),
+          fetchCharts(1, entriesPerPage, searchTerm)
+        ]);
       } catch (error) {
         console.error("Error fetching data:", error);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to fetch data. Please try again later.',
-          confirmButtonColor: '#3085d6',
-        });
+        setError('Failed to load data');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchData();
+    fetchAllData();
   }, []);
+
+  // Refetch when pagination or search changes
+  useEffect(() => {
+    if (!loading) {
+      const debounceTimer = setTimeout(() => {
+        fetchCharts(currentPage, entriesPerPage, searchTerm);
+      }, 300);
+      
+      return () => clearTimeout(debounceTimer);
+    }
+  }, [currentPage, entriesPerPage, searchTerm]);
 
   // Function to get username from user_id
   const getUsernameById = (userId) => {
     if (!userId || users.length === 0) return userId;
-    
     const user = users.find(user => user.user_id === userId);
     return user ? user.username : userId;
-  };
-
-  // Function to get user search data (both ID and username)
-  const getUserSearchData = (userId) => {
-    if (!userId) return '';
-    const user = users.find(user => user.user_id === userId);
-    return user ? `${userId} ${user.username}` : userId;
   };
 
   const resetForm = () => {
@@ -1239,16 +1754,6 @@ const PreventiveMaintainanceChart = () => {
       const result = await response.json();
 
       if (response.ok && result.status === "success") {
-        if (isEdit) {
-          setCharts(prev =>
-            prev.map(chart =>
-              chart.chart_id === selectedChart.chart_id ? result.data : chart
-            )
-          );
-        } else {
-          setCharts(prev => [result.data, ...prev]);
-        }
-
         Swal.fire({
           icon: "success",
           title: "Success!",
@@ -1258,12 +1763,10 @@ const PreventiveMaintainanceChart = () => {
 
         resetForm();
         toggleForm();
+        // Refresh the current page data
+        fetchCharts(currentPage, entriesPerPage, searchTerm);
       } else {
-        console.error(
-          `❌ ${method} ${url} failed with status ${response.status}:`,
-          result
-        );
-
+        console.error(`❌ ${method} ${url} failed with status ${response.status}:`, result);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -1273,7 +1776,6 @@ const PreventiveMaintainanceChart = () => {
       }
     } catch (error) {
       console.error(`⚠️ Error during ${method} ${url}:`, error);
-
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -1301,13 +1803,14 @@ const PreventiveMaintainanceChart = () => {
         });
 
         if (response.ok) {
-          setCharts(prev => prev.filter(chart => chart.chart_id !== chartId));
           Swal.fire({
             icon: 'success',
             title: 'Deleted!',
             text: 'PM Chart has been deleted.',
             confirmButtonColor: '#3085d6',
           });
+          // Refresh the current page data
+          fetchCharts(currentPage, entriesPerPage, searchTerm);
         } else {
           const errorData = await response.json();
           throw new Error(errorData.message || 'Failed to delete PM Chart');
@@ -1342,100 +1845,29 @@ const PreventiveMaintainanceChart = () => {
     setShowForm(true);
   };
 
-  // Function to format date in multiple formats for search
-  const formatDateForSearch = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    
-    if (isNaN(date.getTime())) return '';
-    
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const monthName = date.toLocaleString('en-IN', { month: 'long' });
-    const monthShort = date.toLocaleString('en-IN', { month: 'short' });
-    const hour = date.getHours().toString().padStart(2, '0');
-    const minute = date.getMinutes().toString().padStart(2, '0');
-    const second = date.getSeconds().toString().padStart(2, '0');
-    
-    // Return multiple formats for better searchability
-    return [
-      `${day}/${month}/${year}`,                    // DD/MM/YYYY
-      `${day}/${month}/${year} ${hour}:${minute}:${second}`, // DD/MM/YYYY HH:MM:SS
-      `${month}/${day}/${year}`,                    // MM/DD/YYYY
-      `${year}-${month}-${day}`,                    // YYYY-MM-DD
-      `${year}${month}${day}`,                      // YYYYMMDD
-      `${day}-${month}-${year}`,                    // DD-MM-YYYY
-      date.toISOString(),                           // ISO string
-      monthName,                                    // January, February
-      monthShort,                                   // Jan, Feb
-      `${year}`,                                    // 2024
-      `${month}/${year}`,                           // MM/YYYY
-      `${day} ${monthName} ${year}`,               // 15 January 2024
-      `${day} ${monthShort} ${year}`,              // 15 Jan 2024
-      `${hour}:${minute}`,                          // HH:MM
-      `${hour}:${minute}:${second}`,               // HH:MM:SS
-    ].join(' ');
+  // Handler for search change - resets to page 1
+  const handleSearchChange = (value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+    sessionStorage.setItem("pmChart_currentPage", 1);
   };
 
- const filteredCharts = React.useMemo(() => {
-    if (!searchTerm.trim()) {
-      const totalPagesNow = Math.ceil(charts.length / entriesPerPage);
-      const savedPage =
-        Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
+  // Handler for entries per page change - resets to page 1
+  const handleEntriesPerPageChange = (value) => {
+    setEntriesPerPage(value);
+    setCurrentPage(1);
+    sessionStorage.setItem("pmChart_currentPage", 1);
+  };
 
-      if (savedPage > totalPagesNow && totalPagesNow > 0) {
-        setCurrentPage(totalPagesNow);
-      }
-
-      return charts;
+  // Handler for page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
     }
+  };
 
-    const searchLower = searchTerm.toLowerCase().trim();
-
-    const filtered = charts.filter((chart) => {
-      const createdBySearch = getUserSearchData(chart.created_by);
-      const updatedBySearch = getUserSearchData(chart.updated_by);
-
-      const text = [
-        chart.chart_id,
-        chart.pm_id,
-        chart.description,
-        chart.task_type,
-        chart.responsible,
-        chart.status,
-        createdBySearch,
-        updatedBySearch,
-        formatDateForSearch(chart.created_at),
-        formatDateForSearch(chart.updated_at),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return text.includes(searchLower);
-    });
-
-    // ✅ CLAMP PAGE AFTER FILTER
-    const totalPagesNow = Math.ceil(filtered.length / entriesPerPage);
-    const savedPage =
-      Number(sessionStorage.getItem("pmChart_currentPage")) || 1;
-
-    if (savedPage > totalPagesNow && totalPagesNow > 0) {
-      setCurrentPage(totalPagesNow);
-    }
-
-    return filtered;
-  }, [searchTerm, charts, users, entriesPerPage]);
-
-  // PAGINATION
-  const indexOfLastEntry = currentPage * entriesPerPage;
-  const indexOfFirstEntry = indexOfLastEntry - entriesPerPage;
-  const currentItems = filteredCharts.slice(
-    indexOfFirstEntry,
-    indexOfLastEntry
-  );
-
-  const totalPages = Math.ceil(filteredCharts.length / entriesPerPage);
+  if (loading) return <div className="text-center my-4">Loading PM Charts...</div>;
+  if (error) return <div className="alert alert-danger my-4">{error}</div>;
 
   return (
     <div className="pm-container">
@@ -1480,16 +1912,18 @@ const PreventiveMaintainanceChart = () => {
         />
       ) : (
         <ChartTable
-          currentItems={currentItems}
-          indexOfFirstEntry={indexOfFirstEntry}
+          charts={charts}
           searchTerm={searchTerm}
           setSearchTerm={handleSearchChange}
           entriesPerPage={entriesPerPage}
           setEntriesPerPage={handleEntriesPerPageChange}
           currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
+          setCurrentPage={handlePageChange}
           totalPages={totalPages}
-          filteredCharts={filteredCharts}
+          totalCount={totalCount}
+          hasNextPage={hasNextPage}
+          hasPreviousPage={hasPreviousPage}
+          fetching={fetching}
           onDelete={handleDelete}
           onEdit={handleEdit}
           users={users}
@@ -1500,4 +1934,4 @@ const PreventiveMaintainanceChart = () => {
   );
 };
 
-export default PreventiveMaintainanceChart; 
+export default PreventiveMaintainanceChart;
